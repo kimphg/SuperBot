@@ -78,7 +78,7 @@ void loop() {
           Serial.print(' ');
           Serial.print(getFrameByte(1)-160);
           Serial.print(' ');
-          for(int i=0;i<15;i++)
+          for(int i=0;i<16;i++)
           {
             lidarMap[aziCount][i] = getFrameByte(i*2+5)*256+getBufOffset(i*2+6);
             Serial.print(lidarMap[aziCount][i]);

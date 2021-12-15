@@ -19,6 +19,7 @@ public slots:
     void serialData();
 protected slots:
     void paintEvent(QPaintEvent *event);
+    void timerEvent(QTimerEvent *event);
 private:
     Ui::MainWindow *ui;
     void processFrame(QByteArray data);
