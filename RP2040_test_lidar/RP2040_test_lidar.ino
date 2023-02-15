@@ -1,7 +1,7 @@
 
 void setup() {
-  Serial.begin(480600);
-  Serial1.begin(480600);
+  Serial.begin(460800);
+  Serial1.begin(460800);
   delay(200);
   Serial1.print("startlds$");
 }
@@ -26,8 +26,17 @@ void loop() {
           {
             unsigned char *frameData = &(dataBuff[fragment][0])+62*part;
             Serial.write(0xff);
-            Serial.write(0xff);
-            Serial.write(&frameData[2],35);
+            Serial.write(0xAA);
+//            Serial.println(frameData[2]);
+            Serial.write(&frameData[2],35);//
+//            Serial1.print("startlds$");
+//            Serial.print(frameData[2] - 160); Serial.print(' ');
+//            for (int i = 5; i < 37; i += 2)
+//            {
+//              int valuerange = frameData[i] + frameData[i + 1] * 256;
+//              Serial.print(valuerange); Serial.print(' ');
+//            }
+//            Serial.print('\n');
           }
         }
         fragmentCount = 0;
@@ -37,7 +46,7 @@ void loop() {
     }
     timelast = timenew;
     curBuffIndex++;
-    if (curBuffIndex >= 300)
+    if (curBuffIndex >= 200)
     {
       curBuffIndex = 0;
     }

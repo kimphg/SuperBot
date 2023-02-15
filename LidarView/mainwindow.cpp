@@ -39,6 +39,7 @@ void MainWindow::timerEvent(QTimerEvent *event)
 {
     repaint();
 }
+unsigned char oldbyte;
 void MainWindow::serialData()
 {
     while (serial->bytesAvailable()) {
@@ -46,17 +47,20 @@ void MainWindow::serialData()
         unsigned char inbyte;
         serial->read(( char *)(&inbyte),1);
 
-        if(buffIndex>=BUFF_SIZE)buffIndex=0;
-        if(inbyte==0xff)
+
+        if(inbyte==0xaa&&oldbyte==0xff)
         {
 
 //            QByteArray dataFrame(serialDataBuff,buffIndex);
             processFrameHex(serialDataBuff);
             buffIndex=0;
         }else
-        {serialDataBuff[buffIndex]=inbyte;
-        buffIndex++;}
-
+        {
+            serialDataBuff[buffIndex]=inbyte;
+            buffIndex++;
+            if(buffIndex>=BUFF_SIZE)buffIndex=0;
+        }
+        oldbyte =inbyte;
 
     }
 }
@@ -80,6 +84,7 @@ void MainWindow::processFrameHex(unsigned char* data)
 {
     float angle = data[0]-160;
     if(angle<0||angle>90)return;
+    printf("\n%f",angle);
     for(int miniangle = 0;miniangle<16;miniangle++)
     {
         int realAngle = angle*ministep+miniangle;
