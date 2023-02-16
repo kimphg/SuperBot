@@ -15,18 +15,19 @@ void loop() {
   while (Serial1.available()) {
     unsigned char bytein = Serial1.read();
     dataBuff[curBuffIndex] = bytein;
-    if(bytein)zeroCount = 0;else zeroCount++;
-    if (bytein>=4)
+    if (bytein)zeroCount = 0; else zeroCount++;
+    if (zeroCount >= 4)
     {
-      Serial.w
-      
-
+      Serial.write(dataBuff, 40);
       curBuffIndex = 0;
+      zeroCount=0;
     }
-    curBuffIndex++;
-    if (curBuffIndex >= 200)
-    {
-      curBuffIndex = 0;
+    else
+    { curBuffIndex++;
+      if (curBuffIndex >= 200)
+      {
+        curBuffIndex = 0;
+      }
     }
 
   }
