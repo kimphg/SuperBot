@@ -17,8 +17,8 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
     serial = new QSerialPort();
-    serial->setPortName("COM3");
-    serial->setBaudRate(480600);
+    serial->setPortName("COM4");
+    serial->setBaudRate(460800);
     serial->open(QIODevice::ReadWrite);
 
 //    renderMap = new QPixmap(200,200);
