@@ -22,9 +22,13 @@ public slots:
 protected slots:
     void paintEvent(QPaintEvent *event);
     void timerEvent(QTimerEvent *event);
+    void wheelEvent(QWheelEvent *event);
 private:
     float fps=0;
-    int frameCount;
+    float bps=0;
+    int frameCount=0;
+    float mScale = 10.0;// mỗi pixel tương ứng 10mm
+    int byteCount = 0;
     Ui::MainWindow *ui;
     void processFrame(QByteArray data);
 };

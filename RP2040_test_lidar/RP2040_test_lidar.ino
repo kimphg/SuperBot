@@ -1,6 +1,6 @@
 
 void setup() {
-  Serial.begin(460800);
+  Serial.begin(115200);
   Serial1.begin(460800);
   delay(200);
   Serial1.print("startlds$");
@@ -18,7 +18,9 @@ void loop() {
     if (bytein)zeroCount = 0; else zeroCount++;
     if (zeroCount >= 4)
     {
-      Serial.write(dataBuff, 40);
+      Serial.write(0xff);
+      Serial.write(0xaa);
+      Serial.write(dataBuff+3, 35);
       curBuffIndex = 0;
       zeroCount=0;
     }
