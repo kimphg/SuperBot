@@ -26,12 +26,18 @@ pyb.LED(RED_LED_PIN).off()
 print("You're on camera!")
 count = 0
 p2old = 0
-framid = "000"
+framid = ""
 while (True):
-    bytein = uart.readchar()
-    if(p2.value()>p2old):
-        sensor.snapshot().save(framid+"slave.jpg",quality=50) # or "example.bmp" (or others)
-        count=count+1
-    p2old = p2.value()
+    inputint = uart.readchar()
+    if(inputint>=0):
+        bytein = chr()
+        if(bytein=="$"):
+            framid = ""
+        elif (bytein=="#"):
+            pyb.LED(BLUE_LED_PIN).on()
+            sensor.snapshot().save(framid+"slv.jpg",quality=50) # or "example.bmp" (or others)
 
-print("Done! Reset the camera to see the saved image.")
+        else:
+            framid = framid+bytein
+        pyb.LED(BLUE_LED_PIN).off()
+
