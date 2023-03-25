@@ -30,8 +30,9 @@ p3.low()
 while (count<200):
 
 
+
+    uart.write('$'+str(count)+'#')
     p2.high()
-    pyb.delay(1)
     img = sensor.snapshot()
     p2.low()
     img.save(str(count)+"msrec.jpg",quality=50)
