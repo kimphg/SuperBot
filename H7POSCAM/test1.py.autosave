@@ -13,11 +13,11 @@ pyb.LED(RED_LED_PIN).off()
 #img_writer = image.ImageIO(str(pyb.rng())+'.img','w')
 m = mjpeg.Mjpeg(str(pyb.rng())+".mjpeg")
 i = 0
-
+count = 0
 fps = 14
 mspf = round(1000/fps)
 pyb.LED(BLUE_LED_PIN).on()
-while (count<8400):
+while (count<100):
     frame_start = pyb.millis()
     uart.write('$'+str(count)+'#')
     #clock.tick()

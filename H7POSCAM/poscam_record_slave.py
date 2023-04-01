@@ -6,27 +6,22 @@
 
 import sensor, image, pyb,time
 from pyb import Pin, Timer
-p2  = pyb.Pin("P2", pyb.Pin.IN)
-p3  = pyb.Pin("P3", pyb.Pin.IN)
+
 RED_LED_PIN = 1
 BLUE_LED_PIN = 3
-clock = time.clock()
-sensor.reset() # Initialize the camera sensor.
-sensor.set_pixformat(sensor.RGB565) # or sensor.GRAYSCALE
-sensor.set_framesize(sensor.VGA) # or sensor.QQVGA (or others)
-sensor.skip_frames(time = 2000) # Let new settings take affect.
-
 pyb.LED(RED_LED_PIN).on()
-uart = pyb.UART(3, 1000000)
-sensor.skip_frames(time = 2000) # Give the user time to get ready.
+sensor.reset()                      # Reset and initialize the sensor.
+sensor.set_pixformat(sensor.GRAYSCALE) # Set pixel format to RGB565 (or GRAYSCALE)
+sensor.set_framesize(sensor.HD) # or sensor.QQVGA (or others)
+sensor.skip_frames(time = 1000) # Let new settings take affect.
+m = mjpeg.Mjpeg(str(pyb.rng())+".mjpeg")
+pyb.LED(RED_LED_PIN).on()
+uart = pyb.UART(3, 500000)
 
 pyb.LED(RED_LED_PIN).off()
-#pyb.LED(BLUE_LED_PIN).on()
+pyb.LED(BLUE_LED_PIN).on()
 
-print("You're on camera!")
-count = 0
-p2old = 0
-framid = ""
+
 while (True):
     inputint = uart.readchar()
     if(inputint>=0):
@@ -34,10 +29,11 @@ while (True):
         if(bytein=="$"):
             framid = ""
         elif (bytein=="#"):
-            pyb.LED(BLUE_LED_PIN).on()
-            sensor.snapshot().save(framid+"slv.jpg",quality=50) # or "example.bmp" (or others)
-
+            m.add_frame(sensor.snapshot(),quality = 50)
+        elif (bytein=="!"):
+            break
         else:
             framid = framid+bytein
-        pyb.LED(BLUE_LED_PIN).off()
-
+        #pyb.LED(BLUE_LED_PIN).off()
+m.close(14)
+pyb.LED(BLUE_LED_PIN).off()
