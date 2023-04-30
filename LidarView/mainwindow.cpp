@@ -18,7 +18,7 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
     serial = new QSerialPort();
-    serial->setPortName("COM4");
+    serial->setPortName("COM10");
     serial->setBaudRate(460800);
     serial->open(QIODevice::ReadWrite);
 
@@ -81,7 +81,6 @@ void MainWindow::processFrame(QByteArray data)
     {
         int realAngle = angle*ministep+miniangle;
         float range  = QString(datalist[1+miniangle]).toFloat();
-//        if(range<1) {printf("\n%s %d",data.data(),miniangle); break;}
         mapData[realAngle] = range;
     }
 }
