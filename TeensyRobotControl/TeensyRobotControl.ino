@@ -11,14 +11,14 @@
 #define RS485_SERIAL Serial1
 #define MOTOR_R_ADDRESS 1
 #define MOTOR_L_ADDRESS 2
-
+#include "mti.h"
 rs485_asukiaaa::ModbusRtu::Central modbus(&RS485_SERIAL, RS485_DE, RS485_RE);
 BLVD20KM_asukiaaa motorR(&modbus, MOTOR_R_ADDRESS);
 BLVD20KM_asukiaaa motorL(&modbus, MOTOR_L_ADDRESS);
 //========================================================================================================================//
 //                                                 USER-SPECIFIED DEFINES                                                 //
 //========================================================================================================================//
-
+IntervalTimer imu_read_timer;
 //Uncomment only one receiver type
 //#define USE_PWM_RX
 #define USE_PPM_RX
@@ -29,7 +29,7 @@ BLVD20KM_asukiaaa motorL(&modbus, MOTOR_L_ADDRESS);
 //#define USE_ONESHOT_ESC
 
 //Uncomment only one IMU
-#define USE_MPU6050_I2C //default
+// #define USE_MPU6050_I2C //default
 //#define USE_MPU9250_SPI
 
 //Uncomment only one full scale gyro range (deg/sec)
@@ -54,7 +54,7 @@ BLVD20KM_asukiaaa motorL(&modbus, MOTOR_L_ADDRESS);
 
 #include <Wire.h>     //I2c communication
 #include <SPI.h>      //SPI communication
-#include <PWMServo.h> //commanding any extra actuators, installed with teensyduino installer
+//#include <PWMServo.h> //commanding any extra actuators, installed with teensyduino installer
 
 #if defined USE_SBUS_RX
 #include "src/SBUS/SBUS.h"   //sBus interface
@@ -67,7 +67,8 @@ MPU6050 mpu6050;
 #include "src/MPU9250/MPU9250.h"
 MPU9250 mpu9250(SPI2, 36);
 #else
-#error No MPU defined...
+#include "mti.h"
+IMU_driver imu;
 #endif
 
 
@@ -186,40 +187,8 @@ float Kd_yaw = 0.00015;       //Yaw D-gain (be careful when increasing too high,
 //                                                     DECLARE PINS                                                       //
 //========================================================================================================================//
 
-//NOTE: Pin 13 is reserved for onboard LED, pins 18 and 19 are reserved for the MPU6050 IMU for default setup
-//Radio:
-//Note: If using SBUS, connect to pin 21 (RX5)
-const int PPM_Pin = 21;
-//OneShot125 ESC pin outputs:
-const int m1Pin = 2;
-const int m2Pin = 3;
-const int m3Pin = 4;
-const int m4Pin = 5;
-const int m5Pin = 6;
-const int m6Pin = 7;
-//PWM servo or ESC outputs:
-const int servo1Pin = 8;
-const int servo2Pin = 9;
-const int servo3Pin = 10;
-const int servo4Pin = 11;
-const int servo5Pin = 12;
-const int servo6Pin = 13;
-const int servo7Pin = 14;
-PWMServo servo1;  //create servo object to control a servo or ESC with PWM
-PWMServo servo2;
-PWMServo servo3;
-PWMServo servo4;
-PWMServo servo5;
-PWMServo servo6;
-PWMServo servo7;
-#ifdef USE_PWM_ESC
-PWMServo motor1;
-PWMServo motor2;
-PWMServo motor3;
-PWMServo motor4;
-#endif
-
 #include "common.h"
+
 //========================================================================================================================//
 
 
@@ -280,19 +249,31 @@ int s1_command_PWM, s2_command_PWM, s3_command_PWM, s4_command_PWM, s5_command_P
 //                                                      VOID SETUP                                                        //
 //========================================================================================================================//
 void commandMotorsOneShot() ;
+void imuRead()
+{
+  imu.updateData();
+}
 void setup() {
   Serial.begin(500000); //usb serial
   Serial4.begin(57600); //usb serial
+  Serial1.begin(921600);
+  delay(2000);
+  imu.IMU_init(Serial1);
+  Serial.println("start Modbus motors");
   BLVD20KM_asukiaaa::beginModbus(&modbus, RS485_BAUDRATE);
   motorR.beginWithoutModbus();
   motorL.beginWithoutModbus();
   //Initialize all pins
   pinMode(13, OUTPUT); //pin 13 LED blinker on board, do not modify
+  if(imu.getIsConnected())
+  {
+    Serial.println("IMU connect OK");
 
-
+  }else Serial.println("IMU connect failed");
+  Serial.flush();
   //Initialize radio communication
   radioSetup();
-
+  imu_read_timer.begin(imuRead, 1000);
   //Set radio channels to default (safe) values before entering main loop
   channel_1_pwm = channel_1_fs;
   channel_2_pwm = channel_2_fs;
@@ -321,6 +302,7 @@ void printBatVoltage()
 
 }
 void loop() {
+  
   prev_time = current_time;
   current_time = micros();
   dt = (current_time - prev_time) / 1000000.0;
@@ -366,13 +348,7 @@ void loop() {
   //Command actuators
   commandMotorsOneShot(); //sends command pulses to each motor pin using OneShot125 protocol
 #endif
-  servo1.write(s1_command_PWM);
-  servo2.write(s2_command_PWM);
-  servo3.write(s3_command_PWM);
-  servo4.write(s4_command_PWM);
-  servo5.write(s5_command_PWM);
-  servo6.write(s6_command_PWM);
-  servo7.write(s7_command_PWM);
+
 
   //Get vehicle commands for next loop iteration
   getCommands(); //pulls current available radio commands
@@ -508,74 +484,9 @@ void commandMotorPWM()
 }
 void commandMotors()
 {
-#ifdef USE_PWM_ESC
-  motor1.write(m1_command_PWM);
-  motor2.write(m2_command_PWM);
-  motor3.write(m3_command_PWM);
-  motor4.write(m4_command_PWM);
-#else
-  commandMotorsOneShot();
-#endif
-}
-void commandMotorsOneShot() {
-  //DESCRIPTION: Send pulses to motor pins, oneshot125 protocol
-  /*
-     My crude implimentation of OneShot125 protocol which sends 125 - 250us pulses to the ESCs (mXPin). The pulselengths being
-     sent are mX_command_PWM, computed in scaleCommands(). This may be replaced by something more efficient in the future.
-  */
-  int wentLow = 0;
-  int pulseStart, timer;
-  int flagM1 = 0;
-  int flagM2 = 0;
-  int flagM3 = 0;
-  int flagM4 = 0;
-  int flagM5 = 0;
-  int flagM6 = 0;
 
-  //Write all motor pins high
-  digitalWrite(m1Pin, HIGH);
-  digitalWrite(m2Pin, HIGH);
-  digitalWrite(m3Pin, HIGH);
-  digitalWrite(m4Pin, HIGH);
-  //  digitalWrite(m5Pin, HIGH);
-  //  digitalWrite(m6Pin, HIGH);
-  pulseStart = micros();
-
-  //Write each motor pin low as correct pulse length is reached
-  while (wentLow < 6 ) { //keep going until final (6th) pulse is finished, then done
-    timer = micros();
-    if ((m1_command_PWM <= timer - pulseStart) && (flagM1 == 0)) {
-      digitalWrite(m1Pin, LOW);
-      wentLow = wentLow + 1;
-      flagM1 = 1;
-    }
-    if ((m2_command_PWM <= timer - pulseStart) && (flagM2 == 0)) {
-      digitalWrite(m2Pin, LOW);
-      wentLow = wentLow + 1;
-      flagM2 = 1;
-    }
-    if ((m3_command_PWM <= timer - pulseStart) && (flagM3 == 0)) {
-      digitalWrite(m3Pin, LOW);
-      wentLow = wentLow + 1;
-      flagM3 = 1;
-    }
-    if ((m4_command_PWM <= timer - pulseStart) && (flagM4 == 0)) {
-      digitalWrite(m4Pin, LOW);
-      wentLow = wentLow + 1;
-      flagM4 = 1;
-    }
-    if ((m5_command_PWM <= timer - pulseStart) && (flagM5 == 0)) {
-      //digitalWrite(m5Pin, LOW);
-      wentLow = wentLow + 1;
-      flagM5 = 1;
-    }
-    if ((m6_command_PWM <= timer - pulseStart) && (flagM6 == 0)) {
-      //digitalWrite(m6Pin, LOW);
-      wentLow = wentLow + 1;
-      flagM6 = 1;
-    }
-  }
 }
+
 void calculate_IMU_error() {
   //DESCRIPTION: Computes IMU accelerometer and gyro error on startup. Note: vehicle should be powered up on flat surface
   /*
@@ -1053,33 +964,9 @@ void controlMixer() {
   else {
     motorLset = thro_des +yaw_des/200.0;
     motorRset = thro_des -yaw_des/200.0;
-//    m1_command_scaled = thro_des  - roll_PID; //- pitch_PID + roll_PID + yaw_PID;
-//    m2_command_scaled = thro_des  + roll_PID; //- pitch_PID - roll_PID - yaw_PID;
-//    m3_command_scaled = thro_des + pitch_PID * 4 ; //- roll_PID + yaw_PID;
-//    m4_command_scaled = thro_des ;//+ pitch_PID + roll_PID - yaw_PID;
-//    m5_command_scaled = 0;
-//    m6_command_scaled = 0;
+
   }
-  //0.5 is centered servo, 0 is zero throttle if connecting to ESC for conventional PWM, 1 is max throttle
-  //  s1_command_scaled :right servo
-  //  s2_command_scaled :left servo
-  //  s3_command_scaled :airleron
-  //  s4_command_scaled :elevator
-//  float angleOfServo = (channel_6_pwm - 1000.0) / 1000.0;
-//  s2_command_scaled = -yaw_PID + angleOfServo; //
-//  s1_command_scaled = -yaw_PID + 1 - angleOfServo + 0.15; //: he so dieu chinh do lech 2 servo trai phai
-//  s3_command_scaled = (channel_1_pwm - 1500.0) / 1000.0 +  roll_PID;
-  //  s1_command_scaled = 1-yaw_PID;//(channel_6_pwm-1000.0)/1000.0;
-  //  s2_command_scaled = 0-yaw_PID;//(channel_6_pwm-1000.0)/1000.0;
-  //Example use of the linear fader for float type variables. Linearly interpolate between minimum and maximum values for Kp_pitch_rate variable based on state of channel 6:
-  /*
-    if (channel_6_pwm > 1500){ //go to max specified value in 5.5 seconds
-    Kp_pitch_rate = floatFaderLinear(Kp_pitch_rate, 0.1, 0.3, 5.5, 1, 2000); //parameter, minimum value, maximum value, fadeTime (seconds), state (0 min or 1 max), loop frequency
-    }
-    if (channel_6_pwm < 1500) { //go to min specified value in 2.5 seconds
-    Kp_pitch_rate = floatFaderLinear(Kp_pitch_rate, 0.1, 0.3, 2.5, 0, 2000); //parameter, minimum value, maximum value, fadeTime, state (0 min or 1 max), loop frequency
-    }
-  */
+
 }
 
 void scaleCommands() {
@@ -1194,16 +1081,6 @@ void failSafe() {
 
 
 float floatFaderLinear(float param, float param_min, float param_max, float fadeTime, int state, int loopFreq) {
-  //DESCRIPTION: Linearly fades a float type variable between min and max bounds based on desired high or low state and time
-  /*
-      Takes in a float variable, desired minimum and maximum bounds, fade time, high or low desired state, and the loop frequency
-      and linearly interpolates that param variable between the maximum and minimum bounds. This function can be called in controlMixer()
-      and high/low states can be determined by monitoring the state of an auxillarly radio channel. For example, if channel_6_pwm is being
-      monitored to switch between two dynamic configurations (hover and forward flight), this function can be called within the logical
-      statements in order to fade controller gains, for example between the two dynamic configurations. The 'state' (1 or 0) can be used
-      to designate the two final options for that control gain based on the dynamic configuration assignment to the auxillary radio channel.
-
-  */
   float diffParam = (param_max - param_min) / (fadeTime * loopFreq); //difference to add or subtract from param for each loop iteration for desired fadeTime
 
   if (state == 1) { //maximum param bound desired, increase param by diffParam for each loop iteration
@@ -1219,14 +1096,7 @@ float floatFaderLinear(float param, float param_min, float param_max, float fade
 }
 
 float switchRollYaw(int reverseRoll, int reverseYaw) {
-  //DESCRIPTION: Switches roll_des and yaw_des variables for tailsitter-type configurations
-  /*
-     Takes in two integers (either 1 or -1) corresponding to the desired reversing of the roll axis and yaw axis, respectively.
-     Reversing of the roll or yaw axis may be needed when switching between the two for some dynamic configurations. Inputs of 1, 1 does not
-     reverse either of them, while -1, 1 will reverse the output corresponding to the new roll axis.
-     This function may be replaced in the future by a function that switches the IMU data instead (so that angle can also be estimated with the
-     IMU tilted 90 degrees from default level).
-  */
+
   float switch_holder;
 
   switch_holder = yaw_des;
