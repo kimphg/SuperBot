@@ -8,46 +8,19 @@
 // #define RS485_RE RS485_DE // you can unify DE and RE
 #define RS485_RE 5
 #define RS485_BAUDRATE 115200
-#define RS485_SERIAL Serial1
+#define RS485_modbus Serial2
+#define RS485_IMU Serial1
+#define DEBUG_TELEMETRY Serial4
 #define MOTOR_R_ADDRESS 1
 #define MOTOR_L_ADDRESS 2
 #include "mti.h"
-rs485_asukiaaa::ModbusRtu::Central modbus(&RS485_SERIAL, RS485_DE, RS485_RE);
+rs485_asukiaaa::ModbusRtu::Central modbus(&RS485_modbus, RS485_DE, RS485_RE);
 BLVD20KM_asukiaaa motorR(&modbus, MOTOR_R_ADDRESS);
 BLVD20KM_asukiaaa motorL(&modbus, MOTOR_L_ADDRESS);
 //========================================================================================================================//
 //                                                 USER-SPECIFIED DEFINES                                                 //
 //========================================================================================================================//
 IntervalTimer imu_read_timer;
-//Uncomment only one receiver type
-//#define USE_PWM_RX
-#define USE_PPM_RX
-//#define USE_SBUS_RX
-#define BAT_VOL_SENS A1
-//Uncomment only one ESC type
-#define USE_PWM_ESC
-//#define USE_ONESHOT_ESC
-
-//Uncomment only one IMU
-// #define USE_MPU6050_I2C //default
-//#define USE_MPU9250_SPI
-
-//Uncomment only one full scale gyro range (deg/sec)
-#define GYRO_250DPS //default
-//#define GYRO_500DPS
-//#define GYRO_1000DPS
-//#define GYRO_2000DPS
-
-//Uncomment only one full scale accelerometer range (G's)
-#define ACCEL_2G //default
-//#define ACCEL_4G
-//#define ACCEL_8G
-//#define ACCEL_16G
-
-
-
-//========================================================================================================================//
-
 
 
 //REQUIRED LIBRARIES (included with download in main sketch folder)
@@ -55,79 +28,6 @@ IntervalTimer imu_read_timer;
 #include <Wire.h>     //I2c communication
 #include <SPI.h>      //SPI communication
 //#include <PWMServo.h> //commanding any extra actuators, installed with teensyduino installer
-
-#if defined USE_SBUS_RX
-#include "src/SBUS/SBUS.h"   //sBus interface
-#endif
-
-#if defined USE_MPU6050_I2C
-#include "src/MPU6050/MPU6050.h"
-MPU6050 mpu6050;
-#elif defined USE_MPU9250_SPI
-#include "src/MPU9250/MPU9250.h"
-MPU9250 mpu9250(SPI2, 36);
-#else
-#include "mti.h"
-IMU_driver imu;
-#endif
-
-
-
-//========================================================================================================================//
-
-
-
-//Setup gyro and accel full scale value selection and scale factor
-
-#if defined USE_MPU6050_I2C
-#define GYRO_FS_SEL_250    MPU6050_GYRO_FS_250
-#define GYRO_FS_SEL_500    MPU6050_GYRO_FS_500
-#define GYRO_FS_SEL_1000   MPU6050_GYRO_FS_1000
-#define GYRO_FS_SEL_2000   MPU6050_GYRO_FS_2000
-#define ACCEL_FS_SEL_2     MPU6050_ACCEL_FS_2
-#define ACCEL_FS_SEL_4     MPU6050_ACCEL_FS_4
-#define ACCEL_FS_SEL_8     MPU6050_ACCEL_FS_8
-#define ACCEL_FS_SEL_16    MPU6050_ACCEL_FS_16
-#elif defined USE_MPU9250_SPI
-#define GYRO_FS_SEL_250    mpu9250.GYRO_RANGE_250DPS
-#define GYRO_FS_SEL_500    mpu9250.GYRO_RANGE_500DPS
-#define GYRO_FS_SEL_1000   mpu9250.GYRO_RANGE_1000DPS
-#define GYRO_FS_SEL_2000   mpu9250.GYRO_RANGE_2000DPS
-#define ACCEL_FS_SEL_2     mpu9250.ACCEL_RANGE_2G
-#define ACCEL_FS_SEL_4     mpu9250.ACCEL_RANGE_4G
-#define ACCEL_FS_SEL_8     mpu9250.ACCEL_RANGE_8G
-#define ACCEL_FS_SEL_16    mpu9250.ACCEL_RANGE_16G
-#endif
-
-#if defined GYRO_250DPS
-#define GYRO_SCALE GYRO_FS_SEL_250
-#define GYRO_SCALE_FACTOR 131.0
-#elif defined GYRO_500DPS
-#define GYRO_SCALE GYRO_FS_SEL_500
-#define GYRO_SCALE_FACTOR 65.5
-#elif defined GYRO_1000DPS
-#define GYRO_SCALE GYRO_FS_SEL_1000
-#define GYRO_SCALE_FACTOR 32.8
-#elif defined GYRO_2000DPS
-#define GYRO_SCALE GYRO_FS_SEL_2000
-#define GYRO_SCALE_FACTOR 16.4
-#endif
-
-#if defined ACCEL_2G
-#define ACCEL_SCALE ACCEL_FS_SEL_2
-#define ACCEL_SCALE_FACTOR 16384.0
-#elif defined ACCEL_4G
-#define ACCEL_SCALE ACCEL_FS_SEL_4
-#define ACCEL_SCALE_FACTOR 8192.0
-#elif defined ACCEL_8G
-#define ACCEL_SCALE ACCEL_FS_SEL_8
-#define ACCEL_SCALE_FACTOR 4096.0
-#elif defined ACCEL_16G
-#define ACCEL_SCALE ACCEL_FS_SEL_16
-#define ACCEL_SCALE_FACTOR 2048.0
-#endif
-
-
 
 //========================================================================================================================//
 //                                               USER-SPECIFIED VARIABLES                                                 //
@@ -243,22 +143,19 @@ int m1_command_PWM, m2_command_PWM, m3_command_PWM, m4_command_PWM, m5_command_P
 float s1_command_scaled, s2_command_scaled, s3_command_scaled, s4_command_scaled, s5_command_scaled, s6_command_scaled, s7_command_scaled;
 int s1_command_PWM, s2_command_PWM, s3_command_PWM, s4_command_PWM, s5_command_PWM, s6_command_PWM, s7_command_PWM;
 
-
+IMU_driver imu;
 
 //========================================================================================================================//
 //                                                      VOID SETUP                                                        //
 //========================================================================================================================//
 void commandMotorsOneShot() ;
-void imuRead()
-{
-  imu.updateData();
-}
+
 void setup() {
-  Serial.begin(500000); //usb serial
-  Serial4.begin(57600); //usb serial
-  Serial1.begin(921600);
-  delay(2000);
-  imu.IMU_init(Serial1);
+  Serial.begin(921600); //usb serial
+  DEBUG_TELEMETRY.begin(57600); //telemetry serial
+  RS485_IMU.begin(921600);
+  delay(200);
+  imu.IMU_init(RS485_IMU);
   Serial.println("start Modbus motors");
   BLVD20KM_asukiaaa::beginModbus(&modbus, RS485_BAUDRATE);
   motorR.beginWithoutModbus();
@@ -269,22 +166,25 @@ void setup() {
   {
     Serial.println("IMU connect OK");
 
-  }else Serial.println("IMU connect failed");
+  }else {
+    Serial.println("IMU connect failed");
+    indicateErrorLed(3);
+  }
   Serial.flush();
   //Initialize radio communication
   radioSetup();
-  imu_read_timer.begin(imuRead, 1000);
+  // imu_read_timer.begin(imuRead, 1000);//
+  Serial.println("IMU timer started");
   //Set radio channels to default (safe) values before entering main loop
-  channel_1_pwm = channel_1_fs;
-  channel_2_pwm = channel_2_fs;
-  channel_3_pwm = channel_3_fs;
-  channel_4_pwm = channel_4_fs;
-  channel_5_pwm = channel_5_fs;
-  channel_6_pwm = channel_6_fs;
-
-  //Indicate entering main loop with 3 quick blinks
-  setupBlink(3, 160, 70); //numBlinks, upTime (ms), downTime (ms)
-
+  // channel_1_pwm = channel_1_fs;
+  // channel_2_pwm = channel_2_fs;
+  // channel_3_pwm = channel_3_fs;
+  // channel_4_pwm = channel_4_fs;
+  // channel_5_pwm = channel_5_fs;
+  // channel_6_pwm = channel_6_fs;
+  // indicateErrorLed(0);
+  prev_time = 0;
+  Serial.println("Setup done, enter main loop");
 }
 
 
@@ -301,32 +201,40 @@ void printBatVoltage()
   Serial.println(valueInput);
 
 }
+int loopRatePeriodUS=1000;
 void loop() {
-  
-  prev_time = current_time;
-  current_time = micros();
-  dt = (current_time - prev_time) / 1000000.0;
-
-  loopBlink(); //indicate we are in main loop with short blink every 1.5 seconds
+  imu.updateData();
+  current_time = micros();          //looprate limiter
+  dt = (current_time - prev_time);  //
+  // Serial.println(dt);
+  // Serial.flush();
+  if(dt<loopRatePeriodUS)return;    //
+  prev_time = current_time;         //
+ if(imu.noMotionCount>100)//200ms
+ digitalWrite(13,HIGH);
+ else  digitalWrite(13,LOW);
+  // loopBlink(); //indicate we are in main loop with short blink every 1.5 seconds
   if (current_time - print_counter > 10000) {
     print_counter = micros();
     //Print data at 100hz (uncomment one at a time for troubleshooting) - SELECT ONE:
-    printRadioData();     //radio pwm values (expected: 1000 to 2000)
+    // printRadioData();     //radio pwm values (expected: 1000 to 2000)
 //    printDesiredState();  //prints desired vehicle state commanded in either degrees or deg/sec (expected: +/- maxAXIS for roll, pitch, yaw; 0 to 1 for throttle)
-    //    printGyroData();      //prints filtered gyro data direct from IMU (expected: ~ -250 to 250, 0 at rest)
+      //  printGyroData();      //prints filtered gyro data direct from IMU (expected: ~ -250 to 250, 0 at rest)
     //      printAccelData();     //prints filtered accelerometer data direct from IMU (expected: ~ -2 to 2; x,y 0 when level, z 1 when level)
     //    printMagData();       //prints filtered magnetometer data direct from IMU (expected: ~ -300 to 300)
-    //      printRollPitchYaw();  //prints roll, pitch, and yaw angles in degrees from Madgwick filter (expected: degrees, 0 when level)
+         printRollPitchYaw();  //prints roll, pitch, and yaw angles in degrees from Madgwick filter (expected: degrees, 0 when level)
     //      printPIDoutput();     //prints computed stabilized PID variables from controller and desired setpoint (expected: ~ -1 to 1)
-    printMotorCommands(); //prints the values being written to the motors (expected: 120 to 250)
+    // printMotorCommands(); //prints the values being written to the motors (expected: 120 to 250)
     //    printBatVoltage();
     //    printServoCommands(); //prints the values being written to the servos (expected: 0 to 180)
     //printLoopRate();      //prints the time between loops in microseconds (expected: microseconds between loop iterations)
   }
+  
   //Get vehicle state
-  getIMUdata(); //pulls raw gyro, accelerometer, and magnetometer data from IMU and LP filters to remove noise
+  // getIMUdata(); //pulls raw gyro, accelerometer, and magnetometer data from IMU and LP filters to remove noise
   //Madgwick(GyroX, -GyroY, -GyroZ, -AccX, AccY, AccZ, MagY, -MagX, MagZ, dt); //updates roll_IMU, pitch_IMU, and yaw_IMU (degrees)
-  Madgwick6DOF(GyroX, -GyroY, -GyroZ, -AccX, AccY, AccZ,  dt);
+  updateSensors();
+  Madgwick6DOF(GyroX, GyroY, GyroZ, AccX, AccY, AccZ,  dt);
   //Compute desired state
   getDesState(); //convert raw commands to normalized values based on saturated control limits
 
@@ -337,16 +245,22 @@ void loop() {
 
   //Actuator mixing and scaling to PWM values
   controlMixer(); //mixes PID outputs to scaled actuator commands -- custom mixing assignments done here
-  scaleCommands(); //scales motor commands to 125 to 250 range (oneshot125 protocol) and servo PWM commands to 0 to 180 (for servo library)
-
+  
+  // scaleCommands(); //scales motor commands to 125 to 250 range (oneshot125 protocol) and servo PWM commands to 0 to 180 (for servo library)
+ 
   //Throttle cut check
-  throttleCut(); //directly sets motor commands to low based on state of ch5
+  // throttleCut(); //directly sets motor commands to low based on state of ch5
 #ifdef USE_PWM_ESC
-  commandMotors();
+  commandMotorsPWM();
 #endif
+
 #ifdef USE_ONESHOT_ESC
   //Command actuators
   commandMotorsOneShot(); //sends command pulses to each motor pin using OneShot125 protocol
+#endif
+#ifdef USE_BLVM_MODBUS
+  //Command actuators
+  // commandMotorsBLVM(); //sends command pulses to each motor pin using OneShot125 protocol
 #endif
 
 
@@ -356,7 +270,7 @@ void loop() {
   failSafe(); //prevent failures in event of bad receiver connection, defaults to failsafe values assigned in setup
 
   //Regulate loop rate
-  loopRate(100); //do not exceed 2000Hz, all filter parameters tuned to 2000Hz by default
+  // loopRate(100); //do not exceed 2000Hz, all filter parameters tuned to 2000Hz by default
 }
 
 
@@ -411,7 +325,17 @@ void IMUinit() {
   mpu9250.setSrd(0); //sets gyro and accel read to 1khz, magnetometer read to 100hz
 #endif
 }
-
+void updateSensors()
+{
+  
+  IMUData measure = imu.getMeasurement();
+  AccX = measure.accY;
+  AccY = measure.accY;
+  AccZ = measure.accZ;
+  GyroX = measure.gyroX;
+  GyroY = measure.gyroY;
+  GyroZ = measure.gyroZ;
+}
 void getIMUdata() {
   //DESCRIPTION: Request full dataset from IMU and LP filter gyro, accelerometer, and magnetometer data
   /*
@@ -482,7 +406,7 @@ void commandMotorPWM()
 {
 
 }
-void commandMotors()
+void commandMotorsPWM()
 {
 
 }
@@ -969,7 +893,7 @@ void controlMixer() {
 
 }
 
-void scaleCommands() {
+void commandMotorsBLVM() {
   motorR.writeSpeed(abs(motorLset)*500);
   motorL.writeSpeed(abs(motorRset)*500);
   if(motorLset>0)
@@ -979,22 +903,6 @@ void scaleCommands() {
   motorR.writeReverse();
   else
   motorR.writeForward();
-  //Scaled to 0-180 for servo library
-  s1_command_PWM = s1_command_scaled * 180;
-  s2_command_PWM = s2_command_scaled * 180;
-  s3_command_PWM = s3_command_scaled * 180;
-  s4_command_PWM = s4_command_scaled * 180;
-  s5_command_PWM = s5_command_scaled * 180;
-  s6_command_PWM = s6_command_scaled * 180;
-  s7_command_PWM = s7_command_scaled * 180;
-  //Constrain commands to servos within servo library bounds
-  s1_command_PWM = constrain(s1_command_PWM, 0, 180);
-  s2_command_PWM = constrain(s2_command_PWM, 0, 180);
-  s3_command_PWM = constrain(s3_command_PWM, 0, 180);
-  s4_command_PWM = constrain(s4_command_PWM, 0, 180);
-  s5_command_PWM = constrain(s5_command_PWM, 0, 180);
-  s6_command_PWM = constrain(s6_command_PWM, 0, 180);
-  s7_command_PWM = constrain(s7_command_PWM, 0, 180);
 
 }
 
@@ -1110,7 +1018,7 @@ void throttleCut() {
   /*
      Monitors the state of radio command channel_5_pwm and directly sets the mx_command_PWM values to minimum (120 is
      minimum for oneshot125 protocol, 0 is minimum for standard PWM servo library used) if channel 5 is high. This is the last function
-     called before commandMotors() is called so that the last thing checked is if the user is giving permission to command
+     called before commandMotorsPWM() is called so that the last thing checked is if the user is giving permission to command
      the motors to anything other than minimum value. Safety first.
   */
   if (channel_5_pwm < 1500) {
@@ -1204,15 +1112,7 @@ void loopBlink() {
   }
 }
 
-void setupBlink(int numBlinks, int upTime, int downTime) {
-  //DESCRIPTION: Simple function to make LED on board blink as desired
-  for (int j = 1; j <= numBlinks; j++) {
-    digitalWrite(13, LOW);
-    delay(downTime);
-    digitalWrite(13, HIGH);
-    delay(upTime);
-  }
-}
+
 
 void printRadioData() {
 
@@ -1284,7 +1184,9 @@ void printRollPitchYaw() {
   Serial.print(F(" pitch: "));
   Serial.print(pitch_IMU);
   Serial.print(F(" yaw: "));
-  Serial.println(yaw_IMU);
+  Serial.print(yaw_IMU);
+  Serial.print(F(" gyroZBiasCompensation: "));
+  Serial.println(imu.gyroZBiasCompensation);
 
 }
 

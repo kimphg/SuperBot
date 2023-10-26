@@ -1,26 +1,16 @@
+#include <stdint.h>
 #ifndef MTI_H
 #define MTI_H
 #define BUF_SIZE_IMU 100
-bool compareArray(unsigned char *data1, unsigned char *data2, int len) {
-  for (int i = 0; i < len; i++) {
-    if (data1[i] != data2[i]) {
-      Serial.print(data1[i], HEX);
-      Serial.print(data2[i], HEX);
-      return false;
-    }
-  }
-  return true;
-}
-void printArray(unsigned char *data1, int len) {
-  for (int i = 0; i < len; i++) {
-    Serial.print(" 0x");
-    Serial.print(data1[i], HEX);
-  }
-  Serial.print("\n");
-  return;
-}
+#include "common.h"
 typedef struct
 {
+  int mid;
+  int dataLen;
+  int xdi;
+  float roll, pitch, yaw;
+  float gyroX,gyroY,gyroZ;
+  float accX,accY,accZ;
 
 } IMUData;
 class IMU_driver {
@@ -28,8 +18,11 @@ public:
   IMU_driver() {}
   void IMU_init(Stream &porti) {
     port = &porti;
-    port->setTimeout(100);
+    // port->setTimeout(100);
     isConnected = false;
+      gyroZBias =0;
+      gyroZBiasCompensation=0;
+   gyroZBiasCount=0;
     Connect();
     gotoMeasurement();
   }
@@ -52,26 +45,32 @@ public:
     unsigned char ansBuff[] = { 0x00, 0x00, 0x00, 0x00, 0x00 };
     while ((trycount < 5)) {
       trycount++;
-      delay(50);
-      while (port->available()) { port->read(); }  // clear input of serial port
+      delay(20);
+      while (port->available()) {
+        port->read();
+      }  // clear input of serial port
 
       port->write((char *)req, 5);
       port->flush();
 
-      delay(50);
+      delay(20);
       if (port->available() >= 5) {
         port->readBytes(ansBuff, 5);
-        printArray(ansBuff, 5);
       } else {
         Serial.print("no ans:");
         Serial.println(port->available());
         continue;
       }
       isSuccess = compareArray(ansExpected, ansBuff, 5);
-      Serial.println(isSuccess);
-      if (isSuccess) break;
+      if (isSuccess) {
+        Serial.print(trycount);
+        Serial.println(" try counts, gotoConfig ok");
+        isMeasurement = false;
+        break;
+      }
     }
     isConnected = isSuccess;
+    if (!isSuccess) Serial.println("gotoConfig failed");
     return isSuccess;
   }
   bool gotoMeasurement() {
@@ -83,53 +82,127 @@ public:
     unsigned char ansBuff[] = { 0x00, 0x00, 0x00, 0x00, 0x00 };
     while (trycount < 5) {
       trycount++;
-      delay(2);
+      delay(20);
       while (port->available()) { port->read(); }  // clear input of serial port
       port->write((char *)req, 5);
       port->flush();
-      delay(5);
+      delay(20);
       if (port->available() >= 5) {
         // đọc chữ liệu
         port->readBytes(ansBuff, 5);
       }
       isSuccess = compareArray(ansExpected, ansBuff, 5);
-      Serial.println(isSuccess);
       if (isSuccess) break;
     }
-    if(isSuccess)Serial.println("gotoMeasurement ok");
-    else Serial.println("gotoMeasurement failed");
+    if (isSuccess) {
+      Serial.print(trycount);
+      Serial.println(" try counts, gotoMeasurement ok");
+    } else Serial.println("gotoMeasurement failed");
     return isSuccess;
   }
   void updateData() {
-    
-  
-    while (port->available()>0)
-    {
-      if(buffIndex>=BUF_SIZE_IMU)buffIndex=0;
-      int bytein = port->read();
-      // Serial.println(bytein,HEX);
-      if(bytein==0xFF)
-      if(lastbyte==0xFA)
-      {
-        printArray(databuf,buffIndex+1);
-        buffIndex = 0;
-        
-      }
-      databuf[buffIndex]=bytein;
+      // Serial.print("updateData");
+    // while (Serial.available()) {        // If anything comes in Serial (USB),
+    //   port->write(Serial.read());  // read it and send it out Serial1 (pins 0 & 1)
+    // }
+    while (port->available() > 0) {
+      if (buffIndex >= BUF_SIZE_IMU) buffIndex = 0;
+      uint8_t bytein = port->read();
+//      Serial.write(&bytein,1);
+      if (bytein == 0xFF)
+        if (lastbyte == 0xFA) {
+          // printArray(databuf, buffIndex + 1);
+          if (buffIndex > 15) {
+            measurement.mid = databuf[1];
+            int dataLen = databuf[2];
+            int iti = 3;
+            while(iti<dataLen)
+            {
+              
+              int xdi = (databuf[iti] << 8) | databuf[iti+1];
+              // Serial.println(xdi);
+              unsigned char leni = databuf[iti+2];
+              if (xdi == 8240) {  //MTDATA2 data ID of euler angles
+                measurement.roll =  bytesToFloat(databuf[iti+3], databuf[iti+4], databuf[iti+5], databuf[iti+6]);
+                measurement.pitch = bytesToFloat(databuf[iti+7], databuf[iti+8], databuf[iti+9], databuf[iti+10]);
+                measurement.yaw =   bytesToFloat(databuf[iti+11], databuf[iti+12], databuf[iti+13], databuf[iti+17]);
+                // Serial.println(measurement.yaw);
+                // Serial.println("new euler angles");
+              }
+              if (xdi == 32832) {  //MTDATA2 data ID of rate of turn HR
+                measurement.gyroX =  bytesToFloat(databuf[iti+3], databuf[iti+4], databuf[iti+5], databuf[iti+6]);
+                measurement.gyroY = bytesToFloat(databuf[iti+7], databuf[iti+8], databuf[iti+9], databuf[iti+10]);
+                float newGyroZ =   bytesToFloat(databuf[iti+11], databuf[iti+12], databuf[iti+13], databuf[iti+17]);
+                
+                if(abs(newGyroZ)>0.01)
+                {
+                  // Serial.println(newGyroZ-measurement.gyroZ);
+                  noMotionCount=0;
+                }
+                if(noMotionCount>100)
+                {
+                  gyroZBias+=newGyroZ;
+                  gyroZBiasCount++;
+                  if(gyroZBiasCount>2500)
+                  {
+                    float newBias = gyroZBias/gyroZBiasCount;
+                    gyroZBiasCount=0;
+                    gyroZBias=0;
+                    gyroZBiasCompensation+=0.5*(newBias-gyroZBiasCompensation);
+                    // Serial.println(1000*gyroZBiasCompensation);
+                  }
+                }
+                measurement.gyroZ=newGyroZ-gyroZBiasCompensation;
+                // Serial.print(measurement.gyroZ);
+                // Serial.print(" ");
+                dataUpdated =true;
+                // Serial.println("new gyro data");
+              }
+              if (xdi == 16448) {  //MTDATA2 data ID of acceleration HR
+                measurement.accX =  bytesToFloat(databuf[iti+3], databuf[iti+4], databuf[iti+5], databuf[iti+6]);
+                measurement.accY =  bytesToFloat(databuf[iti+7], databuf[iti+8], databuf[iti+9], databuf[iti+10]);
+                float newaccZ =   bytesToFloat(databuf[iti+11], databuf[iti+12], databuf[iti+13], databuf[iti+17]);
+                // Serial.println(abs(newaccZ-measurement.accZ));
+                if(abs(newaccZ-measurement.accZ)>0.3)
+                {
+                  // Serial.println(noMotionCount);
+                  noMotionCount=0;
+                }
+                else noMotionCount++;
+                measurement.accZ = newaccZ;
+                
+                
+                // Serial.println("new acc data");
+              }
+              iti+=leni+1;
+            }
+          }
+          buffIndex = 0;
+        }
+      databuf[buffIndex] = bytein;
       buffIndex++;
       lastbyte = bytein;
     }
     //to be implemented
   }
   IMUData getMeasurement() {
+    dataUpdated=false;
     return measurement;
   }
+  bool dataUpdated;
+  int noMotionCount;
+  float gyroZBiasCompensation;
 private:
+  float gyroZBias;
+  
+  int gyroZBiasCount;
   unsigned char databuf[BUF_SIZE_IMU];
   int buffIndex;
+  
   unsigned char lastbyte;
   IMUData measurement;
   Stream *port;
   bool isConnected;
+  bool isMeasurement;
 };
 #endif

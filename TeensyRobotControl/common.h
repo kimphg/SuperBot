@@ -1,5 +1,105 @@
 #ifndef COMMON_H
 #define COMMON_H
+//Uncomment only one receiver type
+//#define USE_PWM_RX
+#define USE_PPM_RX
+//#define USE_SBUS_RX
+#define BAT_VOL_SENS A1
+//Uncomment only one ESC type
+// #define USE_PWM_ESC
+//#define USE_ONESHOT_ESC
+#define USE_BLVM_MODBUS
+//Uncomment only one IMU
+// #define USE_MPU6050_I2C //default
+//#define USE_MPU9250_SPI
+
+//Uncomment only one full scale gyro range (deg/sec)
+#define GYRO_250DPS //default
+//#define GYRO_500DPS
+//#define GYRO_1000DPS
+//#define GYRO_2000DPS
+
+//Uncomment only one full scale accelerometer range (G's)
+#define ACCEL_2G //default
+//#define ACCEL_4G
+//#define ACCEL_8G
+//#define ACCEL_16G
+
+
+
+//========================================================================================================================//
+
+
+#if defined USE_SBUS_RX
+#include "src/SBUS/SBUS.h"   //sBus interface
+#endif
+
+#if defined USE_MPU6050_I2C
+#include "src/MPU6050/MPU6050.h"
+MPU6050 mpu6050;
+#elif defined USE_MPU9250_SPI
+#include "src/MPU9250/MPU9250.h"
+MPU9250 mpu9250(SPI2, 36);
+#else
+#include "mti.h"
+
+#endif
+
+
+
+//========================================================================================================================//
+
+
+
+//Setup gyro and accel full scale value selection and scale factor
+
+#if defined USE_MPU6050_I2C
+#define GYRO_FS_SEL_250    MPU6050_GYRO_FS_250
+#define GYRO_FS_SEL_500    MPU6050_GYRO_FS_500
+#define GYRO_FS_SEL_1000   MPU6050_GYRO_FS_1000
+#define GYRO_FS_SEL_2000   MPU6050_GYRO_FS_2000
+#define ACCEL_FS_SEL_2     MPU6050_ACCEL_FS_2
+#define ACCEL_FS_SEL_4     MPU6050_ACCEL_FS_4
+#define ACCEL_FS_SEL_8     MPU6050_ACCEL_FS_8
+#define ACCEL_FS_SEL_16    MPU6050_ACCEL_FS_16
+#elif defined USE_MPU9250_SPI
+#define GYRO_FS_SEL_250    mpu9250.GYRO_RANGE_250DPS
+#define GYRO_FS_SEL_500    mpu9250.GYRO_RANGE_500DPS
+#define GYRO_FS_SEL_1000   mpu9250.GYRO_RANGE_1000DPS
+#define GYRO_FS_SEL_2000   mpu9250.GYRO_RANGE_2000DPS
+#define ACCEL_FS_SEL_2     mpu9250.ACCEL_RANGE_2G
+#define ACCEL_FS_SEL_4     mpu9250.ACCEL_RANGE_4G
+#define ACCEL_FS_SEL_8     mpu9250.ACCEL_RANGE_8G
+#define ACCEL_FS_SEL_16    mpu9250.ACCEL_RANGE_16G
+#endif
+
+#if defined GYRO_250DPS
+#define GYRO_SCALE GYRO_FS_SEL_250
+#define GYRO_SCALE_FACTOR 131.0
+#elif defined GYRO_500DPS
+#define GYRO_SCALE GYRO_FS_SEL_500
+#define GYRO_SCALE_FACTOR 65.5
+#elif defined GYRO_1000DPS
+#define GYRO_SCALE GYRO_FS_SEL_1000
+#define GYRO_SCALE_FACTOR 32.8
+#elif defined GYRO_2000DPS
+#define GYRO_SCALE GYRO_FS_SEL_2000
+#define GYRO_SCALE_FACTOR 16.4
+#endif
+
+#if defined ACCEL_2G
+#define ACCEL_SCALE ACCEL_FS_SEL_2
+#define ACCEL_SCALE_FACTOR 16384.0
+#elif defined ACCEL_4G
+#define ACCEL_SCALE ACCEL_FS_SEL_4
+#define ACCEL_SCALE_FACTOR 8192.0
+#elif defined ACCEL_8G
+#define ACCEL_SCALE ACCEL_FS_SEL_8
+#define ACCEL_SCALE_FACTOR 4096.0
+#elif defined ACCEL_16G
+#define ACCEL_SCALE ACCEL_FS_SEL_16
+#define ACCEL_SCALE_FACTOR 2048.0
+#endif
 
 //========================================================================================================================//
 //#define USE_PWM_RX
@@ -61,7 +161,35 @@ void readAndPrintAlarm(String motorLabel, BLVD20KM_asukiaaa* motor) {
                    BLVD20KM_asukiaaa::getStrOfError(result));
   }
 }
+void setupBlink(int numBlinks, int upTime, int downTime) {
+  //DESCRIPTION: Simple function to make LED on board blink as desired
+  for (int j = 1; j <= numBlinks; j++) {
+    digitalWrite(13, LOW);
+    delay(downTime);
+    digitalWrite(13, HIGH);
+    delay(upTime);
+    digitalWrite(13, LOW);
+  }
+}
+void indicateErrorLed(int errorCode)
+{
+  if(errorCode==0)
+  {
+    digitalWrite(13, LOW);
+    delay(500);
+    digitalWrite(13, HIGH);
+    delay(1000);
+    digitalWrite(13, LOW);
+    delay(500);
 
+  }
+    else
+    {
+      
+      setupBlink(errorCode, 300, 100); //numBlinks, upTime (ms), downTime (ms)
+      delay(2000);
+    }
+}
 void radioSetup() {
   //PPM Receiver 
   #if defined USE_PPM_RX
@@ -70,7 +198,7 @@ void radioSetup() {
     delay(20);
     //Attach interrupt and point to corresponding ISR function
     attachInterrupt(digitalPinToInterrupt(PPM_Pin), getPPM, CHANGE);
-
+    Serial.println("radioSetup to PPM mode");Serial.flush();
   //PWM Receiver
   #elif defined USE_PWM_RX
     //Declare interrupt pins 
@@ -93,7 +221,7 @@ void radioSetup() {
   //SBUS Recevier 
   #elif defined USE_SBUS_RX
     sbus.begin();
-    
+    Serial.println("radioSetup to Sbus mode");
   #else
     #error No RX type defined...
   #endif
@@ -173,5 +301,33 @@ void getPPM() {
   }
 }
 
+float bytesToFloat(unsigned char  b0, unsigned char  b1, unsigned char b2, unsigned char  b3)
+{
+  float output;
 
+  *((unsigned char*)(&output) + 3) = b0;
+  *((unsigned char*)(&output) + 2) = b1;
+  *((unsigned char*)(&output) + 1) = b2;
+  *((unsigned char*)(&output) + 0) = b3;
+
+  return output;
+}
+bool compareArray(unsigned char *data1, unsigned char *data2, int len) {
+  for (int i = 0; i < len; i++) {
+    if (data1[i] != data2[i]) {
+      Serial.print(data1[i], HEX);
+      Serial.print(data2[i], HEX);
+      return false;
+    }
+  }
+  return true;
+}
+void printArray(unsigned char *data1, int len) {
+  for (int i = 0; i < len; i++) {
+    Serial.print(" 0x");
+    Serial.print(data1[i], HEX);
+  }
+  Serial.print("\n");
+  return;
+}
 #endif // COMMON_H
