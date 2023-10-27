@@ -143,12 +143,12 @@ public:
                 {
                   gyroZBias+=newGyroZ;
                   gyroZBiasCount++;
-                  if(gyroZBiasCount>2500)
+                  if(gyroZBiasCount>2000)
                   {
                     float newBias = gyroZBias/gyroZBiasCount;
                     gyroZBiasCount=0;
                     gyroZBias=0;
-                    gyroZBiasCompensation+=0.5*(newBias-gyroZBiasCompensation);
+                    gyroZBiasCompensation+=0.4*(newBias-gyroZBiasCompensation);
                     // Serial.println(1000*gyroZBiasCompensation);
                   }
                 }

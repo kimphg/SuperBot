@@ -222,7 +222,7 @@ void loop() {
       //  printGyroData();      //prints filtered gyro data direct from IMU (expected: ~ -250 to 250, 0 at rest)
     //      printAccelData();     //prints filtered accelerometer data direct from IMU (expected: ~ -2 to 2; x,y 0 when level, z 1 when level)
     //    printMagData();       //prints filtered magnetometer data direct from IMU (expected: ~ -300 to 300)
-         printRollPitchYaw();  //prints roll, pitch, and yaw angles in degrees from Madgwick filter (expected: degrees, 0 when level)
+        //  printRollPitchYaw();  //prints roll, pitch, and yaw angles in degrees from Madgwick filter (expected: degrees, 0 when level)
     //      printPIDoutput();     //prints computed stabilized PID variables from controller and desired setpoint (expected: ~ -1 to 1)
     // printMotorCommands(); //prints the values being written to the motors (expected: 120 to 250)
     //    printBatVoltage();
@@ -234,7 +234,11 @@ void loop() {
   // getIMUdata(); //pulls raw gyro, accelerometer, and magnetometer data from IMU and LP filters to remove noise
   //Madgwick(GyroX, -GyroY, -GyroZ, -AccX, AccY, AccZ, MagY, -MagX, MagZ, dt); //updates roll_IMU, pitch_IMU, and yaw_IMU (degrees)
   updateSensors();
-  Madgwick6DOF(GyroX, GyroY, GyroZ, AccX, AccY, AccZ,  dt);
+  yaw_IMU+= (GyroZ*dt)/1000000.0;
+  Serial.print(imu.gyroZBiasCompensation*10000);
+  Serial.print(" ");
+  Serial.println(yaw_IMU);
+  // Madgwick6DOF(GyroX, GyroY, GyroZ, AccX, AccY, AccZ,  dt);
   //Compute desired state
   getDesState(); //convert raw commands to normalized values based on saturated control limits
 
@@ -332,9 +336,9 @@ void updateSensors()
   AccX = measure.accY;
   AccY = measure.accY;
   AccZ = measure.accZ;
-  GyroX = measure.gyroX;
-  GyroY = measure.gyroY;
-  GyroZ = measure.gyroZ;
+  GyroX = measure.gyroX*57.2958;
+  GyroY = measure.gyroY*57.2958;
+  GyroZ = measure.gyroZ*57.2958;
 }
 void getIMUdata() {
   //DESCRIPTION: Request full dataset from IMU and LP filter gyro, accelerometer, and magnetometer data
@@ -467,6 +471,7 @@ void calibrateAttitude() {
     current_time = micros();
     dt = (current_time - prev_time) / 1000000.0;
     getIMUdata();
+    
     Madgwick(GyroX, -GyroY, -GyroZ, -AccX, AccY, AccZ, MagY, -MagX, MagZ, dt);
     loopRate(2000); //do not exceed 2000Hz
   }
@@ -1186,7 +1191,7 @@ void printRollPitchYaw() {
   Serial.print(F(" yaw: "));
   Serial.print(yaw_IMU);
   Serial.print(F(" gyroZBiasCompensation: "));
-  Serial.println(imu.gyroZBiasCompensation);
+  Serial.println(imu.gyroZBiasCompensation*1000);
 
 }
 
