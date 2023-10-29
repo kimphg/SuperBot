@@ -2,13 +2,15 @@
 #ifndef MTI_H
 #define MTI_H
 #define BUF_SIZE_IMU 100
+#define PI2 6.2831853
+#define PI 3.141592653589793
 #include "common.h"
 typedef struct
 {
   int mid;
   int dataLen;
   int xdi;
-  float roll, pitch, yaw;
+  float roll, pitch, yaw,gyroyaw;
   float gyroX,gyroY,gyroZ;
   float accX,accY,accZ;
 
@@ -23,6 +25,7 @@ public:
       gyroZBias =0;
       gyroZBiasCompensation=0;
    gyroZBiasCount=0;
+   measurement.gyroyaw = 0;
     Connect();
     gotoMeasurement();
   }
@@ -43,7 +46,7 @@ public:
     unsigned char req[] = { 0xFA, 0xFF, 0x30, 0x00, 0xD1 };
     unsigned char ansExpected[] = { 0xFA, 0xFF, 0x31, 0x00, 0xD0 };
     unsigned char ansBuff[] = { 0x00, 0x00, 0x00, 0x00, 0x00 };
-    while ((trycount < 5)) {
+    while (trycount < 5){
       trycount++;
       delay(20);
       while (port->available()) {
@@ -143,7 +146,7 @@ public:
                 {
                   gyroZBias+=newGyroZ;
                   gyroZBiasCount++;
-                  if(gyroZBiasCount>2000)
+                  if(gyroZBiasCount>200)
                   {
                     float newBias = gyroZBias/gyroZBiasCount;
                     gyroZBiasCount=0;
@@ -152,7 +155,11 @@ public:
                     // Serial.println(1000*gyroZBiasCompensation);
                   }
                 }
+                
                 measurement.gyroZ=newGyroZ-gyroZBiasCompensation;
+                measurement.gyroyaw+= measurement.gyroZ/500.0;// todo: add dt later
+                while(measurement.gyroyaw>PI2)measurement.gyroyaw-=PI2;
+                while(measurement.gyroyaw<0)measurement.gyroyaw+=PI2;
                 // Serial.print(measurement.gyroZ);
                 // Serial.print(" ");
                 dataUpdated =true;

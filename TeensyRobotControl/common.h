@@ -262,6 +262,7 @@ unsigned long getRadioPWM(int ch_num) {
 //INTERRUPT SERVICE ROUTINES (for reading PWM and PPM)
 
 void getPPM() {
+  // Serial.println("getppm");
   unsigned long dt_ppm;
   int trig = digitalRead(PPM_Pin);
   if (trig==1) { //only care about rising edge

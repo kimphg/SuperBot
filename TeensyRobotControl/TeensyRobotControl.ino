@@ -1,8 +1,8 @@
 
 
 
-#include <BLVD20KM_asukiaaa.h>
-#include <rs485_asukiaaa.h>
+#include "BLVD20KM_asukiaaa.h"
+#include "rs485_asukiaaa.h"
 
 #define RS485_DE 4
 // #define RS485_RE RS485_DE // you can unify DE and RE
@@ -129,7 +129,8 @@ float q2 = 0.0f;
 float q3 = 0.0f;
 
 //Normalized desired state:
-float thro_des, roll_des, pitch_des, yaw_des;
+float spd_des=0, roll_des, pitch_des, yaw_des=0, pos_des=0;
+float pos_curr=0;
 float roll_passthru, pitch_passthru, yaw_passthru;
 
 //Controller:
@@ -173,7 +174,7 @@ void setup() {
   Serial.flush();
   //Initialize radio communication
   radioSetup();
-  // imu_read_timer.begin(imuRead, 1000);//
+  imu_read_timer.begin(inputDataUpdate, 300);//
   Serial.println("IMU timer started");
   //Set radio channels to default (safe) values before entering main loop
   // channel_1_pwm = channel_1_fs;
@@ -201,21 +202,26 @@ void printBatVoltage()
   Serial.println(valueInput);
 
 }
-int loopRatePeriodUS=1000;
+bool manualMode = false;
+int loopRatePeriodUS=50000;
 void loop() {
-  imu.updateData();
   current_time = micros();          //looprate limiter
   dt = (current_time - prev_time);  //
-  // Serial.println(dt);
-  // Serial.flush();
   if(dt<loopRatePeriodUS)return;    //
+  if(dt>loopRatePeriodUS+10){
+    Serial.print("loop too slow error:");
+    Serial.println(dt);
+  }
+  
   prev_time = current_time;         //
  if(imu.noMotionCount>100)//200ms
  digitalWrite(13,HIGH);
  else  digitalWrite(13,LOW);
   // loopBlink(); //indicate we are in main loop with short blink every 1.5 seconds
-  if (current_time - print_counter > 10000) {
+  if (current_time - print_counter > 100000) {
     print_counter = micros();
+  //  DEBUG_TELEMETRY.print(dt);
+  //  DEBUG_TELEMETRY.print(" \n");
     //Print data at 100hz (uncomment one at a time for troubleshooting) - SELECT ONE:
     // printRadioData();     //radio pwm values (expected: 1000 to 2000)
 //    printDesiredState();  //prints desired vehicle state commanded in either degrees or deg/sec (expected: +/- maxAXIS for roll, pitch, yaw; 0 to 1 for throttle)
@@ -224,7 +230,7 @@ void loop() {
     //    printMagData();       //prints filtered magnetometer data direct from IMU (expected: ~ -300 to 300)
         //  printRollPitchYaw();  //prints roll, pitch, and yaw angles in degrees from Madgwick filter (expected: degrees, 0 when level)
     //      printPIDoutput();     //prints computed stabilized PID variables from controller and desired setpoint (expected: ~ -1 to 1)
-    // printMotorCommands(); //prints the values being written to the motors (expected: 120 to 250)
+    printMotorCommands(); //prints the values being written to the motors (expected: 120 to 250)
     //    printBatVoltage();
     //    printServoCommands(); //prints the values being written to the servos (expected: 0 to 180)
     //printLoopRate();      //prints the time between loops in microseconds (expected: microseconds between loop iterations)
@@ -234,43 +240,72 @@ void loop() {
   // getIMUdata(); //pulls raw gyro, accelerometer, and magnetometer data from IMU and LP filters to remove noise
   //Madgwick(GyroX, -GyroY, -GyroZ, -AccX, AccY, AccZ, MagY, -MagX, MagZ, dt); //updates roll_IMU, pitch_IMU, and yaw_IMU (degrees)
   updateSensors();
-  yaw_IMU+= (GyroZ*dt)/1000000.0;
-  Serial.print(imu.gyroZBiasCompensation*10000);
-  Serial.print(" ");
-  Serial.println(yaw_IMU);
+  // updateCommandBus();
+  // DEBUG_TELEMETRY.print(imu.gyroZBiasCompensation*100000);
+  // DEBUG_TELEMETRY.print(" ");
+  // DEBUG_TELEMETRY.println(yaw_IMU);
   // Madgwick6DOF(GyroX, GyroY, GyroZ, AccX, AccY, AccZ,  dt);
   //Compute desired state
-  getDesState(); //convert raw commands to normalized values based on saturated control limits
+  if(false)
+  {
+    getDesState(); //convert raw commands to normalized values based on saturated control limits
 
-  //PID Controller - SELECT ONE:
-  controlANGLE(); //stabilize on angle setpoint
-  //controlANGLE2(); //stabilize on angle setpoint using cascaded method
-  //controlRATE(); //stabilize on rate setpoint
+    //PID Controller - SELECT ONE:
+    controlANGLE(); //stabilize on angle setpoint
+    //controlANGLE2(); //stabilize on angle setpoint using cascaded method
+    //controlRATE(); //stabilize on rate setpoint
 
-  //Actuator mixing and scaling to PWM values
-  controlMixer(); //mixes PID outputs to scaled actuator commands -- custom mixing assignments done here
+    //Actuator mixing and scaling to PWM values
+    controlMixer(); //mixes PID outputs to scaled actuator commands -- custom mixing assignments done here
+    
+    // scaleCommands(); //scales motor commands to 125 to 250 range (oneshot125 protocol) and servo PWM commands to 0 to 180 (for servo library)
   
-  // scaleCommands(); //scales motor commands to 125 to 250 range (oneshot125 protocol) and servo PWM commands to 0 to 180 (for servo library)
- 
-  //Throttle cut check
-  // throttleCut(); //directly sets motor commands to low based on state of ch5
-#ifdef USE_PWM_ESC
-  commandMotorsPWM();
-#endif
+    //Throttle cut check
+    // throttleCut(); //directly sets motor commands to low based on state of ch5
+  #ifdef USE_PWM_ESC
+    commandMotorsPWM();
+  #endif
 
-#ifdef USE_ONESHOT_ESC
-  //Command actuators
-  commandMotorsOneShot(); //sends command pulses to each motor pin using OneShot125 protocol
-#endif
-#ifdef USE_BLVM_MODBUS
-  //Command actuators
-  // commandMotorsBLVM(); //sends command pulses to each motor pin using OneShot125 protocol
-#endif
+  #ifdef USE_ONESHOT_ESC
+    //Command actuators
+    commandMotorsOneShot(); //sends command pulses to each motor pin using OneShot125 protocol
+  #endif
+  #ifdef USE_BLVM_MODBUS
+    //Command actuators
+    commandMotorsBLVM(); //sends command pulses to each motor pin using OneShot125 protocol
+  #endif
 
 
-  //Get vehicle commands for next loop iteration
-  getCommands(); //pulls current available radio commands
-
+    //Get vehicle commands for next loop iteration
+    getCommandsRadio(); //pulls current available radio commands
+  }
+  else
+  {
+    getCommandsRadio(); 
+        //Yaw, stablize on rate from GyroZ
+    error_yaw = yaw_des - yaw_IMU;
+    if(error_yaw>180)error_yaw-=360;
+    if(error_yaw<-180)error_yaw+=360;
+    integral_yaw = integral_yaw_prev + error_yaw * dt;
+    if (channel_1_pwm < 1060) {   //don't let integrator build if throttle is too low
+      integral_yaw = 0;
+    }
+    integral_yaw = constrain(integral_yaw, -i_limit, i_limit); //saturate integrator to prevent unsafe buildup
+    derivative_yaw = (error_yaw - error_yaw_prev) / dt;
+    yaw_PID = .01 * (Kp_yaw * error_yaw + Ki_yaw * integral_yaw + Kd_yaw * derivative_yaw); //scaled by .01 to bring within -1 to 1 range
+    error_yaw_prev = error_yaw;
+    Serial.println(yaw_PID);
+    //send command to motors
+    if (channel_5_pwm < 1500) {
+    motorLset=0;
+    motorRset=0;
+    }
+    else{
+      motorLset = spd_des - yaw_PID;
+      motorRset = spd_des + yaw_PID;  
+    }
+    commandMotorsBLVM(); 
+  }
   failSafe(); //prevent failures in event of bad receiver connection, defaults to failsafe values assigned in setup
 
   //Regulate loop rate
@@ -339,7 +374,50 @@ void updateSensors()
   GyroX = measure.gyroX*57.2958;
   GyroY = measure.gyroY*57.2958;
   GyroZ = measure.gyroZ*57.2958;
+  yaw_IMU = measure.gyroyaw*57.2958;
 }
+#define COMMAND_LEN_MAX 200
+String commandString = "";
+int commandBuffIndex = 0;
+void updateCommandBus()
+{
+  while(DEBUG_TELEMETRY.available())
+  {
+    uint8_t bytein = DEBUG_TELEMETRY.read();
+    if(commandString.length()<COMMAND_LEN_MAX)commandString+=(char)bytein;
+    if(bytein=='\n')//end of command
+    {
+      int dataLen = commandString.length();
+      // DEBUG_TELEMETRY.println(dataLen);
+    
+      if(commandString.startsWith("yaw="))//angle set command
+      {
+        
+        // float angle
+        //   DEBUG_TELEMETRY.print(imu.gyroZBiasCompensation*100000);
+        yaw_des = commandString.substring(4,dataLen-1).toFloat();
+        DEBUG_TELEMETRY.print("yaw_des set:");
+        DEBUG_TELEMETRY.println(yaw_des);
+        //   DEBUG_TELEMETRY.println(yaw_IMU);
+      }
+      if(commandString.startsWith("spd="))//angle set command
+      {
+        
+        // float angle
+        //   DEBUG_TELEMETRY.print(imu.gyroZBiasCompensation*100000);
+        spd_des = commandString.substring(4,dataLen-1).toFloat();
+        DEBUG_TELEMETRY.print("thro_des set:");
+        DEBUG_TELEMETRY.println(spd_des);
+        //   DEBUG_TELEMETRY.println(yaw_IMU);
+      }
+      commandString = "";
+      
+      
+    }
+      
+  }
+}
+
 void getIMUdata() {
   //DESCRIPTION: Request full dataset from IMU and LP filter gyro, accelerometer, and magnetometer data
   /*
@@ -682,13 +760,13 @@ void Madgwick6DOF(float gx, float gy, float gz, float ax, float ay, float az, fl
 
 void getDesState() {
 
-  thro_des = (channel_3_pwm - 1000.0) / 1000.0; //between 0 and 1
-  if(thro_des<0.1)thro_des=0;
+  spd_des = (channel_3_pwm - 1000.0) / 1000.0; //between 0 and 1
+  if(spd_des<0.1)spd_des=0;
   roll_des = (channel_1_pwm - 1500.0) / 500.0; //between -1 and 1
   pitch_des = (channel_2_pwm - 1500.0) / 500.0; //between -1 and 1
   yaw_des = -(channel_4_pwm - 1500.0) / 500.0; //between -1 and 1
   //Constrain within normalized bounds
-  thro_des = constrain(thro_des, 0.0, 1.0); //between 0 and 1
+  spd_des = constrain(spd_des, 0.0, 1.0); //between 0 and 1
   roll_des = constrain(roll_des, -1.0, 1.0) * maxRoll; //between -maxRoll and +maxRoll
   pitch_des = constrain(pitch_des, -1.0, 1.0) * maxPitch; //between -maxPitch and +maxPitch
   yaw_des = constrain(yaw_des, -1.0, 1.0) * maxYaw; //between -maxYaw and +maxYaw
@@ -861,16 +939,7 @@ void controlRATE() {
   derivative_pitch = (error_pitch - error_pitch_prev) / dt;
   pitch_PID = .01 * (Kp_pitch_rate * error_pitch + Ki_pitch_rate * integral_pitch + Kd_pitch_rate * derivative_pitch); //scaled by .01 to bring within -1 to 1 range
 
-  //Yaw, stablize on rate from GyroZ
-  error_yaw = yaw_des - GyroZ;
-  integral_yaw = integral_yaw_prev + error_yaw * dt;
-  if (channel_1_pwm < 1060) {   //don't let integrator build if throttle is too low
-    integral_yaw = 0;
-  }
-  integral_yaw = constrain(integral_yaw, -i_limit, i_limit); //saturate integrator to prevent unsafe buildup
-  derivative_yaw = (error_yaw - error_yaw_prev) / dt;
-  yaw_PID = .01 * (Kp_yaw * error_yaw + Ki_yaw * integral_yaw + Kd_yaw * derivative_yaw); //scaled by .01 to bring within -1 to 1 range
-
+  
   //Update roll variables
   error_roll_prev = error_roll;
   integral_roll_prev = integral_roll;
@@ -891,14 +960,15 @@ void controlMixer() {
     motorRset=0;
   }
   else {
-    motorLset = thro_des +yaw_des/200.0;
-    motorRset = thro_des -yaw_des/200.0;
+    motorLset = spd_des +yaw_des/200.0;
+    motorRset = spd_des -yaw_des/200.0;
 
   }
 
 }
 
 void commandMotorsBLVM() {
+  
   motorR.writeSpeed(abs(motorLset)*500);
   motorL.writeSpeed(abs(motorRset)*500);
   if(motorLset>0)
@@ -908,10 +978,12 @@ void commandMotorsBLVM() {
   motorR.writeReverse();
   else
   motorR.writeForward();
-
+  // uint16_t alarm;
+  // motorL.readAlarm((uint16_t*)&alarm);
+  // Serial.println(alarm);
 }
 
-void getCommands() {
+void getCommandsRadio() {
   //DESCRIPTION: Get raw PWM values for every channel from the radio
   /*
      Updates radio PWM commands in loop based on current available commands. channel_x_pwm is the raw command used in the rest of
@@ -958,7 +1030,7 @@ void getCommands() {
 void failSafe() {
   //DESCRIPTION: If radio gives garbage values, set all commands to default values
   /*
-     Radio connection failsafe used to check if the getCommands() function is returning acceptable pwm values. If any of
+     Radio connection failsafe used to check if the getCommandsRadio() function is returning acceptable pwm values. If any of
      the commands are lower than 800 or higher than 2200, then we can be certain that there is an issue with the radio
      connection (most likely hardware related). If any of the channels show this failure, then all of the radio commands
      channel_x_pwm are set to default failsafe values specified in the setup. Comment out this function when troubleshooting
@@ -1121,31 +1193,31 @@ void loopBlink() {
 
 void printRadioData() {
 
-  Serial4.print(F(" CH1: "));
-  Serial4.print(channel_1_pwm);
-  Serial4.print(F(" CH2: "));
-  Serial4.print(channel_2_pwm);
-  Serial4.print(F(" CH3: "));
-  Serial4.print(channel_3_pwm);
-  Serial4.print(F(" CH4: "));
-  Serial4.print(channel_4_pwm);
-  Serial4.print(F(" CH5: "));
-  Serial4.print(channel_5_pwm);
-  Serial4.print(F(" CH6: "));
-  Serial4.println(channel_6_pwm);
+  DEBUG_TELEMETRY.print(F(" CH1: "));
+  DEBUG_TELEMETRY.print(channel_1_pwm);
+  DEBUG_TELEMETRY.print(F(" CH2: "));
+  DEBUG_TELEMETRY.print(channel_2_pwm);
+  DEBUG_TELEMETRY.print(F(" CH3: "));
+  DEBUG_TELEMETRY.print(channel_3_pwm);
+  DEBUG_TELEMETRY.print(F(" CH4: "));
+  DEBUG_TELEMETRY.print(channel_4_pwm);
+  DEBUG_TELEMETRY.print(F(" CH5: "));
+  DEBUG_TELEMETRY.print(channel_5_pwm);
+  DEBUG_TELEMETRY.print(F(" CH6: "));
+  DEBUG_TELEMETRY.println(channel_6_pwm);
 
 }
 
 void printDesiredState() {
 
-  Serial4.print(F("thro_des: "));
-  Serial4.print(thro_des);
-  Serial4.print(F(" roll_des: "));
-  Serial4.print(roll_des);
-  Serial4.print(F(" pitch_des: "));
-  Serial4.print(pitch_des);
-  Serial4.print(F(" yaw_des: "));
-  Serial4.println(yaw_des);
+  DEBUG_TELEMETRY.print(F("thro_des: "));
+  DEBUG_TELEMETRY.print(spd_des);
+  DEBUG_TELEMETRY.print(F(" roll_des: "));
+  DEBUG_TELEMETRY.print(roll_des);
+  DEBUG_TELEMETRY.print(F(" pitch_des: "));
+  DEBUG_TELEMETRY.print(pitch_des);
+  DEBUG_TELEMETRY.print(F(" yaw_des: "));
+  DEBUG_TELEMETRY.println(yaw_des);
 
 }
 
@@ -1208,10 +1280,14 @@ void printPIDoutput() {
 
 void printMotorCommands() {
 
-  Serial4.print(F("m1_command: "));
-  Serial4.print(motorLset);
-  Serial4.print(F(" m2_command: "));
-  Serial4.println(motorRset);
+  DEBUG_TELEMETRY.print(F("  yaw_des: "));
+  DEBUG_TELEMETRY.print(yaw_des);
+  DEBUG_TELEMETRY.print(F("  yaw_IMU: "));
+  DEBUG_TELEMETRY.print(yaw_IMU);
+  DEBUG_TELEMETRY.print(F("motor left: "));
+  DEBUG_TELEMETRY.print(motorLset);
+  DEBUG_TELEMETRY.print(F(" motor right: "));
+  DEBUG_TELEMETRY.println(motorRset);
   
 
 }
@@ -1240,4 +1316,9 @@ void printLoopRate() {
   Serial.print(F("dt = "));
   Serial.println(dt * 1000000.0);
 
+}
+static void inputDataUpdate()
+{
+  imu.updateData();//read IMU
+  updateCommandBus();//read Serial Commands
 }

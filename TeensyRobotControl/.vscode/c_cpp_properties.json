@@ -3,7 +3,9 @@
         {
             "name": "Win32",
             "includePath": [
-                "${workspaceFolder}/**"
+                "c:/Users/Phuong/Documents/GitHub/SuperBot/TeensyRobotControl/**",
+                "C:/Users/Phuong/Documents/Arduino/libraries/BLVD20KM_asukiaaa/src/**",
+                "C:/Users/Phuong/Documents/Arduino/libraries/rs485_asukiaaa/src/**"
             ],
             "defines": [
                 "_DEBUG",
@@ -14,12 +16,23 @@
             "compilerPath": "cl.exe",
             "cStandard": "c17",
             "cppStandard": "c++17",
-            "intelliSenseMode": "windows-msvc-x64"
+            "intelliSenseMode": "windows-msvc-x64",
+            "compilerPathInCppPropertiesJson": "cl.exe",
+            "mergeConfigurations": false,
+            "browse": {
+                "path": [
+                    "c:/Users/Phuong/Documents/GitHub/SuperBot/TeensyRobotControl/**",
+                    "${workspaceFolder}"
+                ],
+                "limitSymbolsToIncludedHeaders": true
+            }
         },
         {
             "name": "Arduino",
             "includePath": [
-                "${workspaceFolder}/**"
+                "c:/Users/Phuong/Documents/GitHub/SuperBot/TeensyRobotControl/**",
+                "C:/Users/Phuong/Documents/Arduino/libraries/BLVD20KM_asukiaaa/src/**",
+                "C:/Users/Phuong/Documents/Arduino/libraries/rs485_asukiaaa/src/**"
             ],
             "defines": [
                 "_DEBUG",
@@ -30,7 +43,18 @@
             "compilerPath": "cl.exe",
             "cStandard": "c17",
             "cppStandard": "c++17",
-            "intelliSenseMode": "windows-msvc-x64"
+            "intelliSenseMode": "windows-msvc-x64",
+            "compilerPathInCppPropertiesJson": "cl.exe",
+            "mergeConfigurations": false,
+            "browse": {
+                "path": [
+                    "c:/Users/Phuong/Documents/GitHub/SuperBot/TeensyRobotControl/**",
+                    "C:/Users/Phuong/Documents/Arduino/libraries/BLVD20KM_asukiaaa/src",
+                    "C:/Users/Phuong/Documents/Arduino/libraries/rs485_asukiaaa/src",
+                    "${workspaceFolder}"
+                ],
+                "limitSymbolsToIncludedHeaders": true
+            }
         }
     ],
     "version": 4
