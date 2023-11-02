@@ -1,10 +1,15 @@
 #ifndef IMU_DRIVER_H
 #define IMU_DRIVER_H
-
+#include <qthread.h>
 #include <QSerialPort>
-class IMU_driver
+typedef struct
+{
+
+}IMUData;
+class IMU_driver : public QThread
 {
 public:
+    Q_OBJECT
     IMU_driver()
     {
 
@@ -17,14 +22,14 @@ public:
         if(port.isOpen())port.close();
         bool isOpen = port.open(QIODevice::ReadWrite);
         if(!isOpen){
-            QSerialPort::SerialPortError err = port.error();
-            int fs = err+1;
-            if(err==QSerialPort::DeviceNotFoundError) return false;
             return false;
         }
         printf("\nport opened :%s; rate: %d",port.portName().toStdString().data(),port.baudRate());
         return gotoConfig();
+
+
     }
+
     bool getIsConnected() const;
     bool gotoConfig()
     {
@@ -62,9 +67,12 @@ public:
         }
         return isSuccess;
     }
+    IMUData getMeasurement() const;
 private:
+    IMUData measurement;
     bool isConnected;
     QSerialPort port;
+
 };
 
 #endif // IMU_DRIVER_H
