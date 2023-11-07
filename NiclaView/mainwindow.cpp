@@ -8,9 +8,9 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
     videoSocket = new QUdpSocket(this);
     udpSocket = new QUdpSocket(this);
-    bool isOK = udpSocket->bind(QHostAddress("192.168.1.14"),31000);
+    bool isOK = udpSocket->bind(31000);
     if(!isOK)QApplication::exit();
-    isOK = videoSocket->bind(QHostAddress("192.168.1.14"),31001);
+    isOK = videoSocket->bind(31001);
     if(!isOK)QApplication::exit();
     connect(udpSocket,SIGNAL(readyRead()),this,SLOT(udpDataReceive()));
     connect(videoSocket,SIGNAL(readyRead()),this,SLOT(videoReceive()));

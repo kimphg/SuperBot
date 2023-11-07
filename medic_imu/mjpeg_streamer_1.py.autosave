@@ -139,6 +139,8 @@ def updateIMU(fps):
     (rx,ry,rz) = lsmimu.read_gyro()
     (ax,ay,az) = lsmimu.read_accel()
 #    lsmimu.read_e
+    print(rx,ry,rz)
+    Madgwick6DOF(rx,ay,rz,ax,ay,az,dtus)
     print(dtus)
     sudp.sendto(bytes("IMU,"+str(ax)+","+str(ay)+","+str(az)+","+str(rx)+","+str(ry)+","+str(rz)+"\n", 'utf-8'),addr)
     return True

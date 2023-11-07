@@ -6,15 +6,13 @@
 import sensor, image, time, math
 from pyb import Pin, Timer
 sensor.reset()
-sensor.set_pixformat(sensor.GRAYSCALE)
-sensor.set_framesize(sensor.QQVGA) # we run out of memory if the resolution is much bigger...
+sensor.set_pixformat(sensor.RGB565)
+sensor.set_framesize(sensor.QVGA) # we run out of memory if the resolution is much bigger...
 sensor.skip_frames(time = 2000)
-sensor.set_auto_exposure(False, exposure_us = 10000)
-#sensor.set_gainceiling()
-sensor.set_auto_gain(False,gain_db=50)  # must turn this off to prevent image washout...
+sensor.set_auto_gain(False)  # must turn this off to prevent image washout...
 sensor.set_auto_whitebal(False)  # must turn this off to prevent image washout...
 clock = time.clock()
-sensor.set_vflip(True)
+
 # Note! Unlike find_qrcodes the find_apriltags method does not need lens correction on the image to work.
 
 # The apriltag code supports up to 6 tag families which can be processed at the same time.
@@ -33,7 +31,7 @@ tag_families |= image.TAG36H11 # comment out to disable this family (default fam
 # is a 6x6 square tag. However, the lower H value (H5 versus H11) means that the false positve
 # rate for the 4x4 tag is much, much, much, higher than the 6x6 tag. So, unless you have a
 # reason to use the other tags families just use TAG36H11 which is the default family.
-
+sensor.set_vflip(True)
 def family_name(tag):
     if(tag.family() == image.TAG16H5):
         return "TAG16H5"
@@ -54,17 +52,17 @@ ch.pulse_width_percent(50)
 p1 = Pin('P9') # P4 has TIM2, CH3
 p1.init(Pin.IN,pull = Pin.PULL_UP)
 count=0
-found=0
 while(True):
     clock.tick()
+
     img = sensor.snapshot()
+
     #img.save ("example.jpg")
     for tag in img.find_apriltags(families=tag_families): # defaults to TAG36H11 without "families".
         img.draw_rectangle(tag.rect(), color = (255))
         img.draw_cross(tag.cx(), tag.cy(), color = (0, 255, 0))
-        print_args = (family_name(tag), tag.id(), (180 * tag.rotation()) / math.pi)
-        print("Tag Family %s, Tag ID %d, rotation %f (degrees)" % print_args)
-        found=found+1
-    count=count+1
+        print_args = ("CAMB","DET", tag.id(), (180 * tag.rotation()) / math.pi)
+        print("%s,%s,%d,%f#" % print_args)
+        count=count+1
 
-    print(found)
+    print(clock.fps())
