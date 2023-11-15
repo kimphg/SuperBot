@@ -1,4 +1,4 @@
-QT       += core gui network
+QT       += core gui network 3dcore
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -37,3 +37,7 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 RESOURCES += \
     shaders.qrc \
     textures.qrc
+win32 {
+DESTDIR = $$PWD/bin/
+QMAKE_POST_LINK =  "C:/Qt/Qt5.14.2/5.14.2/msvc2017_64/bin/windeployqt.exe" $$shell_path($$DESTDIR/$${TARGET}.exe)
+}

@@ -978,11 +978,12 @@ void commandMotorsBLVM() {
   motorR.writeReverse();
   else
   motorR.writeForward();
-  // uint16_t alarm;
-  // motorL.readAlarm((uint16_t*)&alarm);
-  // Serial.println(alarm);
-}
 
+}
+void commandMotorsPWM()
+{
+
+}
 void getCommandsRadio() {
   //DESCRIPTION: Get raw PWM values for every channel from the radio
   /*

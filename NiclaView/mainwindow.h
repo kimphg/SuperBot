@@ -6,7 +6,7 @@
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 #include <QUdpSocket>
-
+#include <QDesktopWidget>
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
 QT_END_NAMESPACE
@@ -28,7 +28,12 @@ private slots:
     void on_pushButton_clicked();
 
     void udpDataReceive();
+    void on_pushButton_2_clicked();
+
 private:
+    bool imgReady=false;
+    float roll_min,roll_max;
+    float pitch_min,pitch_max;
     QByteArray jpegData,header ;
     Ui::MainWindow *ui;
     QNetworkAccessManager* m_netwManager ;
