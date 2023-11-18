@@ -19,6 +19,7 @@ float speedIn2=0.0;
 float speedIn1=0.0;
 float speedOut2=0.0;
 float speedOut1=0.0;
+
 void readSpeed2();
 void motorInit2()
 {

@@ -3,9 +3,9 @@
         {
             "name": "Win32",
             "includePath": [
-                "c:/Users/Phuong/Documents/GitHub/SuperBot/TeensyRobotControl/**",
-                "C:/Users/Phuong/Documents/Arduino/libraries/BLVD20KM_asukiaaa/src/**",
-                "C:/Users/Phuong/Documents/Arduino/libraries/rs485_asukiaaa/src/**"
+                "c:/Users/Phuon/Documents/GitHub/SuperBot/TeensyRobotControl/**",
+                "C:/Users/Phuon/Documents/Arduino/libraries/BLVD20KM_asukiaaa/src/**",
+                "C:/Users/Phuon/Documents/Arduino/libraries/rs485_asukiaaa/src/**"
             ],
             "defines": [
                 "_DEBUG",
