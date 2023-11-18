@@ -13,7 +13,7 @@
 #define M2_MB_FREE 3
 #define M2_PWM 2
 #define M2_IN_SPEED 24
-long int time_ms;
+long int time_ms1,time_ms2;
 long old_dt=4000;
 float speedIn2=0.0;
 float speedIn1=0.0;
@@ -54,7 +54,7 @@ void motorInit1()
 }
 void setMotorSpeed1(float speed)
 {
-  if(speed>=0)
+  if(speed<=0)
   {  
     digitalWrite(M1_FWD,HIGH);
     digitalWrite(M1_REV,LOW);}
@@ -87,16 +87,19 @@ void setMotorSpeed2(float speed)
 
 void reportData()
 {
-  Serial1.print(speedOut2);
-  Serial1.print(",");
-  Serial1.println(speedIn2/1200.0);  
-  if((micros() - time_ms)>10000)speedIn2=0;
+  Serial.print(speedOut2);
+  Serial.print(",");
+  Serial.print(speedIn2/1200.0);  
+  Serial.print(",");
+  Serial.println(speedIn1/1200.0);  
+  if((micros() - time_ms2)>20000)speedIn2=0;
+  if((micros() - time_ms1)>20000)speedIn1=0;
 }
 
 IntervalTimer myTimer;
 // the setup function runs once when you press reset or power the board
 void setup() {
-  Serial1.begin(1000000);
+  Serial.begin(1000000);
   pinMode(LED_BUILTIN, OUTPUT);
    motorInit2();
    motorInit1();
@@ -111,9 +114,9 @@ void readSpeed2()
   long int  dt_ppm;
   int trig = digitalRead(M2_IN_SPEED);
   if (trig==1) { //only care about rising edge
-      dt_ppm = micros() - time_ms;
+      dt_ppm = micros() - time_ms2;
       if(dt_ppm<100)return;
-      time_ms = micros();
+      time_ms2 = micros();
       
       old_dt+=(dt_ppm-old_dt);
       speedIn2=(1000000.0/old_dt)*2.0;
@@ -124,14 +127,14 @@ void readSpeed2()
 void readSpeed1()
 {
   long int  dt_ppm;
-  int trig = digitalRead(M2_IN_SPEED);
+  int trig = digitalRead(M1_IN_SPEED);
   if (trig==1) { //only care about rising edge
-      dt_ppm = micros() - time_ms;
+      dt_ppm = micros() - time_ms1;
       if(dt_ppm<100)return;
-      time_ms = micros();
+      time_ms1 = micros();
       
       old_dt+=(dt_ppm-old_dt);
-      speedIn2=(1000000.0/old_dt)*2.0;
+      speedIn1=(1000000.0/old_dt)*2.0;
       
     }
 
@@ -144,7 +147,7 @@ void loop() {
   // Serial.println(m2in);
   speedOut2=0.3;
   
-  for(speedOut2=0;speedOut2<=1.0;speedOut2+=0.01)
+  for(speedOut2=0;speedOut2<=1.0;speedOut2+=0.0025)
   {
     delay(20);
   setMotorSpeed2(speedOut2);
@@ -152,13 +155,13 @@ void loop() {
   }
   
 
-  delay(2000);
+  delay(4000);
   
-  for(speedOut2=1;speedOut2>=0.0;speedOut2-=0.01)
+  for(speedOut2=1;speedOut2>=0.0;speedOut2-=0.0025)
   {
     delay(20);
     setMotorSpeed2(speedOut2);
     setMotorSpeed1(speedOut2);
   }
-  delay(2000);
+  delay(4000);
 }
