@@ -17,27 +17,47 @@ motorBLVPWM::motorBLVPWM()
 {
     speed_pulse_counter1=0;
     speed_pulse_counter2=0;
-    outputSpeed1=0;
-    outputSpeed2=0;
-    targetSpeed = 0;
-    initMotor1();
-    initMotor2();
+    speedLeft=0;
+    speedRight=0;
+    speedRobot = 0;
+    targetSpeedRobot = 0;
+    initMotorLeft();
+    initMotorRight();
     timeMillis = millis();
+    setMotorLeft(0.0);  
+    setMotorRight(0.0); 
 }
+
 void motorBLVPWM::update()
 {
+    
     unsigned long int newTime = millis();
-    int dt = newTime-timeMillis;
+    int dt = newTime-timeMillis;//check dt, should be 20ms
     timeMillis=newTime;
-    if(dt<1)return;
-    speedMotor1 = speed_pulse_counter1/dt;
+    if(dt<1)return;//dt too small
+    //
+    speedLeftFeedback = speed_pulse_counter1/dt;
     speed_pulse_counter1=0;
-    speedMotor2 = speed_pulse_counter2/dt;
+    speedRightFeedback = speed_pulse_counter2/dt;
     speed_pulse_counter2=0;
-    if(outputSpeed1<targetSpeed)outputSpeed1+=ACC_MAX;
-    if(outputSpeed2>targetSpeed)outputSpeed2-=ACC_MAX;
+    // update speedRobot
+    float acc = targetSpeedRobot-speedRobot;
+    constrain(acc,-ACC_MAX,ACC_MAX);
+    if(acc>ACC_MAX)acc=ACC_MAX;
+    if(acc<-ACC_MAX)acc=-ACC_MAX;
+    speedRobot+=acc;
+    // update speedRight
+    acc = targetSpeedRobot-speedRight;
+    constrain(acc,-ACC_MAX,ACC_MAX);
+    if(acc>ACC_MAX)acc=ACC_MAX;
+    if(acc<-ACC_MAX)acc=-ACC_MAX;
+    speedRight+=acc;
+    // send speed value to pwm
+    setMotorLeft(speedLeft);
+    setMotorRight(speedRight);
+    
 }
-void motorBLVPWM::initMotor1()
+void motorBLVPWM::initMotorLeft()
 {
     pinMode(M1_FWD,OUTPUT);
     pinMode(M1_REV,OUTPUT);
@@ -53,7 +73,7 @@ void motorBLVPWM::initMotor1()
     analogWrite(M1_PWM,256);
     attachInterrupt(digitalPinToInterrupt(M1_IN_SPEED), readSpeed1, RISING);
 }
-void motorBLVPWM::initMotor2()
+void motorBLVPWM::initMotorRight()
 {
     pinMode(M2_FWD,OUTPUT);
     pinMode(M2_REV,OUTPUT);
@@ -69,9 +89,9 @@ void motorBLVPWM::initMotor2()
     analogWrite(M2_PWM,256);
     attachInterrupt(digitalPinToInterrupt(M2_IN_SPEED), readSpeed2, RISING);
 }
-void motorBLVPWM::setMotorSpeed2(float speed)
+void motorBLVPWM::setMotorRight(float speed)
 {
-  if(speed>=0)
+  if(speed<0)
   {  
     digitalWrite(M2_FWD,HIGH);
     digitalWrite(M2_REV,LOW);}
@@ -85,7 +105,7 @@ void motorBLVPWM::setMotorSpeed2(float speed)
   int pwm_value = (1.0-outspeed)*256;
   analogWrite(M2_PWM,pwm_value);
 }
-void motorBLVPWM::setMotorSpeed1(float speed)
+void motorBLVPWM::setMotorLeft(float speed)
 {
   if(speed>=0)
   {  
