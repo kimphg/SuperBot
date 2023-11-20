@@ -1,8 +1,6 @@
 
 #include "motorBLVPWM.h"
-#define DT_CONTROL 0.02 //50hz control loop
-#define ACC_MAX 0.07*DT_CONTROL
-#define BASE_LEN 0.5
+
 unsigned int speed_pulse_counter1,speed_pulse_counter2;
 void readSpeed1()
 {
@@ -21,7 +19,7 @@ motorBLVPWM::motorBLVPWM()
     speedLeft=0;
     speedRight=0;
     speedRobot = 0;
-    targetSpeedRobot = 0;
+    targetSpeed = 0;
     initMotorLeft();
     initMotorRight();
     timeMillis = millis();
@@ -31,10 +29,11 @@ motorBLVPWM::motorBLVPWM()
 
 void motorBLVPWM::update()
 {
-    
+    // Serial.println("motor update");
     unsigned long int newTime = millis();
     int dt = newTime-timeMillis;//check dt, should be 20ms
     timeMillis=newTime;
+    // Serial.println(dt);
     if(dt<1)return;//dt too small
     //
     speedLeftFeedback = speed_pulse_counter1/dt;
@@ -42,26 +41,21 @@ void motorBLVPWM::update()
     speedRightFeedback = speed_pulse_counter2/dt;
     speed_pulse_counter2=0;
     // update speedRobot
-    float acc = targetSpeedRobot-speedRobot;
+    float acc = targetSpeed-speedRobot;
     constrain(acc,-ACC_MAX,ACC_MAX);
-    if(acc>ACC_MAX)acc=ACC_MAX;
-    if(acc<-ACC_MAX)acc=-ACC_MAX;
     speedRobot+=acc;
-    // update speedRight
-    acc = targetSpeedRobot-speedRight;
-    constrain(acc,-ACC_MAX,ACC_MAX);
-    if(acc>ACC_MAX)acc=ACC_MAX;
-    if(acc<-ACC_MAX)acc=-ACC_MAX;
-    speedRight+=acc;
-    // send speed value to pwm
+    // update speedRight speedLeft
+    speedRight = speedRobot-targetSpeedRotation*BASE_LEN/2.0;
+    speedLeft = speedRobot+targetSpeedRotation*BASE_LEN/2.0;
     setMotorLeft(speedLeft);
     setMotorRight(speedRight);
+    
     
 }
 void motorBLVPWM::SetControlValue(float speed,float rotationSpeed)
 {
-    float speedLeft  = speed-rotationSpeed*BASE_LEN/2.0;
-    float speedRight = speed+rotationSpeed*BASE_LEN/2.0;
+     targetSpeed = speed;//-rotationSpeed*BASE_LEN/2.0;
+     targetSpeedRotation = -rotationSpeed;// speed+rotationSpeed*BASE_LEN/2.0;
 }
 void motorBLVPWM::initMotorLeft()
 {

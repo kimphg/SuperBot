@@ -17,6 +17,9 @@
 #define M2_PWM 2
 #define M2_IN_SPEED 24
 #include <Arduino.h>
+#define DT_CONTROL 0.02 //50hz control loop
+#define ACC_MAX 0.07/DT_CONTROL
+#define BASE_LEN 0.5
 /// @brief Class for BLV motor control with DB15 connector and PWM speed control
 class motorBLVPWM {
  public:
@@ -28,9 +31,9 @@ class motorBLVPWM {
     float speedLeftFeedback,speedRightFeedback;
     float speedLeft,speedRight;
     float speedRobot;
-    float targetSpeedRobot;
     void SetControlValue(float speed,float rotationSpeed);
 private:
+     float targetSpeed,    targetSpeedRotation ;
     void initMotorLeft();
     void initMotorRight( );
     void setMotorLeft(float speed);

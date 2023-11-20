@@ -1,7 +1,7 @@
 #include <Arduino.h>
 #include "common.h"
 #define RS485_IMU Serial1
-#define DEBUG_TELEMETRY Serial4
+#define DEBUG_TELEMETRY Serial
 #include <SPI.h>
 #include <NativeEthernet.h>         // for Teensy 4.1
 #include <NativeEthernetUdp.h>
@@ -61,7 +61,7 @@ float MagScaleY = 1.0;
 float MagScaleZ = 1.0;
 
 //Controller parameters (take note of defaults before modifying!):
-float i_limit = 5.0;     //Integrator saturation level, mostly for safety (default 25.0)
+float i_limit = 3.0;     //Integrator saturation level, mostly for safety (default 25.0)
 float maxRoll = 20.0;     //Max roll angle in degrees for angle mode (maximum 60 degrees), deg/sec for rate mode
 float maxPitch = 20.0;    //Max pitch angle in degrees for angle mode (maximum 60 degrees), deg/sec for rate mode
 float maxYaw = 160.0;     //Max yaw rate in deg/sec
@@ -82,9 +82,9 @@ float Kp_pitch_rate = 0.15;   //Pitch P-gain - rate mode
 float Ki_pitch_rate = 0.2;    //Pitch I-gain - rate mode
 float Kd_pitch_rate = 0.0002; //Pitch D-gain - rate mode (be careful when increasing too high, motors will begin to overheat!)
 
-float Kp_yaw = 0.3;           //Yaw P-gain
-float Ki_yaw = 0.005;          //Yaw I-gain
-float Kd_yaw = 0.00015;       //Yaw D-gain (be careful when increasing too high, motors will begin to overheat!)
+float Kp_yaw = 0.6;           //Yaw P-gain
+float Ki_yaw = 0.15;          //Yaw I-gain
+float Kd_yaw = 0.01;       //Yaw D-gain (be careful when increasing too high, motors will begin to overheat!)
 
 
 
@@ -108,8 +108,8 @@ unsigned long blink_counter, blink_delay;
 bool blinkAlternate;
 
 //Radio comm:
-unsigned long channel_1_pwm, channel_2_pwm, channel_3_pwm, channel_4_pwm, channel_5_pwm, channel_6_pwm;
-unsigned long channel_1_pwm_prev, channel_2_pwm_prev, channel_3_pwm_prev, channel_4_pwm_prev;
+unsigned int channel_1_pwm, channel_2_pwm, channel_3_pwm, channel_4_pwm, channel_5_pwm, channel_6_pwm;
+unsigned int channel_1_pwm_prev, channel_2_pwm_prev, channel_3_pwm_prev, channel_4_pwm_prev;
 
 #if defined USE_SBUS_RX
 SBUS sbus(Serial5);
@@ -157,12 +157,12 @@ IMU_driver imu;
 void commandMotorsOneShot() ;
 
 void setup() {
-  Serial.begin(921600); //usb serial
+  Serial.begin(115200); //usb serial
   DEBUG_TELEMETRY.begin(57600); //telemetry serial
   RS485_IMU.begin(921600);
   delay(200);
   imu.IMU_init(RS485_IMU);
-  // Serial.println("start Modbus motors");
+  Serial.println("start");
 
   //Initialize all pins
   pinMode(13, OUTPUT); //pin 13 LED blinker on board, do not modify
@@ -178,7 +178,7 @@ void setup() {
   //Initialize radio communication
   radioSetup();
   timer_data_input.begin(inputDataUpdate, 300);//
-  timer_control_loop.begin(controlUpdate, 10000);
+  timer_control_loop.begin(controlUpdate, int(DT_CONTROL*1000000));
   Serial.println("IMU timer started");
   //Set radio channels to default (safe) values before entering main loop
   // channel_1_pwm = channel_1_fs;
@@ -223,6 +223,7 @@ void loop() {
  if(imu.noMotionCount>100)//200ms
  digitalWrite(13,HIGH);
  else  digitalWrite(13,LOW);
+ 
   // loopBlink(); //indicate we are in main loop with short blink every 1.5 seconds
   if (current_time - print_counter > 100000) {
     print_counter = micros();
@@ -230,8 +231,11 @@ void loop() {
     if(debugID>10)debugID=0;
     if(debugID==1)
     {
-      sprintf(udpBuff,"Radio data:\t%d\t%d\t%d\t%d\t%d",channel_1_pwm,channel_2_pwm,channel_3_pwm,channel_4_pwm,channel_5_pwm);
-      SendToPC(udpBuff);
+      
+      // sprintf(udpBuff,"Radio data:\t%d\t%d\t%d\t%d\t%d",channel_1_pwm,channel_2_pwm,channel_3_pwm,channel_4_pwm,channel_5_pwm);
+      // Serial.printf(udpBuff);
+      // SendToPC(udpBuff);
+      
     }
     
   //  DEBUG_TELEMETRY.print(dt);
@@ -244,7 +248,7 @@ void loop() {
     //    printMagData();       //prints filtered magnetometer data direct from IMU (expected: ~ -300 to 300)
         //  printRollPitchYaw();  //prints roll, pitch, and yaw angles in degrees from Madgwick filter (expected: degrees, 0 when level)
     //      printPIDoutput();     //prints computed stabilized PID variables from controller and desired setpoint (expected: ~ -1 to 1)
-    printMotorCommands(); //prints the values being written to the motors (expected: 120 to 250)
+    // printMotorCommands(); //prints the values being written to the motors (expected: 120 to 250)
     //    printBatVoltage();
     //    printServoCommands(); //prints the values being written to the servos (expected: 0 to 180)
     //printLoopRate();      //prints the time between loops in microseconds (expected: microseconds between loop iterations)
@@ -260,32 +264,38 @@ void loop() {
   // DEBUG_TELEMETRY.println(yaw_IMU);
   // Madgwick6DOF(GyroX, GyroY, GyroZ, AccX, AccY, AccZ,  dt);
   //Compute desired state
-  
-  {
+  // Serial.println(dt);
+  if(1){
     getCommandsRadio(); 
         //Yaw, stablize on rate from GyroZ
     error_yaw = yaw_des - yaw_IMU;
     if(error_yaw>180)error_yaw-=360;
     if(error_yaw<-180)error_yaw+=360;
-    integral_yaw = integral_yaw_prev + error_yaw * dt;
+    integral_yaw = integral_yaw_prev + error_yaw * dt/1000000.0;
     if (channel_1_pwm < 1060) {   //don't let integrator build if throttle is too low
       integral_yaw = 0;
     }
     integral_yaw = constrain(integral_yaw, -i_limit, i_limit); //saturate integrator to prevent unsafe buildup
-    derivative_yaw = (error_yaw - error_yaw_prev) / dt;
-    yaw_PID = .01 * (Kp_yaw * error_yaw + Ki_yaw * integral_yaw + Kd_yaw * derivative_yaw); //scaled by .01 to bring within -1 to 1 range
+    derivative_yaw = (error_yaw - error_yaw_prev) / dt*10000000.0;
+    yaw_PID = .3 * (Kp_yaw * error_yaw + Ki_yaw * integral_yaw + Kd_yaw * derivative_yaw); //scaled by .01 to bring within -1 to 1 range
     error_yaw_prev = error_yaw;
     // Serial.println(yaw_PID);
     //send command to motors
-    if (channel_5_pwm < 1500) {
+    if (channel_3_pwm < 1500) {
       motorDriver.SetControlValue(0,0);
     }
     else{
+      Serial.print(yaw_IMU);
+      Serial.print(",");
+    Serial.print(motorDriver.speedLeft);
+    Serial.print(",");
+    Serial.print(motorDriver.speedRight);
+    Serial.print("\r\n");
       motorDriver.SetControlValue(spd_des,yaw_PID);
     }
     // commandMotorsBLVM(); 
   }
-  failSafe(); //prevent failures in event of bad receiver connection, defaults to failsafe values assigned in setup
+  // failSafe(); //prevent failures in event of bad receiver connection, defaults to failsafe values assigned in setup
 
   //Regulate loop rate
   // loopRate(100); //do not exceed 2000Hz, all filter parameters tuned to 2000Hz by default
@@ -355,12 +365,13 @@ void updateSensors()
   GyroZ = measure.gyroZ*57.2958;
   yaw_IMU = measure.gyroyaw*57.2958;
 }
-
+String commandString;
 void updateCommandBus()
 {
   while(DEBUG_TELEMETRY.available())
   {
     uint8_t bytein = DEBUG_TELEMETRY.read();
+    DEBUG_TELEMETRY.print(bytein);
     if(commandString.length()<COMMAND_LEN_MAX)commandString+=(char)bytein;
     if(bytein=='\n')//end of command
     {
@@ -932,15 +943,7 @@ void controlRATE() {
 
 void controlMixer() {
 
-  if (channel_5_pwm < 1500) {
-    motorLset=0;
-    motorRset=0;
-  }
-  else {
-    motorLset = spd_des +yaw_des/200.0;
-    motorRset = spd_des -yaw_des/200.0;
-
-  }
+  
 
 }
 
@@ -1060,10 +1063,10 @@ void throttleCut() {
      called before commandMotorsPWM() is called so that the last thing checked is if the user is giving permission to command
      the motors to anything other than minimum value. Safety first.
   */
-  if (channel_5_pwm < 1500) {
-    motorLset=0;
-    motorRset=0;
-  }
+  // if (channel_5_pwm < 1500) {
+  //   motorLset=0;
+  //   motorRset=0;
+  // }
 }
 
 void calibrateMagnetometer() {
@@ -1155,7 +1158,7 @@ void loopBlink() {
 
 void printRadioData() {
 
-  DEBUG_TELEMETRY.print(F(" CH1: "));
+  Serial.print(F(" CH1: "));
   DEBUG_TELEMETRY.print(channel_1_pwm);
   DEBUG_TELEMETRY.print(F(" CH2: "));
   DEBUG_TELEMETRY.print(channel_2_pwm);
@@ -1246,16 +1249,15 @@ void printMotorCommands() {
   DEBUG_TELEMETRY.print(yaw_des);
   DEBUG_TELEMETRY.print(F("  yaw_IMU: "));
   DEBUG_TELEMETRY.print(yaw_IMU);
-  DEBUG_TELEMETRY.print(F("motor left: "));
-  DEBUG_TELEMETRY.print(motorLset);
-  DEBUG_TELEMETRY.print(F(" motor right: "));
-  DEBUG_TELEMETRY.println(motorRset);
+  // DEBUG_TELEMETRY.print(F("motor left: "));
+  // DEBUG_TELEMETRY.print(motorLset);
+  // DEBUG_TELEMETRY.print(F(" motor right: "));
+  // DEBUG_TELEMETRY.println(motorRset);
   
 
 }
 
 void printServoCommands() {
-
   Serial.print(F("s1_command: "));
   Serial.print(s1_command_PWM);
   Serial.print(F(" s2_command: "));
@@ -1270,14 +1272,10 @@ void printServoCommands() {
   Serial.print(s6_command_PWM);
   Serial.print(F(" s7_command: "));
   Serial.println(s7_command_PWM);
-
 }
-
 void printLoopRate() {
-
   Serial.print(F("dt = "));
   Serial.println(dt * 1000000.0);
-
 }
 static void inputDataUpdate()
 {
