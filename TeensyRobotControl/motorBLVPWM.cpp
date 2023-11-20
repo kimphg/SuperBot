@@ -2,6 +2,7 @@
 #include "motorBLVPWM.h"
 #define DT_CONTROL 0.02 //50hz control loop
 #define ACC_MAX 0.07*DT_CONTROL
+#define BASE_LEN 0.5
 unsigned int speed_pulse_counter1,speed_pulse_counter2;
 void readSpeed1()
 {
@@ -56,6 +57,11 @@ void motorBLVPWM::update()
     setMotorLeft(speedLeft);
     setMotorRight(speedRight);
     
+}
+void motorBLVPWM::SetControlValue(float speed,float rotationSpeed)
+{
+    float speedLeft  = speed-rotationSpeed*BASE_LEN/2.0;
+    float speedRight = speed+rotationSpeed*BASE_LEN/2.0;
 }
 void motorBLVPWM::initMotorLeft()
 {

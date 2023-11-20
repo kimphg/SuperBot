@@ -1,34 +1,39 @@
-
-
-
-#include "BLVD20KM_asukiaaa.h"
-#include "rs485_asukiaaa.h"
-
-#define RS485_DE 4
-// #define RS485_RE RS485_DE // you can unify DE and RE
-#define RS485_RE 5
-#define RS485_BAUDRATE 115200
-#define RS485_modbus Serial2
+#include <Arduino.h>
+#include "common.h"
 #define RS485_IMU Serial1
 #define DEBUG_TELEMETRY Serial4
-#define MOTOR_R_ADDRESS 1
-#define MOTOR_L_ADDRESS 2
+#include <SPI.h>
+#include <NativeEthernet.h>         // for Teensy 4.1
+#include <NativeEthernetUdp.h>
 #include "mti.h"
-rs485_asukiaaa::ModbusRtu::Central modbus(&RS485_modbus, RS485_DE, RS485_RE);
-BLVD20KM_asukiaaa motorR(&modbus, MOTOR_R_ADDRESS);
-BLVD20KM_asukiaaa motorL(&modbus, MOTOR_L_ADDRESS);
+#include "motorBLVPWM.h"
 //========================================================================================================================//
 //                                                 USER-SPECIFIED DEFINES                                                 //
 //========================================================================================================================//
-IntervalTimer imu_read_timer;
+IntervalTimer timer_data_input;
+IntervalTimer timer_control_loop;
+motorBLVPWM motorDriver;
+//networking configurations
+byte mac[] = { 0x04, 0xE9, 0xE5, 0x0B, 0xFC, 0xD1 };    // com 6      Teensy
+IPAddress myIP(192,  168, 0, 16);                        // BCP21 = (160,  48, 199, 16);                    
+IPAddress destinationIP(192,  168, 0, 4);    
+unsigned int destinationPort = 31000;                         // Inova receiver Address
+unsigned int myPort          = 32501;                         // BCP21 orig. Port
 
-
-//REQUIRED LIBRARIES (included with download in main sketch folder)
-
-#include <Wire.h>     //I2c communication
-#include <SPI.h>      //SPI communication
-//#include <PWMServo.h> //commanding any extra actuators, installed with teensyduino installer
-
+EthernetUDP Udp;  
+void SendToPC(uint8_t* data, int len)
+{
+  Udp.beginPacket(destinationIP, destinationPort);
+  Udp.write(data, len);
+  Udp.endPacket();
+}
+void SendToPC(uint8_t* data)
+{
+  int len = strlen(data);
+  Udp.beginPacket(destinationIP, destinationPort);
+  Udp.write(data, len);
+  Udp.endPacket();
+}
 //========================================================================================================================//
 //                                               USER-SPECIFIED VARIABLES                                                 //
 //========================================================================================================================//
@@ -87,7 +92,7 @@ float Kd_yaw = 0.00015;       //Yaw D-gain (be careful when increasing too high,
 //                                                     DECLARE PINS                                                       //
 //========================================================================================================================//
 
-#include "common.h"
+// #include "common.h"
 
 //========================================================================================================================//
 
@@ -139,7 +144,7 @@ float error_pitch, error_pitch_prev, pitch_des_prev, integral_pitch, integral_pi
 float error_yaw, error_yaw_prev, integral_yaw, integral_yaw_prev, derivative_yaw, yaw_PID = 0;
 
 //Mixer
-float motorLset = 0, motorRset = 0;
+
 int m1_command_PWM, m2_command_PWM, m3_command_PWM, m4_command_PWM, m5_command_PWM, m6_command_PWM;
 float s1_command_scaled, s2_command_scaled, s3_command_scaled, s4_command_scaled, s5_command_scaled, s6_command_scaled, s7_command_scaled;
 int s1_command_PWM, s2_command_PWM, s3_command_PWM, s4_command_PWM, s5_command_PWM, s6_command_PWM, s7_command_PWM;
@@ -157,10 +162,8 @@ void setup() {
   RS485_IMU.begin(921600);
   delay(200);
   imu.IMU_init(RS485_IMU);
-  Serial.println("start Modbus motors");
-  BLVD20KM_asukiaaa::beginModbus(&modbus, RS485_BAUDRATE);
-  motorR.beginWithoutModbus();
-  motorL.beginWithoutModbus();
+  // Serial.println("start Modbus motors");
+
   //Initialize all pins
   pinMode(13, OUTPUT); //pin 13 LED blinker on board, do not modify
   if(imu.getIsConnected())
@@ -174,7 +177,8 @@ void setup() {
   Serial.flush();
   //Initialize radio communication
   radioSetup();
-  imu_read_timer.begin(inputDataUpdate, 300);//
+  timer_data_input.begin(inputDataUpdate, 300);//
+  timer_control_loop.begin(controlUpdate, 10000);
   Serial.println("IMU timer started");
   //Set radio channels to default (safe) values before entering main loop
   // channel_1_pwm = channel_1_fs;
@@ -188,8 +192,10 @@ void setup() {
   Serial.println("Setup done, enter main loop");
 }
 
-
-
+int debugID=0;
+#define COMMAND_LEN_MAX 200
+uint8_t udpBuff[300];
+int commandBuffIndex = 0;
 //========================================================================================================================//
 //                                                       MAIN LOOP                                                        //
 //========================================================================================================================//
@@ -220,6 +226,14 @@ void loop() {
   // loopBlink(); //indicate we are in main loop with short blink every 1.5 seconds
   if (current_time - print_counter > 100000) {
     print_counter = micros();
+    debugID++;
+    if(debugID>10)debugID=0;
+    if(debugID==1)
+    {
+      sprintf(udpBuff,"Radio data:\t%d\t%d\t%d\t%d\t%d",channel_1_pwm,channel_2_pwm,channel_3_pwm,channel_4_pwm,channel_5_pwm);
+      SendToPC(udpBuff);
+    }
+    
   //  DEBUG_TELEMETRY.print(dt);
   //  DEBUG_TELEMETRY.print(" \n");
     //Print data at 100hz (uncomment one at a time for troubleshooting) - SELECT ONE:
@@ -246,40 +260,7 @@ void loop() {
   // DEBUG_TELEMETRY.println(yaw_IMU);
   // Madgwick6DOF(GyroX, GyroY, GyroZ, AccX, AccY, AccZ,  dt);
   //Compute desired state
-  if(false)
-  {
-    getDesState(); //convert raw commands to normalized values based on saturated control limits
-
-    //PID Controller - SELECT ONE:
-    controlANGLE(); //stabilize on angle setpoint
-    //controlANGLE2(); //stabilize on angle setpoint using cascaded method
-    //controlRATE(); //stabilize on rate setpoint
-
-    //Actuator mixing and scaling to PWM values
-    controlMixer(); //mixes PID outputs to scaled actuator commands -- custom mixing assignments done here
-    
-    // scaleCommands(); //scales motor commands to 125 to 250 range (oneshot125 protocol) and servo PWM commands to 0 to 180 (for servo library)
   
-    //Throttle cut check
-    // throttleCut(); //directly sets motor commands to low based on state of ch5
-  #ifdef USE_PWM_ESC
-    commandMotorsPWM();
-  #endif
-
-  #ifdef USE_ONESHOT_ESC
-    //Command actuators
-    commandMotorsOneShot(); //sends command pulses to each motor pin using OneShot125 protocol
-  #endif
-  #ifdef USE_BLVM_MODBUS
-    //Command actuators
-    commandMotorsBLVM(); //sends command pulses to each motor pin using OneShot125 protocol
-  #endif
-
-
-    //Get vehicle commands for next loop iteration
-    getCommandsRadio(); //pulls current available radio commands
-  }
-  else
   {
     getCommandsRadio(); 
         //Yaw, stablize on rate from GyroZ
@@ -294,17 +275,15 @@ void loop() {
     derivative_yaw = (error_yaw - error_yaw_prev) / dt;
     yaw_PID = .01 * (Kp_yaw * error_yaw + Ki_yaw * integral_yaw + Kd_yaw * derivative_yaw); //scaled by .01 to bring within -1 to 1 range
     error_yaw_prev = error_yaw;
-    Serial.println(yaw_PID);
+    // Serial.println(yaw_PID);
     //send command to motors
     if (channel_5_pwm < 1500) {
-    motorLset=0;
-    motorRset=0;
+      motorDriver.SetControlValue(0,0);
     }
     else{
-      motorLset = spd_des - yaw_PID;
-      motorRset = spd_des + yaw_PID;  
+      motorDriver.SetControlValue(spd_des,yaw_PID);
     }
-    commandMotorsBLVM(); 
+    // commandMotorsBLVM(); 
   }
   failSafe(); //prevent failures in event of bad receiver connection, defaults to failsafe values assigned in setup
 
@@ -376,9 +355,7 @@ void updateSensors()
   GyroZ = measure.gyroZ*57.2958;
   yaw_IMU = measure.gyroyaw*57.2958;
 }
-#define COMMAND_LEN_MAX 200
-String commandString = "";
-int commandBuffIndex = 0;
+
 void updateCommandBus()
 {
   while(DEBUG_TELEMETRY.available())
@@ -967,23 +944,7 @@ void controlMixer() {
 
 }
 
-void commandMotorsBLVM() {
-  
-  motorR.writeSpeed(abs(motorLset)*500);
-  motorL.writeSpeed(abs(motorRset)*500);
-  if(motorLset>0)
-  motorL.writeForward();
-  else motorL.writeReverse();
-  if(motorRset>0)
-  motorR.writeReverse();
-  else
-  motorR.writeForward();
 
-}
-void commandMotorsPWM()
-{
-
-}
 void getCommandsRadio() {
   //DESCRIPTION: Get raw PWM values for every channel from the radio
   /*
@@ -1322,4 +1283,8 @@ static void inputDataUpdate()
 {
   imu.updateData();//read IMU
   updateCommandBus();//read Serial Commands
+}
+static void controlUpdate()
+{
+  motorDriver.update();
 }

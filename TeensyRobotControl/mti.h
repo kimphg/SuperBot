@@ -4,7 +4,41 @@
 #define BUF_SIZE_IMU 100
 #define PI2 6.2831853
 #define PI 3.141592653589793
-#include "common.h"
+#include <Arduino.h>
+
+
+//INTERRUPT SERVICE ROUTINES (for reading PWM and PPM)
+
+float bytesToFloat(unsigned char  b0, unsigned char  b1, unsigned char b2, unsigned char  b3)
+{
+  float output;
+
+  *((unsigned char*)(&output) + 3) = b0;
+  *((unsigned char*)(&output) + 2) = b1;
+  *((unsigned char*)(&output) + 1) = b2;
+  *((unsigned char*)(&output) + 0) = b3;
+
+  return output;
+}
+
+void printArray(unsigned char *data1, int len) {
+  for (int i = 0; i < len; i++) {
+    Serial.print(" 0x");
+    Serial.print(data1[i], HEX);
+  }
+  Serial.print("\n");
+  return;
+}
+bool compareArray(unsigned char *data1, unsigned char *data2, int len) {
+  for (int i = 0; i < len; i++) {
+    if (data1[i] != data2[i]) {
+      Serial.print(data1[i], HEX);
+      Serial.print(data2[i], HEX);
+      return false;
+    }
+  }
+  return true;
+}
 typedef struct
 {
   int mid;

@@ -40,11 +40,9 @@ MPU6050 mpu6050;
 #elif defined USE_MPU9250_SPI
 #include "src/MPU9250/MPU9250.h"
 MPU9250 mpu9250(SPI2, 36);
-#else
-#include "mti.h"
 
 #endif
-
+#include <Arduino.h>
 
 
 //========================================================================================================================//
@@ -110,9 +108,50 @@ unsigned long rising_edge_start_1, rising_edge_start_2, rising_edge_start_3, ris
 unsigned long channel_1_raw, channel_2_raw, channel_3_raw, channel_4_raw, channel_5_raw, channel_6_raw;
 int ppm_counter = 0;
 unsigned long time_ms = 0;
+
+void getPPM() {
+  // Serial.println("getppm");
+  unsigned long dt_ppm;
+  int trig = digitalRead(PPM_Pin);
+  if (trig==1) { //only care about rising edge
+    dt_ppm = micros() - time_ms;
+    time_ms = micros();
+
+    
+    if (dt_ppm > 5000) { //waiting for long pulse to indicate a new pulse train has arrived
+      ppm_counter = 0;
+    }
+  
+    if (ppm_counter == 1) { //first pulse
+      channel_1_raw = dt_ppm;
+    }
+  
+    if (ppm_counter == 2) { //second pulse
+      channel_2_raw = dt_ppm;
+    }
+  
+    if (ppm_counter == 3) { //third pulse
+      channel_3_raw = dt_ppm;
+    }
+  
+    if (ppm_counter == 4) { //fourth pulse
+      channel_4_raw = dt_ppm;
+    }
+  
+    if (ppm_counter == 5) { //fifth pulse
+      channel_5_raw = dt_ppm;
+    }
+  
+    if (ppm_counter == 6) { //sixth pulse
+      channel_6_raw = dt_ppm;
+    }
+    
+    ppm_counter = ppm_counter + 1;
+  }
+}
+
 //=========================================================================================//
 //HELPER FUNCTIONS
-void getPPM();
 float invSqrt(float x) {
   //Fast inverse sqrt for madgwick filter
   /*
@@ -127,7 +166,7 @@ float invSqrt(float x) {
   */
   //alternate form:
   unsigned int i = 0x5F1F1412 - (*(unsigned int*)&x >> 1);
-  float tmp = *(float*)&i;
+  float tmp = *((float*)&i);
   float y = tmp * (1.69000231f - 0.714158168f * x * tmp * tmp);
   return y;
 }
@@ -135,32 +174,7 @@ float invSqrt(float x) {
 //Author: Nicholas Rehm
 //Project Start: 1/6/2020
 //Version: Beta 1.2
-void readAndPrintSpeed(String motorLabel, BLVD20KM_asukiaaa* motor) {
-  uint16_t speed;
-  auto result = motor->readSpeed(&speed);
-  Serial.print(motorLabel);
-  Serial.print(" ");
-  if (result == 0) {
-    Serial.println("Speed is " + String(speed));
-  } else {
-    Serial.println("Cannot read speed. E:" + String(result) + " " +
-                   BLVD20KM_asukiaaa::getStrOfError(result));
-  }
-}
 
-void readAndPrintAlarm(String motorLabel, BLVD20KM_asukiaaa* motor) {
-  uint16_t alarmState;
-  auto result = motor->readAlarm(&alarmState);
-  Serial.print(motorLabel);
-  Serial.print(" ");
-  if (result == 0) {
-    Serial.println("Current alarm:0x" + String(alarmState, HEX) + " " +
-                   BLVD20KM_asukiaaa::getStrOfAlarm(alarmState));
-  } else {
-    Serial.println("Cannot read alarm. E:" + String(result) + " " +
-                   BLVD20KM_asukiaaa::getStrOfError(result));
-  }
-}
 void setupBlink(int numBlinks, int upTime, int downTime) {
   //DESCRIPTION: Simple function to make LED on board blink as desired
   for (int j = 1; j <= numBlinks; j++) {
@@ -249,6 +263,7 @@ unsigned long getRadioPWM(int ch_num) {
   else if (ch_num == 6) {
     returnPWM = channel_6_raw;
   }
+  else returnPWM=0;
   
   return returnPWM;
 }
@@ -258,77 +273,4 @@ unsigned long getRadioPWM(int ch_num) {
 //========================================================================================================================//
 
 
-
-//INTERRUPT SERVICE ROUTINES (for reading PWM and PPM)
-
-void getPPM() {
-  // Serial.println("getppm");
-  unsigned long dt_ppm;
-  int trig = digitalRead(PPM_Pin);
-  if (trig==1) { //only care about rising edge
-    dt_ppm = micros() - time_ms;
-    time_ms = micros();
-
-    
-    if (dt_ppm > 5000) { //waiting for long pulse to indicate a new pulse train has arrived
-      ppm_counter = 0;
-    }
-  
-    if (ppm_counter == 1) { //first pulse
-      channel_1_raw = dt_ppm;
-    }
-  
-    if (ppm_counter == 2) { //second pulse
-      channel_2_raw = dt_ppm;
-    }
-  
-    if (ppm_counter == 3) { //third pulse
-      channel_3_raw = dt_ppm;
-    }
-  
-    if (ppm_counter == 4) { //fourth pulse
-      channel_4_raw = dt_ppm;
-    }
-  
-    if (ppm_counter == 5) { //fifth pulse
-      channel_5_raw = dt_ppm;
-    }
-  
-    if (ppm_counter == 6) { //sixth pulse
-      channel_6_raw = dt_ppm;
-    }
-    
-    ppm_counter = ppm_counter + 1;
-  }
-}
-
-float bytesToFloat(unsigned char  b0, unsigned char  b1, unsigned char b2, unsigned char  b3)
-{
-  float output;
-
-  *((unsigned char*)(&output) + 3) = b0;
-  *((unsigned char*)(&output) + 2) = b1;
-  *((unsigned char*)(&output) + 1) = b2;
-  *((unsigned char*)(&output) + 0) = b3;
-
-  return output;
-}
-bool compareArray(unsigned char *data1, unsigned char *data2, int len) {
-  for (int i = 0; i < len; i++) {
-    if (data1[i] != data2[i]) {
-      Serial.print(data1[i], HEX);
-      Serial.print(data2[i], HEX);
-      return false;
-    }
-  }
-  return true;
-}
-void printArray(unsigned char *data1, int len) {
-  for (int i = 0; i < len; i++) {
-    Serial.print(" 0x");
-    Serial.print(data1[i], HEX);
-  }
-  Serial.print("\n");
-  return;
-}
 #endif // COMMON_H
