@@ -82,9 +82,7 @@ float Kp_pitch_rate = 0.15;   //Pitch P-gain - rate mode
 float Ki_pitch_rate = 0.2;    //Pitch I-gain - rate mode
 float Kd_pitch_rate = 0.0002; //Pitch D-gain - rate mode (be careful when increasing too high, motors will begin to overheat!)
 
-float Kp_yaw = 0.6;           //Yaw P-gain
-float Ki_yaw = 0.15;          //Yaw I-gain
-float Kd_yaw = 0.01;       //Yaw D-gain (be careful when increasing too high, motors will begin to overheat!)
+
 
 
 
@@ -141,7 +139,7 @@ float roll_passthru, pitch_passthru, yaw_passthru;
 //Controller:
 float error_roll, error_roll_prev, roll_des_prev, integral_roll, integral_roll_il, integral_roll_ol, integral_roll_prev, integral_roll_prev_il, integral_roll_prev_ol, derivative_roll, roll_PID = 0;
 float error_pitch, error_pitch_prev, pitch_des_prev, integral_pitch, integral_pitch_il, integral_pitch_ol, integral_pitch_prev, integral_pitch_prev_il, integral_pitch_prev_ol, derivative_pitch, pitch_PID = 0;
-float error_yaw, error_yaw_prev, integral_yaw, integral_yaw_prev, derivative_yaw, yaw_PID = 0;
+
 
 //Mixer
 
@@ -268,17 +266,17 @@ void loop() {
   if(1){
     getCommandsRadio(); 
         //Yaw, stablize on rate from GyroZ
-    error_yaw = yaw_des - yaw_IMU;
-    if(error_yaw>180)error_yaw-=360;
-    if(error_yaw<-180)error_yaw+=360;
-    integral_yaw = integral_yaw_prev + error_yaw * dt/1000000.0;
-    if (channel_1_pwm < 1060) {   //don't let integrator build if throttle is too low
-      integral_yaw = 0;
-    }
-    integral_yaw = constrain(integral_yaw, -i_limit, i_limit); //saturate integrator to prevent unsafe buildup
-    derivative_yaw = (error_yaw - error_yaw_prev) / dt*10000000.0;
-    yaw_PID = .3 * (Kp_yaw * error_yaw + Ki_yaw * integral_yaw + Kd_yaw * derivative_yaw); //scaled by .01 to bring within -1 to 1 range
-    error_yaw_prev = error_yaw;
+    // error_yaw = yaw_des - yaw_IMU;
+    // if(error_yaw>180)error_yaw-=360;
+    // if(error_yaw<-180)error_yaw+=360;
+    // integral_yaw = integral_yaw_prev + error_yaw * dt/1000000.0;
+    // if (channel_1_pwm < 1060) {   //don't let integrator build if throttle is too low
+    //   integral_yaw = 0;
+    // }
+    // integral_yaw = constrain(integral_yaw, -i_limit, i_limit); //saturate integrator to prevent unsafe buildup
+    // derivative_yaw = (error_yaw - error_yaw_prev) / dt*10000000.0;
+    // yaw_PID = .3 * (Kp_yaw * error_yaw + Ki_yaw * integral_yaw + Kd_yaw * derivative_yaw); //scaled by .01 to bring within -1 to 1 range
+    // error_yaw_prev = error_yaw;
     // Serial.println(yaw_PID);
     //send command to motors
     if (channel_3_pwm < 1500) {
@@ -291,7 +289,7 @@ void loop() {
     Serial.print(",");
     Serial.print(motorDriver.speedRight);
     Serial.print("\r\n");
-      motorDriver.SetControlValue(spd_des,yaw_PID);
+      // motorDriver.SetControlValue(spd_des,yaw_PID);
     }
     // commandMotorsBLVM(); 
   }
@@ -797,23 +795,23 @@ void controlANGLE() {
   derivative_pitch = GyroY;
   pitch_PID = .01 * (Kp_pitch_angle * error_pitch + Ki_pitch_angle * integral_pitch - Kd_pitch_angle * derivative_pitch); //scaled by .01 to bring within -1 to 1 range
 
-  //Yaw, stablize on rate from GyroZ
-  error_yaw = yaw_des - GyroZ;
-  integral_yaw = integral_yaw_prev + error_yaw * dt;
-  if (channel_1_pwm < 1060) {   //don't let integrator build if throttle is too low
-    integral_yaw = 0;
-  }
-  integral_yaw = constrain(integral_yaw, -i_limit, i_limit); //saturate integrator to prevent unsafe buildup
-  derivative_yaw = (error_yaw - error_yaw_prev) / dt;
-  yaw_PID = .01 * (Kp_yaw * error_yaw + Ki_yaw * integral_yaw + Kd_yaw * derivative_yaw); //scaled by .01 to bring within -1 to 1 range
+  // //Yaw, stablize on rate from GyroZ
+  // error_yaw = yaw_des - GyroZ;
+  // integral_yaw = integral_yaw_prev + error_yaw * dt;
+  // if (channel_1_pwm < 1060) {   //don't let integrator build if throttle is too low
+  //   integral_yaw = 0;
+  // }
+  // integral_yaw = constrain(integral_yaw, -i_limit, i_limit); //saturate integrator to prevent unsafe buildup
+  // derivative_yaw = (error_yaw - error_yaw_prev) / dt;
+  // yaw_PID = .01 * (Kp_yaw * error_yaw + Ki_yaw * integral_yaw + Kd_yaw * derivative_yaw); //scaled by .01 to bring within -1 to 1 range
 
   //Update roll variables
   integral_roll_prev = integral_roll;
   //Update pitch variables
   integral_pitch_prev = integral_pitch;
   //Update yaw variables
-  error_yaw_prev = error_yaw;
-  integral_yaw_prev = integral_yaw;
+  // error_yaw_prev = error_yaw;
+  // integral_yaw_prev = integral_yaw;
 }
 
 void controlANGLE2() {
@@ -1284,5 +1282,5 @@ static void inputDataUpdate()
 }
 static void controlUpdate()
 {
-  motorDriver.update();
+  motorDriver.update(yaw_IMU);
 }

@@ -25,15 +25,22 @@ class motorBLVPWM {
  public:
 
     motorBLVPWM();
-    void update();
+    void update(float angleIMU);
     
     unsigned long int timeMillis;
     float speedLeftFeedback,speedRightFeedback;
     float speedLeft,speedRight;
     float speedRobot;
     void SetControlValue(float speed,float rotationSpeed);
+    void SetTargetPosition(float pos);
+    void SetTargetAngle(float pos);
 private:
-     float targetSpeed,    targetSpeedRotation ;
+    float Kp_yaw ;           //Yaw P-gain
+    float Ki_yaw ;          //Yaw I-gain
+    float Kd_yaw ;       //Yaw D-gain (be careful when increasing too high, motors will begin to overheat!)
+    float error_yaw, error_yaw_prev, integral_yaw, integral_yaw_prev, derivative_yaw, yaw_PID = 0;
+    float range;
+    float targetSpeed,    targetSpeedRotation ;
     void initMotorLeft();
     void initMotorRight( );
     void setMotorLeft(float speed);
