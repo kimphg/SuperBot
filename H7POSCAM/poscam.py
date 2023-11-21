@@ -12,7 +12,10 @@ sensor.skip_frames(time = 2000)
 sensor.set_auto_gain(False)  # must turn this off to prevent image washout...
 sensor.set_auto_whitebal(False)  # must turn this off to prevent image washout...
 clock = time.clock()
+from pyb import UART
 
+uart = UART(1, 1000000, timeout_char=1000)                         # init with given baudrate
+uart.init(1000000, bits=8, parity=None, stop=1, timeout_char=1000) # init with given parameters
 # Note! Unlike find_qrcodes the find_apriltags method does not need lens correction on the image to work.
 
 # The apriltag code supports up to 6 tag families which can be processed at the same time.
@@ -52,17 +55,57 @@ ch.pulse_width_percent(50)
 p1 = Pin('P9') # P4 has TIM2, CH3
 p1.init(Pin.IN,pull = Pin.PULL_UP)
 count=0
+uartBuff = []
+newFrameDetected = False
+newFramePos = 0
+masterFrameLen=6
+workMode=0
+frameWidth = sensor.width()
+frameHeight = sensor.height()
 while(True):
     clock.tick()
 
     img = sensor.snapshot()
 
     #img.save ("example.jpg")
-    for tag in img.find_apriltags(families=tag_families): # defaults to TAG36H11 without "families".
-        img.draw_rectangle(tag.rect(), color = (255))
-        img.draw_cross(tag.cx(), tag.cy(), color = (0, 255, 0))
-        print_args = ("CAMB","DET", tag.id(), (180 * tag.rotation()) / math.pi)
-        print("%s,%s,%d,%f#" % print_args)
-        count=count+1
+    if(workMode):
+        tagCount=0
+        for tag in img.find_apriltags(families=tag_families):
+            uart.write(0xAA)
+            uart.write(0x55)
+            uart.write(0x01)
+            uart.write(0x11)
+            uart.write(0x01)
+            uart.write(byte(tag.id()>>8))
+            uart.write(byte(tag.id()&0xff))
+            uart.write(byte(tag.cx()/frameWidth*255))
+            uart.write(byte(tag.cy()/frameHeight*255))
+            rotationDeg = (180 * tag.rotation()) / math.pi*10
+            if(rotationDeg<0)rotationDeg+=3600
+            uart.write(byte(rotationDeg>>8))
+            uart.write(byte(rotationDeg&0xff))
+            tagCount++
 
+        # defaults to TAG36H11 without "families".
+#        img.draw_rectangle(tag.rect(), color = (255))
+#        img.draw_cross(tag.cx(), tag.cy(), color = (0, 255, 0))
+#        print_args = ("CAMB","DET", tag.id(), (180 * tag.rotation()) / math.pi)
+#        print("%s,%s,%d,%f#" % print_args)
+#        count=count+1
+#    Serial
+    datalen = uart.any()
+    if(datalen):
+        uartBuff.append(uart.read(datalen))
+        for i in range(uartBuff.size()-1):
+            if(uartBuff[i]==0xAA):
+                if(uartBuff[i+1]==0x55):
+                    newFrameDetected=True
+                    newFramePos=i
+    if(newFrameDetected):
+        if(newFramePos<=(uartBuff.size()-6)):
+            addressByte = uartBuff[newFramePos+2]
+            if(addressByte==0x11):
+                commandByte=uartBuff[newFramePos+3]
+                if(commandByte=0x01):
+                    workMode=1
     print(clock.fps())

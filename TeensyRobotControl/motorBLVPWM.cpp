@@ -1,6 +1,11 @@
 
 #include "motorBLVPWM.h"
-
+float constrainVal(float input,float min, float max)
+{
+  if(input<min)return min;
+  if(input>max)return max;
+  return input;
+}
 unsigned int speed_pulse_counter1,speed_pulse_counter2;
 void readSpeed1()
 {
@@ -14,6 +19,7 @@ void readSpeed2()
 }
 motorBLVPWM::motorBLVPWM()
 {
+    i_limit = 3.0;
     speed_pulse_counter1=0;
     speed_pulse_counter2=0;
     speedLeft=0;
@@ -22,33 +28,43 @@ motorBLVPWM::motorBLVPWM()
     targetSpeed = 0;
     initMotorLeft();
     initMotorRight();
+    delay(5);
     timeMillis = millis();
     setMotorLeft(0.0);  
     setMotorRight(0.0); 
     range=0;
-    Kp_yaw = 0.6;           //Yaw P-gain
-    Ki_yaw = 0.15;          //Yaw I-gain
+    Kp_yaw = 0.3;           //Yaw P-gain
+    Ki_yaw = 0.2;          //Yaw I-gain
     Kd_yaw = 0.005;       //Yaw D-gain (be careful when increasing too high, motors will begin to overheat!)
+    yaw_des=0;
 }
 
 
 void motorBLVPWM::update(float angleIMU)
 {
+    
+  if (isActive ==0) {   //don't let integrator build if throttle is too low
+      integral_yaw = 0;
+      setMotorLeft(0);
+      setMotorRight(0);
+      error_yaw_prev = 0;
+    integral_yaw_prev = 0;
+      return;
+    }
     error_yaw = yaw_des - angleIMU;
     if(error_yaw>180)error_yaw-=360;
     if(error_yaw<-180)error_yaw+=360;
-    integral_yaw = integral_yaw_prev + error_yaw * dt/1000000.0;
-    if (channel_1_pwm < 1060) {   //don't let integrator build if throttle is too low
-      integral_yaw = 0;
-    }
+    
+    
+    integral_yaw +=  error_yaw * DT_CONTROL;
+    
 
-
-    integral_yaw = constrain(integral_yaw, -i_limit, i_limit); //saturate integrator to prevent unsafe buildup
-    derivative_yaw = (error_yaw - error_yaw_prev) / dt*10000000.0;
+    integral_yaw = constrainVal(integral_yaw, -i_limit, i_limit); //saturate integrator to prevent unsafe buildup
+    derivative_yaw = (error_yaw - error_yaw_prev) /DT_CONTROL;
     yaw_PID = .3 * (Kp_yaw * error_yaw + Ki_yaw * integral_yaw + Kd_yaw * derivative_yaw); //scaled by .01 to bring within -1 to 1 range
     error_yaw_prev = error_yaw;
     integral_yaw_prev = integral_yaw;
-    targetSpeedRotation = yaw_PID;
+    targetSpeedRotation = -yaw_PID;
     // Serial.println("motor update");
     unsigned long int newTime = millis();
     int dt = newTime-timeMillis;//check dt, should be 20ms
@@ -56,24 +72,26 @@ void motorBLVPWM::update(float angleIMU)
     // Serial.println(dt);
     if(dt<1)return;//dt too small
     //
-    if(speedLeft>0)speedLeftFeedback = speed_pulse_counter1/float(dt)*1000;
-    else speedLeftFeedback = -speed_pulse_counter1/float(dt)*1000;
+    if(speedLeft>0)speedLeftFeedback = speed_pulse_counter1/DT_CONTROL;
+    else speedLeftFeedback = -speed_pulse_counter1/DT_CONTROL;
     speed_pulse_counter1=0;
-    if(speedRight>0)speedRightFeedback = speed_pulse_counter2/float(dt)*1000;
-    else speedRightFeedback = -speed_pulse_counter2/float(dt)*1000;
+    if(speedRight>0)speedRightFeedback = speed_pulse_counter2/DT_CONTROL;
+    else speedRightFeedback = -speed_pulse_counter2/DT_CONTROL;
     speed_pulse_counter2=0;
     range+=(speedLeftFeedback+speedRightFeedback)/2;
     // update speedRobot
     float acc = targetSpeed-speedRobot;
-    constrain(acc,-ACC_MAX,ACC_MAX);
+    constrainVal(acc,-ACC_MAX,ACC_MAX);
     speedRobot+=acc;
     // update speedRight speedLeft
     acc = speedRobot-targetSpeedRotation*BASE_LEN/2.0-speedRight;
-    constrain(acc,-ACC_MAX,ACC_MAX);
+    constrainVal(acc,-ACC_MAX,ACC_MAX);
     speedRight+=acc;
     acc= speedRobot+targetSpeedRotation*BASE_LEN/2.0-speedLeft;
-    constrain(acc,-ACC_MAX,ACC_MAX);
+    constrainVal(acc,-ACC_MAX,ACC_MAX);
     speedLeft+=acc;
+    constrainVal(speedLeft,-0.1,0.1);
+    constrainVal(speedRight,-0.1,0.1);
     setMotorLeft(speedLeft);
     setMotorRight(speedRight);
     
@@ -82,7 +100,14 @@ void motorBLVPWM::update(float angleIMU)
 void motorBLVPWM::SetControlValue(float speed,float rotationSpeed)
 {
      targetSpeed = speed;//-rotationSpeed*BASE_LEN/2.0;
-     targetSpeedRotation = -rotationSpeed;// speed+rotationSpeed*BASE_LEN/2.0;
+     yaw_des=rotationSpeed;
+    //  targetSpeedRotation = -rotationSpeed;// speed+rotationSpeed*BASE_LEN/2.0;
+      // Serial.print(angleIMU);
+      // Serial.print(",");
+    Serial.print(targetSpeedRotation);
+    Serial.print(",");
+    Serial.print(yaw_des);
+    Serial.print("\r\n");
 }
 void motorBLVPWM::initMotorLeft()
 {

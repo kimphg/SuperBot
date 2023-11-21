@@ -28,6 +28,7 @@ class motorBLVPWM {
     void update(float angleIMU);
     
     unsigned long int timeMillis;
+    bool isActive=false;
     float speedLeftFeedback,speedRightFeedback;
     float speedLeft,speedRight;
     float speedRobot;
@@ -35,11 +36,13 @@ class motorBLVPWM {
     void SetTargetPosition(float pos);
     void SetTargetAngle(float pos);
 private:
+    float i_limit = 3.0; 
     float Kp_yaw ;           //Yaw P-gain
     float Ki_yaw ;          //Yaw I-gain
     float Kd_yaw ;       //Yaw D-gain (be careful when increasing too high, motors will begin to overheat!)
     float error_yaw, error_yaw_prev, integral_yaw, integral_yaw_prev, derivative_yaw, yaw_PID = 0;
     float range;
+    float yaw_des;
     float targetSpeed,    targetSpeedRotation ;
     void initMotorLeft();
     void initMotorRight( );
