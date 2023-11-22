@@ -1,4 +1,6 @@
-
+#ifndef  DEBUG_TELEMETRY
+#define DEBUG_TELEMETRY Serial3
+#endif
 #include "motorBLVPWM.h"
 float constrainVal(float input,float min, float max)
 {
@@ -65,11 +67,11 @@ void motorBLVPWM::update(float angleIMU)
     error_yaw_prev = error_yaw;
     integral_yaw_prev = integral_yaw;
     targetSpeedRotation = -yaw_PID;
-    // Serial.println("motor update");
+    // DEBUG_TELEMETRY.println("motor update");
     unsigned long int newTime = millis();
     int dt = newTime-timeMillis;//check dt, should be 20ms
     timeMillis=newTime;
-    // Serial.println(dt);
+    // DEBUG_TELEMETRY.println(dt);
     if(dt<1)return;//dt too small
     //
     if(speedLeft>0)speedLeftFeedback = speed_pulse_counter1/DT_CONTROL;
@@ -102,12 +104,12 @@ void motorBLVPWM::SetControlValue(float speed,float rotationSpeed)
      targetSpeed = speed;//-rotationSpeed*BASE_LEN/2.0;
      yaw_des=rotationSpeed;
     //  targetSpeedRotation = -rotationSpeed;// speed+rotationSpeed*BASE_LEN/2.0;
-      // Serial.print(angleIMU);
-      // Serial.print(",");
-    Serial.print(targetSpeedRotation);
-    Serial.print(",");
-    Serial.print(yaw_des);
-    Serial.print("\r\n");
+      // DEBUG_TELEMETRY.print(angleIMU);
+      // DEBUG_TELEMETRY.print(",");
+    DEBUG_TELEMETRY.print(targetSpeedRotation);
+    DEBUG_TELEMETRY.print(",");
+    DEBUG_TELEMETRY.print(yaw_des);
+    DEBUG_TELEMETRY.print("\r\n");
 }
 void motorBLVPWM::initMotorLeft()
 {

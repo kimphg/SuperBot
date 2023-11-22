@@ -1,7 +1,7 @@
 #include <Arduino.h>
 #include "common.h"
 #define RS485_IMU Serial1
-#define DEBUG_TELEMETRY Serial
+#define DEBUG_TELEMETRY Serial5
 #include <SPI.h>
 #include <NativeEthernet.h>         // for Teensy 4.1
 #include <NativeEthernetUdp.h>
@@ -163,7 +163,7 @@ void setup() {
   Serial.println("start");
 
   //Initialize all pins
-  pinMode(13, OUTPUT); //pin 13 LED blinker on board, do not modify
+  // pinMode(13, OUTPUT); //pin 13 LED blinker on board, do not modify
   if(imu.getIsConnected())
   {
     Serial.println("IMU connect OK");
@@ -219,8 +219,8 @@ void loop() {
   
   prev_time = current_time;         //
  if(imu.noMotionCount>100)//200ms
- digitalWrite(13,HIGH);
- else  digitalWrite(13,LOW);
+//  digitalWrite(13,HIGH);
+//  else  digitalWrite(13,LOW);
  
   // loopBlink(); //indicate we are in main loop with short blink every 1.5 seconds
   if (current_time - print_counter > 100000) {
@@ -239,7 +239,7 @@ void loop() {
   //  DEBUG_TELEMETRY.print(dt);
   //  DEBUG_TELEMETRY.print(" \n");
     //Print data at 100hz (uncomment one at a time for troubleshooting) - SELECT ONE:
-    // printRadioData();     //radio pwm values (expected: 1000 to 2000)
+    printRadioData();     //radio pwm values (expected: 1000 to 2000)
 //    printDesiredState();  //prints desired vehicle state commanded in either degrees or deg/sec (expected: +/- maxAXIS for roll, pitch, yaw; 0 to 1 for throttle)
       //  printGyroData();      //prints filtered gyro data direct from IMU (expected: ~ -250 to 250, 0 at rest)
     //      printAccelData();     //prints filtered accelerometer data direct from IMU (expected: ~ -2 to 2; x,y 0 when level, z 1 when level)
@@ -1005,7 +1005,7 @@ void loopBlink() {
   */
   if (current_time - blink_counter > blink_delay) {
     blink_counter = micros();
-    digitalWrite(13, blinkAlternate); //pin 13 is built in LED
+    // digitalWrite(13, blinkAlternate); //pin 13 is built in LED
 
     if (blinkAlternate == 1) {
       blinkAlternate = 0;
@@ -1022,7 +1022,7 @@ void loopBlink() {
 
 void printRadioData() {
 
-  Serial.print(F(" CH1: "));
+  DEBUG_TELEMETRY.print(F(" CH1: "));
   DEBUG_TELEMETRY.print(channel_1_pwm);
   DEBUG_TELEMETRY.print(F(" CH2: "));
   DEBUG_TELEMETRY.print(channel_2_pwm);
