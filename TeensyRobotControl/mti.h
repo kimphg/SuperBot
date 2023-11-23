@@ -63,6 +63,10 @@ public:
     Connect();
     gotoMeasurement();
   }
+  void resetYaw()
+  {
+    measurement.gyroyaw = 0;
+  }
   bool Connect() {
     Serial.println("Connect IMU");
     return gotoConfig();

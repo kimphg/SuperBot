@@ -103,7 +103,6 @@ unsigned long current_time, prev_time;
 unsigned long print_counter, serial_counter;
 unsigned long blink_counter, blink_delay;
 bool blinkAlternate;
-
 //Radio comm:
  int channel_1_pwm, channel_2_pwm, channel_3_pwm, channel_4_pwm, channel_5_pwm, channel_6_pwm;
  int channel_1_pwm_prev, channel_2_pwm_prev, channel_3_pwm_prev, channel_4_pwm_prev;
@@ -207,6 +206,7 @@ void printBatVoltage()
 }
 bool manualMode = false;
 int loopRatePeriodUS=50000;
+int loopCountActive=0;
 void loop() {
   current_time = micros();          //looprate limiter
   dt = (current_time - prev_time);  //
@@ -238,7 +238,7 @@ void loop() {
   //  DEBUG_TELEMETRY.print(dt);
   //  DEBUG_TELEMETRY.print(" \n");
     //Print data at 100hz (uncomment one at a time for troubleshooting) - SELECT ONE:
-    printRadioData();     //radio pwm values (expected: 1000 to 2000)
+    // printRadioData();     //radio pwm values (expected: 1000 to 2000)
 //    printDesiredState();  //prints desired vehicle state commanded in either degrees or deg/sec (expected: +/- maxAXIS for roll, pitch, yaw; 0 to 1 for throttle)
       //  printGyroData();      //prints filtered gyro data direct from IMU (expected: ~ -250 to 250, 0 at rest)
     //      printAccelData();     //prints filtered accelerometer data direct from IMU (expected: ~ -2 to 2; x,y 0 when level, z 1 when level)
@@ -278,14 +278,33 @@ void loop() {
     // error_yaw_prev = error_yaw;
     // Serial.println((channel_4_pwm-1500)/5000.0);
     //send command to motors
+    // Serial.println(yaw_IMU);
+    if (channel_5_pwm < 1500)
+    {
+      imu.resetYaw();
+      motorDriver.robotPosition=0;
+    }
     if (channel_3_pwm < 1500) {
       motorDriver.isActive=false;
+      motorDriver.robotPosition=0;
+      // imu.resetYaw();
+      loopCountActive=0;
     }
     else{
+      loopCountActive++;
       motorDriver.isActive=true;
-      int rotation=(channel_4_pwm-1500);
-      float curTime=millis()/1000.0;
-      motorDriver.SetControlValue((channel_3_pwm-1500.0)/2000.0,0);
+      // int rotation=(channel_4_pwm-1500);
+      // float curTime=millis()/1000.0;
+      // float speed = (channel_3_pwm-1500.0)/2000.0;
+      // if (speed<0)speed=0;
+      //
+      // motorDriver.SetControlValue(0,yaw_des,pos_des);
+      // Serial.println(loopCountActive);
+      if(loopCountActive<30)      motorDriver.SetControlValue(0,0);
+      else if(loopCountActive<150)motorDriver.SetControlValue(0,1000);
+      else if(loopCountActive<250)motorDriver.SetControlValue(-180,1000);
+      else if(loopCountActive<370)motorDriver.SetControlValue(-180,2000);
+      else if(loopCountActive<500)motorDriver.SetControlValue(0,2000);
       // if(curTime>5&&curTime<8)motorDriver.SetControlValue(0.2,0);
       // else if(curTime>8&&curTime<10)motorDriver.SetControlValue(0,45);
       // else if(curTime>10&&curTime<12)motorDriver.SetControlValue(0,90);
@@ -387,6 +406,16 @@ void updateCommandBus()
         yaw_des = commandString.substring(4,dataLen-1).toFloat();
         DEBUG_TELEMETRY.print("yaw_des set:");
         DEBUG_TELEMETRY.println(yaw_des);
+        //   DEBUG_TELEMETRY.println(yaw_IMU);
+      }
+      else if(commandString.startsWith("pos="))//angle set command
+      {
+        
+        // float angle
+        //   DEBUG_TELEMETRY.print(imu.gyroZBiasCompensation*100000);
+        pos_des = commandString.substring(4,dataLen-1).toFloat();
+        DEBUG_TELEMETRY.print("pos_des set:");
+        DEBUG_TELEMETRY.println(pos_des);
         //   DEBUG_TELEMETRY.println(yaw_IMU);
       }
       if(commandString.startsWith("spd="))//angle set command

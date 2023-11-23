@@ -20,30 +20,32 @@
 #include <Arduino.h>
 
 #define DT_CONTROL 0.02 //50hz control loop
-#define ACC_MAX 0.07/DT_CONTROL
+#define ACC_MAX 0.05/DT_CONTROL
 #define BASE_LEN 0.5
+
 /// @brief Class for BLV motor control with DB15 connector and PWM speed control
 class motorBLVPWM {
  public:
 
     motorBLVPWM();
     void update(float angleIMU);
-    
+    float robotPosition;
     unsigned long int timeMillis;
     bool isActive=false;
     float speedLeftFeedback,speedRightFeedback;
     float speedLeft,speedRight;
     float speedRobot;
-    void SetControlValue(float speed,float rotationSpeed);
+    void SetControlValue(float rotationSpeed,float desPos);
     void SetTargetPosition(float pos);
     void SetTargetAngle(float pos);
 private:
-    float i_limit = 3.0; 
-    float Kp_yaw ;           //Yaw P-gain
-    float Ki_yaw ;          //Yaw I-gain
-    float Kd_yaw ;       //Yaw D-gain (be careful when increasing too high, motors will begin to overheat!)
-    float error_yaw, error_yaw_prev, integral_yaw, integral_yaw_prev, derivative_yaw, yaw_PID = 0;
-    float range;
+    float pos_des = 0.0;
+    float i_limit_yaw = 3.0; 
+    float i_limit_pos = 30.0; 
+    float Kp_yaw ,Ki_yaw , Kd_yaw ;   
+    float Kp_pos ,Ki_pos, Kd_pos ;  
+    float error_pos, error_pos_prev, integral_pos,  derivative_pos, pos_PID = 0;
+    float error_yaw, error_yaw_prev, integral_yaw,  derivative_yaw, yaw_PID = 0;
     float yaw_des;
     float targetSpeed,    targetSpeedRotation ;
     void initMotorLeft();
