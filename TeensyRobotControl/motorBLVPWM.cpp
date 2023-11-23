@@ -1,6 +1,4 @@
-#ifndef  DEBUG_TELEMETRY
-#define DEBUG_TELEMETRY Serial3
-#endif
+
 #include "motorBLVPWM.h"
 float constrainVal(float input,float min, float max)
 {
@@ -45,7 +43,7 @@ motorBLVPWM::motorBLVPWM()
 void motorBLVPWM::update(float angleIMU)
 {
     
-  if (isActive ==0) {   //don't let integrator build if throttle is too low
+  if (isActive ==0) {   //check status
       integral_yaw = 0;
       setMotorLeft(0);
       setMotorRight(0);
@@ -53,6 +51,12 @@ void motorBLVPWM::update(float angleIMU)
     integral_yaw_prev = 0;
       return;
     }
+    unsigned long int newTime = millis();
+    int dt = newTime-timeMillis;//check dt, should be 20ms
+    timeMillis=newTime;
+    // Serial.println(dt);
+    if(dt<1)return;//dt too small
+
     error_yaw = yaw_des - angleIMU;
     if(error_yaw>180)error_yaw-=360;
     if(error_yaw<-180)error_yaw+=360;
@@ -67,12 +71,8 @@ void motorBLVPWM::update(float angleIMU)
     error_yaw_prev = error_yaw;
     integral_yaw_prev = integral_yaw;
     targetSpeedRotation = -yaw_PID;
-    // DEBUG_TELEMETRY.println("motor update");
-    unsigned long int newTime = millis();
-    int dt = newTime-timeMillis;//check dt, should be 20ms
-    timeMillis=newTime;
-    // DEBUG_TELEMETRY.println(dt);
-    if(dt<1)return;//dt too small
+    // Serial.println("motor update");
+    
     //
     if(speedLeft>0)speedLeftFeedback = speed_pulse_counter1/DT_CONTROL;
     else speedLeftFeedback = -speed_pulse_counter1/DT_CONTROL;
@@ -104,12 +104,12 @@ void motorBLVPWM::SetControlValue(float speed,float rotationSpeed)
      targetSpeed = speed;//-rotationSpeed*BASE_LEN/2.0;
      yaw_des=rotationSpeed;
     //  targetSpeedRotation = -rotationSpeed;// speed+rotationSpeed*BASE_LEN/2.0;
-      // DEBUG_TELEMETRY.print(angleIMU);
-      // DEBUG_TELEMETRY.print(",");
-    DEBUG_TELEMETRY.print(targetSpeedRotation);
-    DEBUG_TELEMETRY.print(",");
-    DEBUG_TELEMETRY.print(yaw_des);
-    DEBUG_TELEMETRY.print("\r\n");
+      // Serial.print(angleIMU);
+      // Serial.print(",");
+    Serial.print(targetSpeedRotation);
+    Serial.print(",");
+    Serial.print(yaw_des);
+    Serial.print("\r\n");
 }
 void motorBLVPWM::initMotorLeft()
 {

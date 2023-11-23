@@ -1,7 +1,6 @@
 #include <Arduino.h>
 #include "common.h"
-#define RS485_IMU Serial1
-#define DEBUG_TELEMETRY Serial5
+
 #include <SPI.h>
 #include <NativeEthernet.h>         // for Teensy 4.1
 #include <NativeEthernetUdp.h>

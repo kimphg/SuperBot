@@ -1,5 +1,7 @@
 #ifndef COMMON_H
 #define COMMON_H
+#define RS485_IMU Serial1
+#define DEBUG_TELEMETRY Serial5
 //Uncomment only one receiver type
 //#define USE_PWM_RX
 #define USE_PPM_RX

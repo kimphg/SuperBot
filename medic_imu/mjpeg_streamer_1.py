@@ -13,8 +13,8 @@ from lsm6dsox import LSM6DSOX
 from machine import Pin
 from machine import SPI
 import math
-SSID = "Phuong Nga"  # Network SSID
-KEY = "19891990"  # Network key
+SSID = "AndroidAPs8"  # Network SSID
+KEY = "12344321"  # Network key
 HOST = ""  # Use first available interface
 PORT = 8080  # Arbitrary non-privileged port
 lsmimu = LSM6DSOX(SPI(5), cs=Pin("PF6", Pin.OUT_PP, Pin.PULL_UP))
@@ -26,7 +26,7 @@ ledpin = Pin("PF4", Pin.OUT_PP, Pin.PULL_UP)
 # Init wlan module and connect to network
 wlan = WLAN(network.STA_IF)
 wlan.active(True)
-wlan.ifconfig(("192.168.1.18", "255.255.255.0", "192.168.1.1", "192.168.1.1"))
+wlan.ifconfig(("192.168.75.18", "255.255.255.0", "192.168.75.1", "192.168.75.1"))
 wlan.connect(SSID, KEY)
 roll=0
 pitch=0
@@ -64,8 +64,8 @@ B_gyro = 0.1       #Gyro LP filter paramter, (MPU6050 default: 0.1. MPU9250 defa
 
 # Set server socket to blocking
 #s.setblocking(True)
-addr = socket.getaddrinfo("192.168.1.17", 31000)[0][4]
-addrvideo = socket.getaddrinfo("192.168.1.17", 31001)[0][4]
+addr = socket.getaddrinfo("192.168.75.38", 31000)[0][4]
+addrvideo = socket.getaddrinfo("192.168.75.38", 31001)[0][4]
 def invSqrt(x) :
 
   return 1.0/math.sqrt(x)

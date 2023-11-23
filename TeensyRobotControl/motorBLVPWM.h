@@ -1,6 +1,7 @@
 
 #ifndef MOTORBLVPWM
 #define MOTORBLVPWM
+
 #define M1_FWD 29
 #define M1_REV 28
 #define M1_STOP_MODE 27
@@ -17,6 +18,7 @@
 #define M2_PWM 2
 #define M2_IN_SPEED 24
 #include <Arduino.h>
+
 #define DT_CONTROL 0.02 //50hz control loop
 #define ACC_MAX 0.07/DT_CONTROL
 #define BASE_LEN 0.5

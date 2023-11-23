@@ -234,6 +234,7 @@ Makefile: ..\NiclaView\Niclaviewer.pro C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\mkspecs
 		C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\mkspecs\features\qt_config.prf \
 		C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\mkspecs\win32-msvc\qmake.conf \
 		C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\mkspecs\features\spec_post.prf \
+		.qmake.stash \
 		C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\mkspecs\features\exclusive_builds.prf \
 		C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\mkspecs\common\msvc-version.conf \
 		C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\mkspecs\features\toolchain.prf \
@@ -259,15 +260,16 @@ Makefile: ..\NiclaView\Niclaviewer.pro C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\mkspecs
 		C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\mkspecs\features\yacc.prf \
 		C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\mkspecs\features\lex.prf \
 		..\NiclaView\Niclaviewer.pro \
+		C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\lib\Qt53DCore.prl \
 		C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\lib\Qt5Widgets.prl \
 		C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\lib\Qt5Gui.prl \
 		C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\lib\Qt5Network.prl \
 		C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\lib\Qt5Core.prl \
 		C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\lib\qtmain.prl \
-		.qmake.stash \
 		C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\mkspecs\features\build_pass.prf \
 		..\NiclaView\shaders.qrc \
 		..\NiclaView\textures.qrc \
+		C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\lib\Qt53DCored.prl \
 		C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\lib\Qt5Widgetsd.prl \
 		C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\lib\Qt5Guid.prl \
 		C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\lib\Qt5Networkd.prl \
@@ -424,6 +426,7 @@ C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\mkspecs\features\qt_functions.prf:
 C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\mkspecs\features\qt_config.prf:
 C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\mkspecs\win32-msvc\qmake.conf:
 C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\mkspecs\features\spec_post.prf:
+.qmake.stash:
 C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\mkspecs\features\exclusive_builds.prf:
 C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\mkspecs\common\msvc-version.conf:
 C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\mkspecs\features\toolchain.prf:
@@ -449,15 +452,16 @@ C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\mkspecs\features\exceptions.prf:
 C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\mkspecs\features\yacc.prf:
 C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\mkspecs\features\lex.prf:
 ..\NiclaView\Niclaviewer.pro:
+C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\lib\Qt53DCore.prl:
 C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\lib\Qt5Widgets.prl:
 C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\lib\Qt5Gui.prl:
 C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\lib\Qt5Network.prl:
 C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\lib\Qt5Core.prl:
 C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\lib\qtmain.prl:
-.qmake.stash:
 C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\mkspecs\features\build_pass.prf:
 ..\NiclaView\shaders.qrc:
 ..\NiclaView\textures.qrc:
+C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\lib\Qt53DCored.prl:
 C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\lib\Qt5Widgetsd.prl:
 C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\lib\Qt5Guid.prl:
 C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\lib\Qt5Networkd.prl:
