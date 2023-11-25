@@ -49,14 +49,14 @@ motorBLVPWM::motorBLVPWM()
 void motorBLVPWM::update(float angleIMU)
 {
     {
-      Serial.print(robotPosition);
-      Serial.print(",");
-      Serial.print(pos_des);
-      Serial.print(",");
-      Serial.print(yaw_des);
-      Serial.print(",");
-      Serial.print(angleIMU);
-      Serial.print("\r\n");
+      // Serial.print(robotPosition);
+      // Serial.print(",");
+      // Serial.print(pos_des);
+      // Serial.print(",");
+      // Serial.print(yaw_des);
+      // Serial.print(",");
+      // Serial.print(angleIMU);
+      // Serial.print("\r\n");
     }
   if (isActive ==0) {   //check status
       integral_yaw = 0;
@@ -85,7 +85,7 @@ void motorBLVPWM::update(float angleIMU)
     targetSpeedRotation = -yaw_PID;
     targetSpeedRotation = constrainVal(targetSpeedRotation,-1,1);
 
-    error_pos = pos_des - robotPosition;
+    error_pos = 0;//pos_des - robotPosition;
     integral_pos +=  error_pos * DT_CONTROL;
     integral_pos = constrainVal(integral_pos, -i_limit_pos, i_limit_pos); //saturate integrator to prevent unsafe buildup
     derivative_pos = (error_pos - error_pos_prev) /DT_CONTROL;

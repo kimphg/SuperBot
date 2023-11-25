@@ -45,13 +45,19 @@ typedef struct
   int dataLen;
   int xdi;
   float roll, pitch, yaw,gyroyaw;
-  float gyroX,gyroY,gyroZ;
+  float gyroX,gyroY,gyroZ,gyroZold;
   float accX,accY,accZ;
 
 } IMUData;
 class IMU_driver {
 public:
-  IMU_driver() {}
+  float yawShift;
+  int yawCalcMode ;
+  IMU_driver(){
+    measurement.gyroZold=0;
+    yawShift = 0;
+    yawCalcMode = 0;
+  }
   void IMU_init(Stream &porti) {
     port = &porti;
     // port->setTimeout(100);
@@ -66,6 +72,9 @@ public:
   void resetYaw()
   {
     measurement.gyroyaw = 0;
+    yawShift = measurement.gyroyaw - measurement.yaw;
+    while(yawShift>360.0)yawShift-=360.0;
+                  while(yawShift<0)yawShift+=360.0;
   }
   bool Connect() {
     Serial.println("Connect IMU");
@@ -167,6 +176,17 @@ public:
                 measurement.roll =  bytesToFloat(databuf[iti+3], databuf[iti+4], databuf[iti+5], databuf[iti+6]);
                 measurement.pitch = bytesToFloat(databuf[iti+7], databuf[iti+8], databuf[iti+9], databuf[iti+10]);
                 measurement.yaw =   bytesToFloat(databuf[iti+11], databuf[iti+12], databuf[iti+13], databuf[iti+17]);
+                if(yawCalcMode==0){
+                  yawShift = measurement.gyroyaw-measurement.yaw;
+                  while(yawShift>360.0)yawShift-=360.0;
+                  while(yawShift<0)yawShift+=360.0;
+                }
+                else
+                {
+                  measurement.gyroyaw = measurement.yaw+yawShift;
+                  while(measurement.gyroyaw>360.0)measurement.gyroyaw-=360.0;
+                  while(measurement.gyroyaw<0)measurement.gyroyaw+=360.0;
+                }
                 // Serial.println(measurement.yaw);
                 // Serial.println("new euler angles");
               }
@@ -174,30 +194,40 @@ public:
                 measurement.gyroX =  bytesToFloat(databuf[iti+3], databuf[iti+4], databuf[iti+5], databuf[iti+6]);
                 measurement.gyroY = bytesToFloat(databuf[iti+7], databuf[iti+8], databuf[iti+9], databuf[iti+10]);
                 float newGyroZ =   bytesToFloat(databuf[iti+11], databuf[iti+12], databuf[iti+13], databuf[iti+17]);
-                
-                if(abs(newGyroZ)>0.01)
+                if(abs(newGyroZ<0.1))
                 {
-                  // Serial.println(newGyroZ-measurement.gyroZ);
-                  noMotionCount=0;
+                  if(yawCalcMode>0)
+                  yawCalcMode--;
                 }
-                if(noMotionCount>100)
-                {
-                  gyroZBias+=newGyroZ;
-                  gyroZBiasCount++;
-                  if(gyroZBiasCount>200)
+                else yawCalcMode=200;
+                if(yawCalcMode==0){
+                  if(abs(newGyroZ)>0.01)
                   {
-                    float newBias = gyroZBias/gyroZBiasCount;
-                    gyroZBiasCount=0;
-                    gyroZBias=0;
-                    gyroZBiasCompensation+=0.4*(newBias-gyroZBiasCompensation);
-                    // Serial.println(1000*gyroZBiasCompensation);
+                    // Serial.println(newGyroZ-measurement.gyroZ);
+                    noMotionCount=0;
                   }
+                  if(noMotionCount>100)
+                  {
+                    gyroZBias+=newGyroZ;
+                    gyroZBiasCount++;
+                    if(gyroZBiasCount>200)
+                    {
+                      float newBias = gyroZBias/gyroZBiasCount;
+                      gyroZBiasCount=0;
+                      gyroZBias=0;
+                      gyroZBiasCompensation+=0.4*(newBias-gyroZBiasCompensation);
+                      // Serial.println(1000*gyroZBiasCompensation);
+                    }
+                  }
+                  
+                  measurement.gyroZ=newGyroZ-gyroZBiasCompensation;
+                  
+                  measurement.gyroyaw+= (measurement.gyroZ+measurement.gyroZold)/1000.0*57.2958;// todo: add dt later
+                  
+                  while(measurement.gyroyaw>360.0)measurement.gyroyaw-=360.0;
+                  while(measurement.gyroyaw<0)measurement.gyroyaw+=360.0;
                 }
-                
-                measurement.gyroZ=newGyroZ-gyroZBiasCompensation;
-                measurement.gyroyaw+= measurement.gyroZ/500.0;// todo: add dt later
-                while(measurement.gyroyaw>PI2)measurement.gyroyaw-=PI2;
-                while(measurement.gyroyaw<0)measurement.gyroyaw+=PI2;
+                measurement.gyroZold = measurement.gyroZ;
                 // Serial.print(measurement.gyroZ);
                 // Serial.print(" ");
                 dataUpdated =true;
