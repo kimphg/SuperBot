@@ -6,7 +6,7 @@
 import sensor, image, time, math
 from pyb import Pin, Timer
 sensor.reset()
-sensor.set_pixformat(sensor.RGB565)
+sensor.set_pixformat(sensor.GRAYSCALE)
 sensor.set_framesize(sensor.QVGA) # we run out of memory if the resolution is much bigger...
 sensor.skip_frames(time = 2000)
 sensor.set_auto_gain(False)  # must turn this off to prevent image washout...
@@ -20,7 +20,18 @@ uart.init(1000000, bits=8, parity=None, stop=1, timeout_char=1000) # init with g
 
 # The apriltag code supports up to 6 tag families which can be processed at the same time.
 # Returned tag objects will have their tag family and id within the tag family.
-
+def crc16(data : bytearray, offset , length):
+    if data is None or offset < 0 or offset > len(data)- 1 and offset+length > len(data):
+        return 0
+    crc = 0xFFFF
+    for i in range(0, length):
+        crc ^= data[offset + i] << 8
+        for j in range(0,8):
+            if (crc & 0x8000) > 0:
+                crc =(crc << 1) ^ 0x1021
+            else:
+                crc = crc << 1
+    return crc & 0xFFFF
 tag_families = 0
 #tag_families |= image.TAG16H5 # comment out to disable this family
 #tag_families |= image.TAG25H7 # comment out to disable this family
@@ -68,24 +79,29 @@ while(True):
     img = sensor.snapshot()
 
     #img.save ("example.jpg")
-    if(workMode):
+    if(workMode>0):
         tagCount=0
         for tag in img.find_apriltags(families=tag_families):
-            uart.write(0xAA)
-            uart.write(0x55)
-            uart.write(0x01)
-            uart.write(0x11)
-            uart.write(0x01)
-            uart.write(byte(tag.id()>>8))
-            uart.write(byte(tag.id()&0xff))
-            uart.write(byte(tag.cx()/frameWidth*255))
-            uart.write(byte(tag.cy()/frameHeight*255))
+            packet=[]
+            packet.append(0xAA)
+            packet.append(0x55)
+            packet.append(0x01)
+            packet.append(0x11)
+            packet.append(byte())
+            packet.append(byte(tag.id()>>8))
+            packet.append(byte(tag.id()&0xff))
+            packet.append(byte(tag.cx()/frameWidth*255))
+            packet.append(byte(tag.cy()/frameHeight*255))
             rotationDeg = (180 * tag.rotation()) / math.pi*10
             if(rotationDeg<0)rotationDeg+=3600
-            uart.write(byte(rotationDeg>>8))
-            uart.write(byte(rotationDeg&0xff))
+            packet.append(byte(rotationDeg>>8))
+            packet.append(byte(rotationDeg&0xff))
+            datalen = packet.size()-2;
+            cs_byte = crc16(packet,2,datalen)
+            packet.append(cs_byte>>8)
+            packet.append(cs_byte&0xff)
             tagCount++
-
+            uart.write(packet)
         # defaults to TAG36H11 without "families".
 #        img.draw_rectangle(tag.rect(), color = (255))
 #        img.draw_cross(tag.cx(), tag.cy(), color = (0, 255, 0))
@@ -108,4 +124,12 @@ while(True):
                 commandByte=uartBuff[newFramePos+3]
                 if(commandByte=0x01):
                     workMode=1
+                    sensor.set_pixformat(sensor.GRAYSCALE)
+                    sensor.set_framesize(sensor.QVGA)
+                else if(commandByte=0x02):
+                    workMode=2
+                    sensor.set_pixformat(sensor.GRAYSCALE)
+                    sensor.set_framesize(sensor.QVGA)
+                else:
+                    workMode=0
     print(clock.fps())
