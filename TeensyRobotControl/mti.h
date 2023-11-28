@@ -151,10 +151,6 @@ public:
     return isSuccess;
   }
   void updateData() {
-      // Serial.print("updateData");
-    // while (Serial.available()) {        // If anything comes in Serial (USB),
-    //   port->write(Serial.read());  // read it and send it out Serial1 (pins 0 & 1)
-    // }
     while (port->available() > 0) {
       if (buffIndex >= BUF_SIZE_IMU) buffIndex = 0;
       uint8_t bytein = port->read();

@@ -11,6 +11,9 @@ sensor.set_framesize(sensor.QVGA) # we run out of memory if the resolution is mu
 sensor.skip_frames(time = 2000)
 sensor.set_auto_gain(False)  # must turn this off to prevent image washout...
 sensor.set_auto_whitebal(False)  # must turn this off to prevent image washout...
+sensor.set_auto_exposure(     False, exposure_us=1000 )
+sensor.set_auto_gain(False, gain_db=25)
+
 clock = time.clock()
 from pyb import UART
 
@@ -70,38 +73,37 @@ uartBuff = []
 newFrameDetected = False
 newFramePos = 0
 masterFrameLen=6
-workMode=0
+workMode=1
 frameWidth = sensor.width()
 frameHeight = sensor.height()
 while(True):
     clock.tick()
-
+#    print(sensor.get_exposure_us())
     img = sensor.snapshot()
 
     #img.save ("example.jpg")
     if(workMode>0):
         tagCount=0
         for tag in img.find_apriltags(families=tag_families):
-            packet=[]
-            packet.append(0xAA)
-            packet.append(0x55)
-            packet.append(0x01)
-            packet.append(0x11)
-            packet.append(byte())
-            packet.append(byte(tag.id()>>8))
-            packet.append(byte(tag.id()&0xff))
-            packet.append(byte(tag.cx()/frameWidth*255))
-            packet.append(byte(tag.cy()/frameHeight*255))
+            packet=bytearray((b'\xaa\x55\x01\x11'))
+#            packet.append(byte())
+            packet.append((tag.id()>>8))
+            packet.append((tag.id()&0xff))
+            packet.append(int(tag.cx()/frameWidth*255))
+            packet.append(int(tag.cy()/frameHeight*255))
             rotationDeg = (180 * tag.rotation()) / math.pi*10
-            if(rotationDeg<0)rotationDeg+=3600
-            packet.append(byte(rotationDeg>>8))
-            packet.append(byte(rotationDeg&0xff))
-            datalen = packet.size()-2;
+            if(rotationDeg<0):
+                rotationDeg+=3600
+            outputDeg = int(rotationDeg)
+            packet.append((outputDeg>>8))
+            packet.append((outputDeg&0xff))
+            datalen = len(packet)-2;
             cs_byte = crc16(packet,2,datalen)
             packet.append(cs_byte>>8)
             packet.append(cs_byte&0xff)
-            tagCount++
+            tagCount=tagCount+1
             uart.write(packet)
+            print(tag.id())
         # defaults to TAG36H11 without "families".
 #        img.draw_rectangle(tag.rect(), color = (255))
 #        img.draw_cross(tag.cx(), tag.cy(), color = (0, 255, 0))
@@ -122,14 +124,14 @@ while(True):
             addressByte = uartBuff[newFramePos+2]
             if(addressByte==0x11):
                 commandByte=uartBuff[newFramePos+3]
-                if(commandByte=0x01):
+                if(commandByte==0x01):
                     workMode=1
                     sensor.set_pixformat(sensor.GRAYSCALE)
                     sensor.set_framesize(sensor.QVGA)
-                else if(commandByte=0x02):
+                elif(commandByte==0x02):
                     workMode=2
                     sensor.set_pixformat(sensor.GRAYSCALE)
-                    sensor.set_framesize(sensor.QVGA)
+                    sensor.set_framesize(sensor.QQVGA)
                 else:
                     workMode=0
     print(clock.fps())
