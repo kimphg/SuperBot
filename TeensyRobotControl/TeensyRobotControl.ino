@@ -286,16 +286,16 @@ void loop() {
       // imu.resetYaw();
       // motorDriver.robotPosition=0;
     }
-    motorDriver.isActive=motorActive;
-    if (!motorActive) {
+    // motorDriver.isActive=motorActive;
+    if (motorDriver.isActive==false) {
       
-      // motorDriver.robotPosition=0;
-      // imu.resetYaw();
+      motorDriver.resetPosition();
+      imu.resetYaw();
       loopCountActive=0;
     }
     else{
       loopCountActive++;
-      motorDriver.isActive=true;
+      // motorDriver.isActive=true;
       // int rotation=(channel_4_pwm-1500);
       // float curTime=millis()/1000.0;
       // float speed = (channel_3_pwm-1500.0)/2000.0;
@@ -304,10 +304,18 @@ void loop() {
       // motorDriver.SetControlValue(yaw_des,pos_des);
       // Serial.println(loopCountActive);
 
-      if(loopCountActive<30)      motorDriver.SetControlValue(0,0);
-      else if(loopCountActive<120)motorDriver.SetControlValue(-90,0);
-      else if(loopCountActive<220)motorDriver.SetControlValue(-180,0);
-      else if(loopCountActive<300)motorDriver.SetControlValue(90,0);
+      if(loopCountActive<50)      motorDriver.SetControlValue(0,0);
+      else if(loopCountActive<300)motorDriver.SetControlValue(0,2000);
+      else if(loopCountActive<400)motorDriver.SetControlValue(90,2000);
+      else if(loopCountActive<550)motorDriver.SetControlValue(90,3000);
+      else if(loopCountActive<650)motorDriver.SetControlValue(180,3000);
+      else if(loopCountActive<900)motorDriver.SetControlValue(180,5000);
+      else if(loopCountActive<1000)motorDriver.SetControlValue(270,5000);
+      else if(loopCountActive<1150)motorDriver.SetControlValue(270,6000);
+      else if(loopCountActive<1000000)motorDriver.SetControlValue(0,6000);
+      // else if(loopCountActive<250)motorDriver.SetControlValue(0,0);
+      // else if(loopCountActive<220)motorDriver.SetControlValue(-180,0);
+      // else if(loopCountActive<300)motorDriver.SetControlValue(90,0);
       // else if(loopCountActive<370)motorDriver.SetControlValue(-180,0);
       // else if(loopCountActive<500)motorDriver.SetControlValue(0,2000);
 
@@ -391,11 +399,11 @@ void updateSensors()
   GyroZ = measure.gyroZ*57.2958;
   // yaw_IMU = measure.gyroyaw*57.2958;
   yaw_IMU = measure.gyroyaw;
-  Serial.print(yaw_IMU);
-  Serial.print(" ");
-  Serial.print(measure.yaw-170.3);
-  Serial.print(" ");
-  Serial.println(imu.yawCalcMode-100);
+  // Serial.print(yaw_IMU);
+  // Serial.print(" ");
+  // Serial.print(measure.yaw-170.3);
+  // Serial.print(" ");
+  // Serial.println(imu.yawCalcMode-100);
 }
 String commandString;
 void updateCommandBus()

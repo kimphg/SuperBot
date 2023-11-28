@@ -103,7 +103,7 @@ MPU9250 mpu9250(SPI2, 36);
 
 //========================================================================================================================//
 //#define USE_PWM_RX
-#define PPM_Pin 13
+#define PPM_Pin 10
 //This file contains all necessary functions and code used for radio communication to avoid cluttering the main code
 
 unsigned long rising_edge_start_1, rising_edge_start_2, rising_edge_start_3, rising_edge_start_4, rising_edge_start_5, rising_edge_start_6; 

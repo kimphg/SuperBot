@@ -28,8 +28,8 @@ class motorBLVPWM {
  public:
 
     motorBLVPWM();
+    void resetPosition();
     void update(float angleIMU);
-    float robotPosition;
     unsigned long int timeMillis;
     bool isActive=false;
     float speedLeftFeedback,speedRightFeedback;
