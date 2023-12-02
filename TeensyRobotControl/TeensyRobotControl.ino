@@ -6,6 +6,13 @@
 #include <NativeEthernetUdp.h>
 #include "mti.h"
 #include "motorBLVPWM.h"
+typedef struct CamData
+{
+  float x,y;
+  float angle;
+  int tagid;
+  int connectCount;
+} camh7data;
 //========================================================================================================================//
 //                                                 USER-SPECIFIED DEFINES                                                 //
 //========================================================================================================================//
@@ -156,8 +163,11 @@ unsigned char sensBusBuff[200];
 int sensBusBuffi=0;
 unsigned char sensBusBuffo;
 int poscamConnect = 0;
+int h7ConnectCount=0;
 void readSensBus()
 {
+  if(h7ConnectCount>0)h7ConnectCount--;
+  camh7data.connectCount = h7ConnectCount;
   while(RS485_SENS.available())
   {
     
@@ -168,14 +178,16 @@ void readSensBus()
       // DEBUG_TELEMETRY.println(sensBusBuffi);
       if(sensBusBuffi==12)if(sensBusBuff[0]=0x01)
       {
-        int angleTag = sensBusBuff[7]*256+sensBusBuff[8];
-        int dx = 
-        DEBUG_TELEMETRY.print(sensBusBuff[5]);DEBUG_TELEMETRY.print(" ");
-        DEBUG_TELEMETRY.print(sensBusBuff[6]);DEBUG_TELEMETRY.print(" ");
-        DEBUG_TELEMETRY.print(angleTag);DEBUG_TELEMETRY.print(" ");
-        // DEBUG_TELEMETRY.print(sensBusBuff[4]);DEBUG_TELEMETRY.print(" ");
-        // DEBUG_TELEMETRY.print(sensBusBuff[5]);DEBUG_TELEMETRY.print(" ");
-        DEBUG_TELEMETRY.print(sensBusBuff[6]);DEBUG_TELEMETRY.print("\r\n");
+        if(sensBusBuff[1]=0x11){
+          int angleTag = sensBusBuff[7]*256+sensBusBuff[8];
+          camh7data.x = sensBusBuff[5]-127;
+          camh7data.y = sensBusBuff[6]-127;
+          camh7data.angle = angleTag/10.0;h7ConnectCount=600;
+          DEBUG_TELEMETRY.print(sensBusBuff[5]);DEBUG_TELEMETRY.print(" ");
+          DEBUG_TELEMETRY.print(sensBusBuff[6]);DEBUG_TELEMETRY.print(" ");
+          DEBUG_TELEMETRY.print(angleTag);      DEBUG_TELEMETRY.print(" ");
+          DEBUG_TELEMETRY.print(sensBusBuff[6]);DEBUG_TELEMETRY.print("\r\n");
+        }
       }
       sensBusBuffi=0;
     }
@@ -183,6 +195,29 @@ void readSensBus()
     sensBusBuffi++;
     if(sensBusBuffi>=200)sensBusBuffi=0;
   }
+}
+int currState=0;
+int stateStepID = 0;
+void gotoState(int state)
+{
+    currState = state;
+    stateStepID = 0;
+}
+void loopState()
+{
+  if(currState==4)//Tag searching sequence
+  {
+    if(stateStepID==0)
+    {
+      if(camh7data.connectCount!=0)
+      {
+        yaw_des = atan(camh7data.x/camh7data.y);//todo: further correction
+          motorDriver.SetControlValue(yaw_des,0);
+      }
+    }
+    
+  }
+
 }
 void setup() {
   Serial.begin(115200); //usb serial
@@ -312,7 +347,7 @@ void loop() {
     // Serial.println((channel_4_pwm-1500)/5000.0);
     //send command to motors
     // Serial.println(yaw_IMU);
-    motorDriver.SetControlValue(yaw_des,pos_des);
+    
     if (channel_5_pwm < 1500)
     {
       // imu.resetYaw();
