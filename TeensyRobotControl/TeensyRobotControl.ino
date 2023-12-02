@@ -152,11 +152,43 @@ IMU_driver imu;
 //                                                      VOID SETUP                                                        //
 //========================================================================================================================//
 void commandMotorsOneShot() ;
-
+unsigned char sensBusBuff[200];
+int sensBusBuffi=0;
+unsigned char sensBusBuffo;
+int poscamConnect = 0;
+void readSensBus()
+{
+  while(RS485_SENS.available())
+  {
+    
+    unsigned char inputByte = RS485_SENS.read();
+    sensBusBuff[sensBusBuffi] =inputByte;
+    if(sensBusBuffo==0xAA)if(inputByte==0x55)
+    {
+      // DEBUG_TELEMETRY.println(sensBusBuffi);
+      if(sensBusBuffi==12)if(sensBusBuff[0]=0x01)
+      {
+        int angleTag = sensBusBuff[7]*256+sensBusBuff[8];
+        int dx = 
+        DEBUG_TELEMETRY.print(sensBusBuff[5]);DEBUG_TELEMETRY.print(" ");
+        DEBUG_TELEMETRY.print(sensBusBuff[6]);DEBUG_TELEMETRY.print(" ");
+        DEBUG_TELEMETRY.print(angleTag);DEBUG_TELEMETRY.print(" ");
+        // DEBUG_TELEMETRY.print(sensBusBuff[4]);DEBUG_TELEMETRY.print(" ");
+        // DEBUG_TELEMETRY.print(sensBusBuff[5]);DEBUG_TELEMETRY.print(" ");
+        DEBUG_TELEMETRY.print(sensBusBuff[6]);DEBUG_TELEMETRY.print("\r\n");
+      }
+      sensBusBuffi=0;
+    }
+    sensBusBuffo= inputByte;
+    sensBusBuffi++;
+    if(sensBusBuffi>=200)sensBusBuffi=0;
+  }
+}
 void setup() {
   Serial.begin(115200); //usb serial
   DEBUG_TELEMETRY.begin(57600); //telemetry serial
   RS485_IMU.begin(921600);
+  RS485_SENS.begin(1000000);
   delay(200);
   imu.IMU_init(RS485_IMU);
   Serial.println("start");
@@ -1197,6 +1229,7 @@ static void inputDataUpdate()
 {
   imu.updateData();//read IMU
   updateCommandBus();//read Serial Commands
+  readSensBus();
 }
 static void controlUpdate()
 {

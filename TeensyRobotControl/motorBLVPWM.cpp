@@ -5,6 +5,7 @@
 #define ENC_B1 11
 #define ENC_A2 12
 #define ENC_B2 10
+#define Debug Serial
 int robotPosition=0;
 float constrainVal(float input,float min, float max)
 {
@@ -83,7 +84,7 @@ void motorBLVPWM::update(float angleIMU)
     unsigned long int newTime = millis();
     int dt = newTime-timeMillis;//check dt, should be 20ms
     timeMillis=newTime;
-    // Serial.println(dt);
+    // Debug.println(dt);
     if(dt<1)return;//dt too small
 
     error_yaw = yaw_des - angleIMU;
@@ -111,14 +112,14 @@ void motorBLVPWM::update(float angleIMU)
   {
     if(angleIMU>180)angleIMU-=360;
     if(angleIMU<-180)angleIMU+=360;
-      Serial.print(robotRealPosition);
-      Serial.print(",");
-      Serial.print(angleIMU);
-      Serial.print(",");
-      Serial.print(targetSpeedRotation);
-      Serial.print(",");
-      Serial.print(targetSpeed);
-      Serial.print("\r\n");
+      // Debug.print(robotRealPosition);
+      // Debug.print(",");
+      // Debug.print(angleIMU);
+      // Debug.print(",");
+      // Debug.print(targetSpeedRotation);
+      // Debug.print(",");
+      // Debug.print(targetSpeed);
+      // Debug.print("\r\n");
     }
     isActive = (digitalRead(EMG_STOP));
   if (isActive ==0) {   //check status
@@ -132,7 +133,7 @@ void motorBLVPWM::update(float angleIMU)
     }
     // if(targetSpeedRotation>0.05)
     
-    // Serial.println("motor update");
+    // Debug.println("motor update");
     
     //
     // if(speedLeft>0)speedLeftFeedback = (float)speed_pulse_counter1/DT_CONTROL;
@@ -168,8 +169,8 @@ void motorBLVPWM::SetControlValue(float desAngle,float desPos)
      yaw_des=desAngle;
      pos_des = desPos;
     //  targetSpeedRotation = -rotationSpeed;// speed+rotationSpeed*BASE_LEN/2.0;
-      // Serial.print(angleIMU);
-      // Serial.print(",");
+      // Debug.print(angleIMU);
+      // Debug.print(",");
     
 }
 void motorBLVPWM::initMotorLeft()

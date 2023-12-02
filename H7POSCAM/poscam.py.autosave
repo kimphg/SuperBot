@@ -112,12 +112,14 @@ while(True):
 #        count=count+1
 #    Serial
     datalen = uart.any()
+    
     if(datalen):
         if(len(uartBuff)+datalen>1000):
             uartBuff=[]
             uart.read(datalen)
             continue
-        uartBuff.append(uart.read(datalen))
+        else :
+            uartBuff.append(uart.read(datalen))
         for i in range(len(uartBuff)-1):
             if(uartBuff[i]==0xAA):
                 if(uartBuff[i+1]==0x55):
@@ -139,6 +141,7 @@ while(True):
                     sensor.set_framesize(sensor.QQVGA)
                 else:
                     workMode=0
-    if(len(uartBuff)>1000):
+    if(len(uartBuff)>100):
         uartBuff=[]
+    print(len(uartBuff))
     print(clock.fps())
