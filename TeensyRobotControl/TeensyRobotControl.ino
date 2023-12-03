@@ -6,13 +6,20 @@
 #include <NativeEthernetUdp.h>
 #include "mti.h"
 #include "motorBLVPWM.h"
-typedef struct CamData
+typedef class CamData
 {
+  public:
+  CamData();
+  float getTagBearing()
+  {
+    
+  }
   float x,y;
   float angle;
   int tagid;
   int connectCount;
-} camh7data;
+} ;
+CamData camh7data;
 //========================================================================================================================//
 //                                                 USER-SPECIFIED DEFINES                                                 //
 //========================================================================================================================//
@@ -202,6 +209,7 @@ void gotoState(int state)
 {
     currState = state;
     stateStepID = 0;
+    motorDriver.resetPosition();
 }
 void loopState()
 {
@@ -211,22 +219,58 @@ void loopState()
     {
       if(camh7data.connectCount!=0)
       {
+        float tagBearing=0;
         if(camh7data.y>0)
-          yaw_des = atan(camh7data.x/camh7data.y)*57.2958;
+          tagBearing = atan(camh7data.x/camh7data.y)*57.2958;
         else if(camh7data.y<0)
-          yaw_des = atan(camh7data.x/camh7data.y)*57.2958+180;
-          else if(camh7data.x<0)yaw_des=-90;
-          else yaw_des=90;
-          motorDriver.SetControlValue(yaw_des,0);
-          stateStepID=1;
+          tagBearing = atan(camh7data.x/camh7data.y)*57.2958+180;
+        else if(camh7data.x<0)tagBearing=-90;
+        else tagBearing=90;
+        yaw_des = yaw_IMU+tagBearing;
+        motorDriver.SetControlValue(yaw_des,0);
+        stateStepID=1;
+        DEBUG_TELEMETRY.print("Step up:");
+        DEBUG_TELEMETRY.println(stateStepID);
         
+      }
+      else{
+        DEBUG_TELEMETRY.println("Tag not detected ");
       }
     }
     if(stateStepID==1)// rotate to tag drection stage
     {
       if(abs(yaw_des-yaw_IMU)<0.5)
+          if(motorDriver.getRotSpeed<0.05){
+            if(camh7data.connectCount!=0)
+      {
+        stateStepID=2;
+          }
+          
+    }
+    if(stateStepID==2)// move to tag position stage
+    {
+      if(abs(yaw_des-yaw_IMU)<0.5)
           if(motorDriver.getRotSpeed<0.05)
+          if(camh7data.connectCount!=0)
+        {
+          float tagBearing=0;
+          if(camh7data.y>0)
+            tagBearing = atan(camh7data.x/camh7data.y)*57.2958;
+          else if(camh7data.y<0)
+            tagBearing = atan(camh7data.x/camh7data.y)*57.2958+180;
+          else if(camh7data.x<0)tagBearing=-90;
+          else tagBearing=90;
+          if(tagBearing>180)tagBearing-=360.0;
+          if(abs(tagBearing<5))
+          motorDriver.SetControlValue(yaw_IMU,camh7data.y);
           stateStepID=2;
+          DEBUG_TELEMETRY.print("Step up");
+          DEBUG_TELEMETRY.println(stateStepID);
+          
+        }
+        else{
+          DEBUG_TELEMETRY.println("Tag not detected ");
+        }
     }
     
   }
@@ -298,7 +342,7 @@ void loop() {
   }
   
   prev_time = current_time;         //
- if(imu.noMotionCount>100)//200ms
+//  if(imu.noMotionCount>100)//200ms
 //  digitalWrite(13,HIGH);
 //  else  digitalWrite(13,LOW);
  
@@ -374,7 +418,8 @@ void loop() {
       loopCountActive=0;
     }
     else{
-      loopCountActive++;
+      loopCountActive++
+      loopState();
       // motorDriver.isActive=true;
       // int rotation=(channel_4_pwm-1500);
       // float curTime=millis()/1000.0;
@@ -384,15 +429,15 @@ void loop() {
       // motorDriver.SetControlValue(yaw_des,pos_des);
       // Serial.println(loopCountActive);
 
-      if(loopCountActive<50)      motorDriver.SetControlValue(0,0);
-      else if(loopCountActive<300)motorDriver.SetControlValue(0,2000);
-      else if(loopCountActive<400)motorDriver.SetControlValue(90,2000);
-      else if(loopCountActive<550)motorDriver.SetControlValue(90,3000);
-      else if(loopCountActive<650)motorDriver.SetControlValue(180,3000);
-      else if(loopCountActive<900)motorDriver.SetControlValue(180,5000);
-      else if(loopCountActive<1000)motorDriver.SetControlValue(270,5000);
-      else if(loopCountActive<1150)motorDriver.SetControlValue(270,6000);
-      else if(loopCountActive<1000000)motorDriver.SetControlValue(0,6000);
+      // if(loopCountActive<50)      motorDriver.SetControlValue(0,0);
+      // else if(loopCountActive<300)motorDriver.SetControlValue(0,2000);
+      // else if(loopCountActive<400)motorDriver.SetControlValue(90,2000);
+      // else if(loopCountActive<550)motorDriver.SetControlValue(90,3000);
+      // else if(loopCountActive<650)motorDriver.SetControlValue(180,3000);
+      // else if(loopCountActive<900)motorDriver.SetControlValue(180,5000);
+      // else if(loopCountActive<1000)motorDriver.SetControlValue(270,5000);
+      // else if(loopCountActive<1150)motorDriver.SetControlValue(270,6000);
+      // else if(loopCountActive<1000000)motorDriver.SetControlValue(0,6000);
       // else if(loopCountActive<250)motorDriver.SetControlValue(0,0);
       // else if(loopCountActive<220)motorDriver.SetControlValue(-180,0);
       // else if(loopCountActive<300)motorDriver.SetControlValue(90,0);
@@ -522,14 +567,13 @@ void updateCommandBus()
       {
         imu.resetYaw();
       }
-      else if(commandString.startsWith("act="))//active set command
+      else if(commandString.startsWith("stt="))//active set command
       {
         
         // float angle
         //   DEBUG_TELEMETRY.print(imu.gyroZBiasCompensation*100000);
-        motorActive = commandString.substring(4,dataLen-1).toFloat();
-        DEBUG_TELEMETRY.print("motorActive set:");
-        DEBUG_TELEMETRY.println(motorActive);
+        int newstat = commandString.substring(4,dataLen-1).toFloat();
+        gotoStat(newstat);
         //   DEBUG_TELEMETRY.println(yaw_IMU);
       }
       commandString = "";
