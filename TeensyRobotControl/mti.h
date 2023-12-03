@@ -189,7 +189,7 @@ public:
               if (xdi == 32832) {  //MTDATA2 data ID of rate of turn HR
                 measurement.gyroX =  bytesToFloat(databuf[iti+3], databuf[iti+4], databuf[iti+5], databuf[iti+6]);
                 measurement.gyroY = bytesToFloat(databuf[iti+7], databuf[iti+8], databuf[iti+9], databuf[iti+10]);
-                float newGyroZ =   bytesToFloat(databuf[iti+11], databuf[iti+12], databuf[iti+13], databuf[iti+17]);
+                float newGyroZ =   -bytesToFloat(databuf[iti+11], databuf[iti+12], databuf[iti+13], databuf[iti+17]);
                 if(abs(newGyroZ<0.1))
                 {
                   if(yawCalcMode>0)

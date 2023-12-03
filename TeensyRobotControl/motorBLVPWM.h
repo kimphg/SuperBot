@@ -38,7 +38,10 @@ class motorBLVPWM {
     void SetControlValue(float rotationSpeed,float desPos);
     void SetTargetPosition(float pos);
     void SetTargetAngle(float pos);
+    float getRotSpeed(){return targetSpeedRotation;}
 private:
+    float posX,posY;
+    float curSpeed,posYOld;
     float pos_des = 0.0;
     float i_limit_yaw = 3.0; 
     float i_limit_pos = 30.0; 
@@ -47,7 +50,7 @@ private:
     float error_pos, error_pos_prev, integral_pos,  derivative_pos, pos_PID = 0;
     float error_yaw, error_yaw_prev, integral_yaw,  derivative_yaw, yaw_PID = 0;
     float yaw_des;
-    float targetSpeed,    targetSpeedRotation ;
+    float targetSpeed,    targetSpeedRotation ;//targetSpeedRotation radian per second
     void initMotorLeft();
     void initMotorRight( );
     void setMotorLeft(float speed);

@@ -181,7 +181,7 @@ void readSensBus()
         if(sensBusBuff[1]=0x11){
           int angleTag = sensBusBuff[7]*256+sensBusBuff[8];
           camh7data.x = sensBusBuff[5]-127;
-          camh7data.y = sensBusBuff[6]-127;
+          camh7data.y = 127- sensBusBuff[6];
           camh7data.angle = angleTag/10.0;h7ConnectCount=600;
           DEBUG_TELEMETRY.print(sensBusBuff[5]);DEBUG_TELEMETRY.print(" ");
           DEBUG_TELEMETRY.print(sensBusBuff[6]);DEBUG_TELEMETRY.print(" ");
@@ -207,13 +207,26 @@ void loopState()
 {
   if(currState==4)//Tag searching sequence
   {
-    if(stateStepID==0)
+    if(stateStepID==0)// find tag drection stage
     {
       if(camh7data.connectCount!=0)
       {
-        yaw_des = atan(camh7data.x/camh7data.y);//todo: further correction
+        if(camh7data.y>0)
+          yaw_des = atan(camh7data.x/camh7data.y)*57.2958;
+        else if(camh7data.y<0)
+          yaw_des = atan(camh7data.x/camh7data.y)*57.2958+180;
+          else if(camh7data.x<0)yaw_des=-90;
+          else yaw_des=90;
           motorDriver.SetControlValue(yaw_des,0);
+          stateStepID=1;
+        
       }
+    }
+    if(stateStepID==1)// rotate to tag drection stage
+    {
+      if(abs(yaw_des-yaw_IMU)<0.5)
+          if(motorDriver.getRotSpeed<0.05)
+          stateStepID=2;
     }
     
   }

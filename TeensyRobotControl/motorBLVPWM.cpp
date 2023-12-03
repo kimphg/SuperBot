@@ -6,7 +6,7 @@
 #define ENC_A2 12
 #define ENC_B2 10
 #define Debug Serial
-int robotPosition=0;
+int encoderPos=0;
 float constrainVal(float input,float min, float max)
 {
   if(input<min)return min;
@@ -17,15 +17,15 @@ unsigned int speed_pulse_counter1,speed_pulse_counter2;
 void EncRight()
 {
   if(digitalRead(ENC_B1)>0)
-  robotPosition++;
-  else robotPosition--;
+  encoderPos++;
+  else encoderPos--;
   
 }
 void EncLeft()
 {
   if(digitalRead(ENC_B2)>0)
-  robotPosition--;
-  else robotPosition++;
+  encoderPos--;
+  else encoderPos++;
   
 }
 void readSpeed1()
@@ -40,7 +40,7 @@ void readSpeed2()
 }
 motorBLVPWM::motorBLVPWM()
 {
-    robotPosition=0;
+    encoderPos=0;
     i_limit_yaw = 3.0;
     i_limit_pos = 50;
     speed_pulse_counter1=0;
@@ -62,7 +62,8 @@ motorBLVPWM::motorBLVPWM()
     pinMode(ENC_B2,INPUT);
     attachInterrupt(digitalPinToInterrupt(ENC_A1), EncRight, RISING);
     attachInterrupt(digitalPinToInterrupt(ENC_A2), EncLeft, RISING);
-    robotPosition=0;
+    encoderPos=0;
+    posYOld=0;
     Kp_yaw = 0.4;          //Yaw P-gain
     Ki_yaw = 0.1;          //Yaw I-gain
     Kd_yaw = 0.01;         //Yaw D-gain (be careful when increasing too high, motors will begin to overheat!)
@@ -75,7 +76,8 @@ motorBLVPWM::motorBLVPWM()
 
 void motorBLVPWM::resetPosition()
 {
-  robotPosition=0;
+  encoderPos=0;
+  posYOld=0;
 }
 
 void motorBLVPWM::update(float angleIMU)
@@ -93,15 +95,17 @@ void motorBLVPWM::update(float angleIMU)
     integral_yaw +=  error_yaw * DT_CONTROL;
     integral_yaw = constrainVal(integral_yaw, -i_limit_yaw, i_limit_yaw); //saturate integrator to prevent unsafe buildup
     derivative_yaw = (error_yaw - error_yaw_prev) /DT_CONTROL;
-    yaw_PID = .3 * (Kp_yaw * error_yaw + Ki_yaw * integral_yaw + Kd_yaw * derivative_yaw); //scaled by .01 to bring within -1 to 1 range
+    yaw_PID = (Kp_yaw * error_yaw + Ki_yaw * integral_yaw + Kd_yaw * derivative_yaw); //scaled by .01 to bring within -1 to 1 range
     error_yaw_prev = error_yaw;
 
-    targetSpeedRotation = -yaw_PID;
+    targetSpeedRotation = 0.3*yaw_PID*(1.0-curSpeed);
     targetSpeedRotation = constrainVal(targetSpeedRotation,-1,1);
 
     
-    float robotRealPosition = robotPosition/3.1;
-    error_pos = pos_des - robotRealPosition;
+    posY = encoderPos/3.1;
+    curSpeed += 0.1*((posY-posYOld)/DT_CONTROL-curSpeed);
+    posYOld = posY;
+    error_pos = pos_des - posY;
     integral_pos +=  error_pos * DT_CONTROL;
     integral_pos = constrainVal(integral_pos, -i_limit_pos, i_limit_pos); //saturate integrator to prevent unsafe buildup
     derivative_pos = (error_pos - error_pos_prev) /DT_CONTROL;
@@ -188,7 +192,7 @@ void motorBLVPWM::initMotorLeft()
     digitalWrite(M1_MB_FREE,HIGH);//electromagnetic brake released
     digitalWrite(M1_M0,HIGH);//electromagnetic brake released
     analogWrite(M1_PWM,256);
-    attachInterrupt(digitalPinToInterrupt(M1_IN_SPEED), readSpeed1, RISING);
+    // attachInterrupt(digitalPinToInterrupt(M1_IN_SPEED), readSpeed1, RISING);
 }
 void motorBLVPWM::initMotorRight()
 {
@@ -205,7 +209,7 @@ void motorBLVPWM::initMotorRight()
     digitalWrite(M2_MB_FREE,HIGH);//electromagnetic brake released
     digitalWrite(M2_M0,HIGH);//electromagnetic brake released
     analogWrite(M2_PWM,256);
-    attachInterrupt(digitalPinToInterrupt(M2_IN_SPEED), readSpeed2, RISING);
+    // attachInterrupt(digitalPinToInterrupt(M2_IN_SPEED), readSpeed2, RISING);
 }
 void motorBLVPWM::setMotorRight(float speed)
 {
