@@ -6,10 +6,10 @@
 #include <NativeEthernetUdp.h>
 #include "mti.h"
 #include "motorBLVPWM.h"
-typedef class CamData
+class CamData
 {
   public:
-  CamData();
+  CamData(){}
   float getTagBearing()
   {
     
@@ -189,11 +189,12 @@ void readSensBus()
           int angleTag = sensBusBuff[7]*256+sensBusBuff[8];
           camh7data.x = sensBusBuff[5]-127;
           camh7data.y = 127- sensBusBuff[6];
-          camh7data.angle = angleTag/10.0;h7ConnectCount=600;
-          DEBUG_TELEMETRY.print(sensBusBuff[5]);DEBUG_TELEMETRY.print(" ");
-          DEBUG_TELEMETRY.print(sensBusBuff[6]);DEBUG_TELEMETRY.print(" ");
+          camh7data.angle = angleTag/10.0;
+          h7ConnectCount=1000;
+          // DEBUG_TELEMETRY.print(sensBusBuff[5]);DEBUG_TELEMETRY.print(" ");
+          // DEBUG_TELEMETRY.print(sensBusBuff[6]);DEBUG_TELEMETRY.print(" ");
           DEBUG_TELEMETRY.print(angleTag);      DEBUG_TELEMETRY.print(" ");
-          DEBUG_TELEMETRY.print(sensBusBuff[6]);DEBUG_TELEMETRY.print("\r\n");
+          // DEBUG_TELEMETRY.print(sensBusBuff[6]);DEBUG_TELEMETRY.print("\r\n");
         }
       }
       sensBusBuffi=0;
@@ -210,15 +211,20 @@ void gotoState(int state)
     currState = state;
     stateStepID = 0;
     motorDriver.resetPosition();
+    DEBUG_TELEMETRY.print("gotoState:");
+    DEBUG_TELEMETRY.println(state);
 }
 void loopState()
 {
+  // DEBUG_TELEMETRY.print("loopState:");
   if(currState==4)//Tag searching sequence
   {
     if(stateStepID==0)// find tag drection stage
     {
+      DEBUG_TELEMETRY.println(camh7data.connectCount);
       if(camh7data.connectCount!=0)
       {
+        
         float tagBearing=0;
         if(camh7data.y>0)
           tagBearing = atan(camh7data.x/camh7data.y)*57.2958;
@@ -240,7 +246,7 @@ void loopState()
     if(stateStepID==1)// rotate to tag drection stage
     {
       if(abs(yaw_des-yaw_IMU)<0.5)
-          if(motorDriver.getRotSpeed<0.05){
+          if(motorDriver.getRotSpeed()<0.05)
             if(camh7data.connectCount!=0)
       {
         stateStepID=2;
@@ -250,7 +256,7 @@ void loopState()
     if(stateStepID==2)// move to tag position stage
     {
       if(abs(yaw_des-yaw_IMU)<0.5)
-          if(motorDriver.getRotSpeed<0.05)
+          if(motorDriver.getRotSpeed()<0.05)
           if(camh7data.connectCount!=0)
         {
           float tagBearing=0;
@@ -416,9 +422,10 @@ void loop() {
       motorDriver.resetPosition();
       imu.resetYaw();
       loopCountActive=0;
+      Serial.println("inactive");
     }
     else{
-      loopCountActive++
+      loopCountActive++;
       loopState();
       // motorDriver.isActive=true;
       // int rotation=(channel_4_pwm-1500);
@@ -573,7 +580,7 @@ void updateCommandBus()
         // float angle
         //   DEBUG_TELEMETRY.print(imu.gyroZBiasCompensation*100000);
         int newstat = commandString.substring(4,dataLen-1).toFloat();
-        gotoStat(newstat);
+        gotoState(newstat);
         //   DEBUG_TELEMETRY.println(yaw_IMU);
       }
       commandString = "";
