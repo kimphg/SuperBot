@@ -7,11 +7,11 @@ import sensor, image, time, math
 from pyb import Pin, Timer
 sensor.reset()
 sensor.set_pixformat(sensor.GRAYSCALE)
-sensor.set_framesize(sensor.QVGA) # we run out of memory if the resolution is much bigger...
-sensor.skip_frames(time = 2000)
+sensor.set_framesize(sensor.QQVGA) # we run out of memory if the resolution is much bigger...
+sensor.skip_frames(time = 1000)
 sensor.set_auto_gain(False)  # must turn this off to prevent image washout...
 sensor.set_auto_whitebal(False)  # must turn this off to prevent image washout...
-sensor.set_auto_exposure(     False, exposure_us=25000 )
+sensor.set_auto_exposure(     False, exposure_us=2000 )
 sensor.set_auto_gain(False, gain_db=30)
 
 clock = time.clock()

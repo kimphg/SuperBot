@@ -188,12 +188,12 @@ void readSensBus()
         if(sensBusBuff[1]=0x11){
           int angleTag = sensBusBuff[7]*256+sensBusBuff[8];
           camh7data.x = sensBusBuff[5]-127;
-          camh7data.y = 127- sensBusBuff[6];
+          camh7data.y = 137- sensBusBuff[6];
           camh7data.angle = angleTag/10.0;
-          h7ConnectCount=1000;
+          h7ConnectCount=200;
           // DEBUG_TELEMETRY.print(sensBusBuff[5]);DEBUG_TELEMETRY.print(" ");
           // DEBUG_TELEMETRY.print(sensBusBuff[6]);DEBUG_TELEMETRY.print(" ");
-          DEBUG_TELEMETRY.print(angleTag);      DEBUG_TELEMETRY.print(" ");
+          // DEBUG_TELEMETRY.println(angleTag); DEBUG_TELEMETRY.print(" ");
           // DEBUG_TELEMETRY.print(sensBusBuff[6]);DEBUG_TELEMETRY.print("\r\n");
         }
       }
@@ -216,15 +216,19 @@ void gotoState(int state)
 }
 void loopState()
 {
-  // DEBUG_TELEMETRY.print("loopState:");
+  
   if(currState==4)//Tag searching sequence
   {
+    // DEBUG_TELEMETRY.print("currState==4:");
     if(stateStepID==0)// find tag drection stage
     {
-      DEBUG_TELEMETRY.println(camh7data.connectCount);
+      // DEBUG_TELEMETRY.println(camh7data.connectCount);
       if(camh7data.connectCount!=0)
       {
-        
+        float distance = sqrt(camh7data.y*camh7data.y+camh7data.x*camh7data.x);
+        DEBUG_TELEMETRY.print("distance:");
+        DEBUG_TELEMETRY.println(distance);
+        // if(distance<15)stateStepID=3;
         float tagBearing=0;
         if(camh7data.y>0)
           tagBearing = atan(camh7data.x/camh7data.y)*57.2958;
@@ -233,7 +237,9 @@ void loopState()
         else if(camh7data.x<0)tagBearing=-90;
         else tagBearing=90;
         yaw_des = yaw_IMU+tagBearing;
-        motorDriver.SetControlValue(yaw_des,0);
+        if(yaw_des>180.0)yaw_des-=360.0;
+        DEBUG_TELEMETRY.print(yaw_des);
+        // motorDriver.SetControlValue(yaw_des,0);
         stateStepID=1;
         DEBUG_TELEMETRY.print("Step up:");
         DEBUG_TELEMETRY.println(stateStepID);
@@ -245,11 +251,18 @@ void loopState()
     }
     if(stateStepID==1)// rotate to tag drection stage
     {
+      float distance = sqrt(camh7data.y*camh7data.y+camh7data.x*camh7data.x);
+        DEBUG_TELEMETRY.print("distance:");
+        DEBUG_TELEMETRY.println(distance);
+      DEBUG_TELEMETRY.print("Step 1:");
+        DEBUG_TELEMETRY.println(yaw_des-yaw_IMU);
       if(abs(yaw_des-yaw_IMU)<0.5)
           if(motorDriver.getRotSpeed()<0.05)
             if(camh7data.connectCount!=0)
       {
         stateStepID=2;
+        DEBUG_TELEMETRY.print("Step up:");
+        DEBUG_TELEMETRY.println(stateStepID);
           }
           
     }
@@ -259,17 +272,10 @@ void loopState()
           if(motorDriver.getRotSpeed()<0.05)
           if(camh7data.connectCount!=0)
         {
-          float tagBearing=0;
-          if(camh7data.y>0)
-            tagBearing = atan(camh7data.x/camh7data.y)*57.2958;
-          else if(camh7data.y<0)
-            tagBearing = atan(camh7data.x/camh7data.y)*57.2958+180;
-          else if(camh7data.x<0)tagBearing=-90;
-          else tagBearing=90;
-          if(tagBearing>180)tagBearing-=360.0;
-          if(abs(tagBearing<5))
-          motorDriver.SetControlValue(yaw_IMU,camh7data.y);
-          stateStepID=2;
+          
+          // motorDriver.SetControlValue(yaw_IMU,camh7data.y);
+          // stateStepID=2;
+          DEBUG_TELEMETRY.print(camh7data.y);
           DEBUG_TELEMETRY.print("Step up");
           DEBUG_TELEMETRY.println(stateStepID);
           
@@ -422,7 +428,7 @@ void loop() {
       motorDriver.resetPosition();
       imu.resetYaw();
       loopCountActive=0;
-      Serial.println("inactive");
+      // Serial.println("inactive");
     }
     else{
       loopCountActive++;
