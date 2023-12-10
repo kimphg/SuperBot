@@ -31,6 +31,10 @@ private slots:
     void on_pushButton_2_clicked();
 
 private:
+    float rrol=0;
+    float rpit=0;
+    float roll=0;float pitch = 0;
+    QPixmap panoramaView;
     bool imgReady=false;
     float roll_min,roll_max;
     float pitch_min,pitch_max;

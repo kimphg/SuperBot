@@ -2,6 +2,7 @@
 #include "ui_mainwindow.h"
 
 #include <QFileDialog>
+#include <QPainter>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -16,7 +17,7 @@ MainWindow::MainWindow(QWidget *parent)
     if(!isOK)QApplication::exit();
     connect(udpSocket,SIGNAL(readyRead()),this,SLOT(udpDataReceive()));
     connect(videoSocket,SIGNAL(readyRead()),this,SLOT(videoReceive()));
-
+    panoramaView  =QPixmap(900,900);
     header.append(0xff);
     header.append(0xff);
     header.append(0xff);
@@ -49,10 +50,16 @@ void MainWindow::videoReceive()
 //            printf("tcpSocket:%s\n",input.toHex().data());_flushall();
             QPixmap pixmap;
             pixmap.loadFromData(jpegData);
+
             if(!pixmap.isNull())
             {
-
-                ui->label_img->setPixmap(pixmap);
+                QPainter p(&panoramaView);
+                QRect outputRect = pixmap.rect();
+                int dx = (roll)*8.9+450-160;
+                int dy = (-pitch)*8.5+900-120;
+                outputRect.adjust(dx,dy,dx,dy);
+                p.drawPixmap(outputRect,pixmap,pixmap.rect());
+                ui->label_img->setPixmap(panoramaView);
                 this->repaint();
                 imgReady=true;
             }
@@ -75,10 +82,10 @@ void MainWindow::udpDataReceive()
     QByteArrayList datalist = datagram.split(',');
     if(datalist.size()<4)return;
 
-    float roll = -datalist.at(1).toFloat();
+    roll = -datalist.at(1).toFloat();
 
 
-    float pitch = datalist.at(2).toFloat();
+    pitch = datalist.at(2).toFloat();
     float yaw = datalist.at(3).toFloat();
 
 
@@ -91,28 +98,28 @@ void MainWindow::udpDataReceive()
     if(pitch<pitch_min)
     {
         pitch_min=pitch;
-        if(imgReady)ui->label_img_bot->setPixmap(*(ui->label_img->pixmap()));
+//        if(imgReady)ui->label_img_bot->setPixmap(*(ui->label_img->pixmap()));
     }
 
     if(pitch>pitch_max)
     {
         pitch_max = pitch;
-        if(imgReady)ui->label_img_top->setPixmap(*(ui->label_img->pixmap()));
+//        if(imgReady)ui->label_img_top->setPixmap(*(ui->label_img->pixmap()));
     }
     if(roll<roll_min)
     {
         roll_min=roll;
-        if(imgReady)ui->label_img_left->setPixmap(*(ui->label_img->pixmap()));
+//        if(imgReady)ui->label_img_left->setPixmap(*(ui->label_img->pixmap()));
     }
     if(roll>roll_max)
     {
         roll_max = roll;
-        if(imgReady)ui->label_img_right->setPixmap(*(ui->label_img->pixmap()));
+//        if(imgReady)ui->label_img_right->setPixmap(*(ui->label_img->pixmap()));
     }
 //    float pitch = 180 * atan2(accelX, sqrt(accelY*accelY + accelZ*accelZ))/PI+90;
 //    float roll = 180 * atan2(accelY, sqrt(accelX*accelX + accelZ*accelZ))/PI;
-    float rrol=pitch+135;
-    float rpit = -roll;
+    rrol=pitch+90;
+    rpit = -roll;
     float ryaw =180;
 //        float rrol=ui->horizontalSlider->value();
 //        float rpit = ui->horizontalSlider_2->value();
