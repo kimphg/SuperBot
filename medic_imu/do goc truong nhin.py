@@ -15,6 +15,7 @@ from machine import SPI
 import math
 SSID = "AndroidAPs8"  # Network SSID
 KEY = "12344321"  # Network key
+CONTROLLER_IP = "192.168.248.184"
 HOST = ""  # Use first available interface
 PORT = 8080  # Arbitrary non-privileged port
 lsmimu = LSM6DSOX(SPI(5), cs=Pin("PF6", Pin.OUT_PP, Pin.PULL_UP))
@@ -26,10 +27,10 @@ ledpin = Pin("PF4", Pin.OUT_PP, Pin.PULL_UP)
 # Init wlan module and connect to network
 wlan = WLAN(network.STA_IF)
 wlan.active(True)
-wlan.ifconfig(("192.168.75.18", "255.255.255.0", "192.168.75.1", "192.168.75.1"))
+#wlan.ifconfig(("192.168.1.18", "255.255.255.0", "192.168.1.1", "192.168.1.1"))
 wlan.connect(SSID, KEY)
 roll=0
-pitch=0
+pitch=90
 yaw=0
 imu_clock = pyb.millis()
 time.sleep_ms(5000)
@@ -58,14 +59,14 @@ q3 = 0.0
 
 #Filter parameters - Defaults tuned for 2kHz loop rate; Do not touch unless you know what you are doing:
 B_madgwick = 0.02 #Madgwick filter parameter
-B_accel = 0.5     #Accelerometer LP filter paramter, (MPU6050 default: 0.14. MPU9250 default: 0.2)
+B_accel = 0.4     #Accelerometer LP filter paramter, (MPU6050 default: 0.14. MPU9250 default: 0.2)
 B_gyro = 0.1       #Gyro LP filter paramter, (MPU6050 default: 0.1. MPU9250 default: 0.17)
 #float B_mag = 1.0;        #Magnetometer LP filter parameter
 
 # Set server socket to blocking
 #s.setblocking(True)
-addr = socket.getaddrinfo("192.168.75.38", 31000)[0][4]
-addrvideo = socket.getaddrinfo("192.168.75.38", 31001)[0][4]
+addr = socket.getaddrinfo(CONTROLLER_IP, 31000)[0][4]
+addrvideo = socket.getaddrinfo(CONTROLLER_IP, 31001)[0][4]
 def invSqrt(x) :
 
   return 1.0/math.sqrt(x)
