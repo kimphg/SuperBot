@@ -2,51 +2,41 @@
 #include "common.h"
 
 #include <SPI.h>
-#include <NativeEthernet.h>         // for Teensy 4.1
-#include <NativeEthernetUdp.h>
+
 #include "mti.h"
 #include "motorBLVPWM.h"
-class CamData
-{
-  public:
-  CamData(){}
-  float getTagBearing()
-  {
-    
-  }
-  float x,y;
-  float angle;
-  int tagid;
-  int connectCount;
-} ;
-CamData camh7data;
+
 //========================================================================================================================//
 //                                                 USER-SPECIFIED DEFINES                                                 //
 //========================================================================================================================//
 IntervalTimer timer_data_input;
 IntervalTimer timer_control_loop;
 motorBLVPWM motorDriver;
+#ifdef TEENSY41
 //networking configurations
-byte mac[] = { 0x04, 0xE9, 0xE5, 0x0B, 0xFC, 0xD1 };    // com 6      Teensy
-IPAddress myIP(192,  168, 0, 16);                        // BCP21 = (160,  48, 199, 16);                    
-IPAddress destinationIP(192,  168, 0, 4);    
-unsigned int destinationPort = 31000;                         // Inova receiver Address
-unsigned int myPort          = 32501;                         // BCP21 orig. Port
+// #include <NativeEthernet.h>         // for Teensy 4.1
+// #include <NativeEthernetUdp.h>
+// byte mac[] = { 0x04, 0xE9, 0xE5, 0x0B, 0xFC, 0xD1 };    // com 6      Teensy
+// IPAddress myIP(192,  168, 0, 16);                        // BCP21 = (160,  48, 199, 16);                    
+// IPAddress destinationIP(192,  168, 0, 4);    
+// unsigned int destinationPort = 31000;                         // Inova receiver Address
+// unsigned int myPort          = 32501;                         // BCP21 orig. Port
 
-EthernetUDP Udp;  
-void SendToPC(uint8_t* data, int len)
-{
-  Udp.beginPacket(destinationIP, destinationPort);
-  Udp.write(data, len);
-  Udp.endPacket();
-}
-void SendToPC(uint8_t* data)
-{
-  int len = strlen(data);
-  Udp.beginPacket(destinationIP, destinationPort);
-  Udp.write(data, len);
-  Udp.endPacket();
-}
+// EthernetUDP Udp;  
+// void SendToPC(uint8_t* data, int len)
+// {
+//   Udp.beginPacket(destinationIP, destinationPort);
+//   Udp.write(data, len);
+//   Udp.endPacket();
+// }
+// void SendToPC(uint8_t* data)
+// {
+//   int len = strlen(data);
+//   Udp.beginPacket(destinationIP, destinationPort);
+//   Udp.write(data, len);
+//   Udp.endPacket();
+// }
+#endif
 //========================================================================================================================//
 //                                               USER-SPECIFIED VARIABLES                                                 //
 //========================================================================================================================//

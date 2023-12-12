@@ -56,4 +56,5 @@ private:
     void setMotorLeft(float speed);
     void setMotorRight(float speed);
 };
+motorBLVPWM mMotor;
 #endif
