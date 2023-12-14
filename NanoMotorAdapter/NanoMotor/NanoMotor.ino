@@ -64,12 +64,12 @@ void setSpeed(int speed)
   if(isMin)if(output_speed<0)output_speed=0;
   if(isMax)if(output_speed>0)output_speed=0;
   if(speed>0){
-    digitalWrite(FWD,HIGH);
+    digitalWrite(FWD,LOW);
     analogWrite(SPEED, 255-output_speed);
   }
   else
   {
-    digitalWrite(FWD,LOW);
+    digitalWrite(FWD,HIGH);
     analogWrite(SPEED, 255+output_speed);
   }
 }
@@ -86,12 +86,28 @@ void setup() {
   pinMode(SPEED,OUTPUT);      digitalWrite(SPEED,HIGH);
   pinMode(MB_FREE,OUTPUT);    digitalWrite(MB_FREE,HIGH);
   setSpeed(0);
-  Serial.begin(500000);
+  Serial.begin(115200);
 }
 
 void loop() {
   updateCommandBus();
-  isMin = digitalRead(MIN_LIM);
-  isMax = digitalRead(MAX_LIM);
-DEBUG_TELEMETRY.println("Motor Ready");
+  isMin = digitalRead(MIN_LIM)==0;
+  isMax = digitalRead(MAX_LIM)==0;
+  if(isMin&&(output_speed<0))
+  {
+    setSpeed(0);
+    delay(1000);
+    setSpeed(200);
+  }
+  if(isMax&&(output_speed>0)){
+    setSpeed(0);
+    delay(1000);
+    setSpeed(-200);
+  }
+  DEBUG_TELEMETRY.print(isMin);
+  DEBUG_TELEMETRY.print(" ");
+  DEBUG_TELEMETRY.print(isMax);
+  DEBUG_TELEMETRY.print(" ");
+DEBUG_TELEMETRY.println(output_speed);
+DEBUG_TELEMETRY.print(" ");
 }
