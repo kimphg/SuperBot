@@ -1,0 +1,14 @@
+{
+	"backtraceGraph" : 
+	{
+		"commands" : [],
+		"files" : [],
+		"nodes" : []
+	},
+	"installers" : [],
+	"paths" : 
+	{
+		"build" : "zephyr/subsys/mgmt",
+		"source" : "C:/Users/Phuong/.platformio/packages/framework-zephyr/subsys/mgmt"
+	}
+}

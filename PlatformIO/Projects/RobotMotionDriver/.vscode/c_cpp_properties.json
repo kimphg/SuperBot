@@ -1,0 +1,62 @@
+//
+// !!! WARNING !!! AUTO-GENERATED FILE!
+// PLEASE DO NOT MODIFY IT AND USE "platformio.ini":
+// https://docs.platformio.org/page/projectconf/section_env_build.html#build-flags
+//
+{
+    "configurations": [
+        {
+            "name": "PlatformIO",
+            "includePath": [
+                "c:/Users/Phuong/Documents/PlatformIO/Projects/RobotMotionDriver/include",
+                "c:/Users/Phuong/Documents/PlatformIO/Projects/RobotMotionDriver/src",
+                "C:/Users/Phuong/.platformio/packages/framework-zephyr/include",
+                "C:/Users/Phuong/Documents/PlatformIO/Projects/RobotMotionDriver/.pio/build/teensy40/zephyr/include/generated",
+                "C:/Users/Phuong/.platformio/packages/framework-zephyr/soc/arm/nxp_imx/rt",
+                ""
+            ],
+            "browse": {
+                "limitSymbolsToIncludedHeaders": true,
+                "path": [
+                    "c:/Users/Phuong/Documents/PlatformIO/Projects/RobotMotionDriver/include",
+                    "c:/Users/Phuong/Documents/PlatformIO/Projects/RobotMotionDriver/src",
+                    "C:/Users/Phuong/.platformio/packages/framework-zephyr/include",
+                    "C:/Users/Phuong/Documents/PlatformIO/Projects/RobotMotionDriver/.pio/build/teensy40/zephyr/include/generated",
+                    "C:/Users/Phuong/.platformio/packages/framework-zephyr/soc/arm/nxp_imx/rt",
+                    ""
+                ]
+            },
+            "defines": [
+                "PLATFORMIO=60111",
+                "__IMXRT1062__",
+                "ARDUINO_TEENSY40",
+                "BUILD_VERSION=zephyr-v20701",
+                "KERNEL",
+                "_FORTIFY_SOURCE=2",
+                "__ZEPHYR__=1",
+                ""
+            ],
+            "cStandard": "c99",
+            "forcedInclude": [
+                "C:/Users/Phuong/Documents/PlatformIO/Projects/RobotMotionDriver/.pio/build/teensy40/zephyr/include/generated/autoconf.h",
+                "C:/Users/Phuong/.platformio/packages/framework-zephyr/include/toolchain/zephyr_stdint.h",
+                ""
+            ],
+            "compilerPath": "C:/Users/Phuong/.platformio/packages/toolchain-gccarmnoneeabi/bin/arm-none-eabi-gcc.exe",
+            "compilerArgs": [
+                "-mcpu=cortex-m7",
+                "-mthumb",
+                "-mabi=aapcs",
+                "-mfp16-format=ieee",
+                "-isystem",
+                "C:/Users/Phuong/.platformio/packages/framework-zephyr/lib/libc/minimal/include",
+                "-isystem",
+                "c:/users/phuong/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/8.2.1/include",
+                "-isystem",
+                "c:/users/phuong/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/8.2.1/include-fixed",
+                ""
+            ]
+        }
+    ],
+    "version": 4
+}

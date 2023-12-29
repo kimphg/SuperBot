@@ -1,0 +1,14 @@
+{
+	"backtraceGraph" : 
+	{
+		"commands" : [],
+		"files" : [],
+		"nodes" : []
+	},
+	"installers" : [],
+	"paths" : 
+	{
+		"build" : "zephyr/arch/arch/arm/core/aarch32/mpu",
+		"source" : "C:/Users/Phuong/.platformio/packages/framework-zephyr/arch/arm/core/aarch32/mpu"
+	}
+}

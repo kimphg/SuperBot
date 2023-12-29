@@ -1,0 +1,51 @@
+{
+	"cmake" : 
+	{
+		"generator" : 
+		{
+			"multiConfig" : false,
+			"name" : "Ninja"
+		},
+		"paths" : 
+		{
+			"cmake" : "C:/Users/Phuong/.platformio/packages/tool-cmake/bin/cmake.exe",
+			"cpack" : "C:/Users/Phuong/.platformio/packages/tool-cmake/bin/cpack.exe",
+			"ctest" : "C:/Users/Phuong/.platformio/packages/tool-cmake/bin/ctest.exe",
+			"root" : "C:/Users/Phuong/.platformio/packages/tool-cmake/share/cmake-3.21"
+		},
+		"version" : 
+		{
+			"isDirty" : false,
+			"major" : 3,
+			"minor" : 21,
+			"patch" : 3,
+			"string" : "3.21.3",
+			"suffix" : ""
+		}
+	},
+	"objects" : 
+	[
+		{
+			"jsonFile" : "codemodel-v2-6ac7c049db2949dec933.json",
+			"kind" : "codemodel",
+			"version" : 
+			{
+				"major" : 2,
+				"minor" : 3
+			}
+		}
+	],
+	"reply" : 
+	{
+		"codemodel-v2" : 
+		{
+			"jsonFile" : "codemodel-v2-6ac7c049db2949dec933.json",
+			"kind" : "codemodel",
+			"version" : 
+			{
+				"major" : 2,
+				"minor" : 3
+			}
+		}
+	}
+}

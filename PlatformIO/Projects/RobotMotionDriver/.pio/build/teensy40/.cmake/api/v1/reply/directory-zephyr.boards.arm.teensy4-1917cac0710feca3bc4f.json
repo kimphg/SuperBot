@@ -1,0 +1,14 @@
+{
+	"backtraceGraph" : 
+	{
+		"commands" : [],
+		"files" : [],
+		"nodes" : []
+	},
+	"installers" : [],
+	"paths" : 
+	{
+		"build" : "zephyr/boards/arm/teensy4",
+		"source" : "C:/Users/Phuong/.platformio/packages/framework-zephyr/boards/arm/teensy4"
+	}
+}

@@ -1,0 +1,14 @@
+{
+	"backtraceGraph" : 
+	{
+		"commands" : [],
+		"files" : [],
+		"nodes" : []
+	},
+	"installers" : [],
+	"paths" : 
+	{
+		"build" : "zephyr/lib/posix",
+		"source" : "C:/Users/Phuong/.platformio/packages/framework-zephyr/lib/posix"
+	}
+}

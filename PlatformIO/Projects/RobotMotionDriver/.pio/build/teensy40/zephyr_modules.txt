@@ -1,0 +1,1 @@
+"_bare_module":"C:/Users/Phuong/.platformio/packages/framework-zephyr/_pio/_bare_module":"C:/Users/Phuong/.platformio/packages/framework-zephyr/_pio/_bare_module"

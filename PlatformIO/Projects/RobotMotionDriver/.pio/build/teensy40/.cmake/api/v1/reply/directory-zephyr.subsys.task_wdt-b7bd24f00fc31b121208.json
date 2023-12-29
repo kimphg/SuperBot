@@ -1,0 +1,14 @@
+{
+	"backtraceGraph" : 
+	{
+		"commands" : [],
+		"files" : [],
+		"nodes" : []
+	},
+	"installers" : [],
+	"paths" : 
+	{
+		"build" : "zephyr/subsys/task_wdt",
+		"source" : "C:/Users/Phuong/.platformio/packages/framework-zephyr/subsys/task_wdt"
+	}
+}
