@@ -242,7 +242,7 @@ void setup() {
   radioSetup();
   timer_data_input.begin(inputDataUpdate, 300);  //
   timer_control_loop.begin(controlUpdate, int(DT_CONTROL * 1000000));
-  Serial.println("IMU timer started");
+  DPRINTF("IMU timer started");
   //Set radio channels to default (safe) values before entering main loop
   // channel_1_pwm = channel_1_fs;
   // channel_2_pwm = channel_2_fs;
@@ -252,7 +252,7 @@ void setup() {
   // channel_6_pwm = channel_6_fs;
   // indicateErrorLed(0);
   prev_time = 0;
-  Serial.println("Setup done, enter main loop");
+  
 }
 
 int debugID = 0;
