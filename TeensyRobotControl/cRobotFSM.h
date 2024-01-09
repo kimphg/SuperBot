@@ -1,28 +1,21 @@
-class CamData
+#include "senbusdriver.h"
+#include <Arduino.h>
+#include "mti.h"
+#include "common.h"
+class RobotDriver
 {
   public:
-  CamData(){}
-  float getTagBearing()
-  {
-    
-  }
-  float x,y;
-  float angle;
-  int tagid;
-  int connectCount;
-} ;
-CamData camh7data;
-class Robot
-{
-  public:
-  CamData(){}
+  RobotDriver(Stream &sportIMU,Stream &sportSenBus);
+  void processCommand(String command);
+  void gotoStandby();
+  void update();
+  private:
+  IMU_driver imu;
+  Stream *portIMU;
+  Stream *portSenBus;
   int botState;
-  void gotoStandby()
-  {
-
-  }
+  SenBusDriver sbus;
   float botx,posy;
   float botangle;
   int CurTagid;
 } ;
-Robot mRobot;

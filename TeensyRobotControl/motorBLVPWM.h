@@ -27,6 +27,7 @@
 class motorBLVPWM {
  public:
 
+    /// 
     motorBLVPWM();
     void resetPosition();
     void update(float angleIMU);
