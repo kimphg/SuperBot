@@ -11,13 +11,13 @@ void RobotDriver::processCommand(String command)
     DEBUG_TELEMETRY.print(des);
   }
 
-
 }
 
-RobotDriver::RobotDriver(Stream &sportIMU, Stream &sportSenBus)
+RobotDriver::RobotDriver(Stream &sportIMU, Stream &sportSenBus, Stream &sportMotor)
 {
   portIMU=&sportIMU;
   portSenBus=&sportSenBus;
+  portmotor = &sportMotor;
   imu.IMU_init(sportIMU);
   Serial.println("start");
   if (imu.getIsConnected()) {
@@ -31,8 +31,12 @@ RobotDriver::RobotDriver(Stream &sportIMU, Stream &sportSenBus)
 }
 void RobotDriver::gotoStandby()
 {
-}
 
+}
+void RobotDriver::executeMotion()
+{
+  
+}
 void RobotDriver::update()
 {
   // readSensBus

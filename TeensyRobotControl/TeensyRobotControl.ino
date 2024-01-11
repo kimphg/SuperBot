@@ -832,7 +832,7 @@ void printLoopRate() {
 static void inputDataUpdate() {todo:reset error
 
   updateCommandBus();  //read Serial Commands
-  // robot.
+  robot.update();
 }
 static void controlUpdate() {
   // motorDriver.update(yaw_IMU);
