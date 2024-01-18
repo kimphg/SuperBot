@@ -7,7 +7,9 @@
 #define DEBUG_TELEMETRY Serial
 #define DT_CONTROL 0.02 //50hz control loop
 #define PI2 6.2831853
-#define PI 3.141592653589793
+#ifndef PI
+  #define PI 3.1415926535897932384626433832795
+#endif
 #define DEBUG
 #ifdef DEBUG
 #define DPRINT(...)    Serial.print(__VA_ARGS__)
@@ -24,7 +26,7 @@
 #define DBEGIN(...)     //blank line
 #endif
 #include <Arduino.h>
-
+#include <vector>
 
 #define PPM_Pin 10
 //This file contains all necessary functions and code used for radio communication to avoid cluttering the main code
@@ -34,5 +36,5 @@
 void setupBlink(int numBlinks, int upTime, int downTime) ;
 void indicateErrorLed(int errorCode) ;
 void radioSetup() ;
-
+std::vector<String> splitString(String input);
 #endif  // COMMON_H

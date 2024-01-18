@@ -111,12 +111,6 @@ bool blinkAlternate;
 unsigned int channel_1_pwm, channel_2_pwm, channel_3_pwm, channel_4_pwm, channel_5_pwm, channel_6_pwm;
 unsigned int channel_1_pwm_prev, channel_2_pwm_prev, channel_3_pwm_prev, channel_4_pwm_prev;
 
-#if defined USE_SBUS_RX
-SBUS sbus(Serial5);
-uint16_t sbusChannels[16];
-bool sbusFailSafe;
-bool sbusLostFrame;
-#endif
 
 //IMU:
 float AccX, AccY, AccZ;
@@ -151,7 +145,7 @@ float s1_command_scaled, s2_command_scaled, s3_command_scaled, s4_command_scaled
 int s1_command_PWM, s2_command_PWM, s3_command_PWM, s4_command_PWM, s5_command_PWM, s6_command_PWM, s7_command_PWM;
 
 
-RobotDriver robot(RS485_IMU,RS485_SENS);
+
 //========================================================================================================================//
 //                                                      VOID SETUP                                                        //
 //========================================================================================================================//
@@ -231,15 +225,16 @@ void loopState() {
     // }
   }
 }
+RobotDriver *robot;
 void setup() {
+  
   Serial.begin(115200);          //usb serial
   DEBUG_TELEMETRY.begin(57600);  //telemetry serial
-  RS485_IMU.begin(921600);//IMU
-  RS485_SENS.begin(1000000);//sens bus
+  Serial.print("Setup started");
   delay(200);
-
+  robot= new RobotDriver();
   //Initialize radio communication
-  radioSetup();
+  // radioSetup();
   timer_data_input.begin(inputDataUpdate, 300);  //
   timer_control_loop.begin(controlUpdate, int(DT_CONTROL * 1000000));
   DPRINTF("IMU timer started");
@@ -254,6 +249,8 @@ void setup() {
   prev_time = 0;
   
 }
+
+
 
 int debugID = 0;
 #define COMMAND_LEN_MAX 200
@@ -271,8 +268,8 @@ void loop() {
   dt = (current_time - prev_time);    //
   if (dt < loopRatePeriodUS) return;  //
   if (dt > loopRatePeriodUS + 10) {
-    Serial.print("loop too slow error:");
-    Serial.println(dt);
+    DPRINTF("loop too slow error:");
+    DPRINTLN(dt);
   }
 
   prev_time = current_time;  //
@@ -280,62 +277,11 @@ void loop() {
                              //  digitalWrite(13,HIGH);
                              //  else  digitalWrite(13,LOW);
 
-  // loopBlink(); //indicate we are in main loop with short blink every 1.5 seconds
-  if (current_time - print_counter > 100000) {
-    print_counter = micros();
-    debugID++;
-    if (debugID > 10) debugID = 0;
-    if (debugID == 1) {
+  loopBlink(); //indicate we are in main loop with short blink every 1.5 seconds
 
-      // sprintf(udpBuff,"Radio data:\t%d\t%d\t%d\t%d\t%d",channel_1_pwm,channel_2_pwm,channel_3_pwm,channel_4_pwm,channel_5_pwm);
-      // Serial.printf(udpBuff);
-      // SendToPC(udpBuff);
-    }
-
-    //  DEBUG_TELEMETRY.print(dt);
-    //  DEBUG_TELEMETRY.print(" \n");
-    //Print data at 100hz (uncomment one at a time for troubleshooting) - SELECT ONE:
-    // printRadioData();     //radio pwm values (expected: 1000 to 2000)
-    //    printDesiredState();  //prints desired vehicle state commanded in either degrees or deg/sec (expected: +/- maxAXIS for roll, pitch, yaw; 0 to 1 for throttle)
-    //  printGyroData();      //prints filtered gyro data direct from IMU (expected: ~ -250 to 250, 0 at rest)
-    //      printAccelData();     //prints filtered accelerometer data direct from IMU (expected: ~ -2 to 2; x,y 0 when level, z 1 when level)
-    //    printMagData();       //prints filtered magnetometer data direct from IMU (expected: ~ -300 to 300)
-    //  printRollPitchYaw();  //prints roll, pitch, and yaw angles in degrees from Madgwick filter (expected: degrees, 0 when level)
-    //      printPIDoutput();     //prints computed stabilized PID variables from controller and desired setpoint (expected: ~ -1 to 1)
-    // printMotorCommands(); //prints the values being written to the motors (expected: 120 to 250)
-    //    printBatVoltage();
-    //    printServoCommands(); //prints the values being written to the servos (expected: 0 to 180)
-    //printLoopRate();      //prints the time between loops in microseconds (expected: microseconds between loop iterations)
-  }
-
-  //Get vehicle state
-  // getIMUdata(); //pulls raw gyro, accelerometer, and magnetometer data from IMU and LP filters to remove noise
-  //Madgwick(GyroX, -GyroY, -GyroZ, -AccX, AccY, AccZ, MagY, -MagX, MagZ, dt); //updates roll_IMU, pitch_IMU, and yaw_IMU (degrees)
-  updateSensors();
-  // updateCommandBus();
-  // DEBUG_TELEMETRY.print(imu.gyroZBiasCompensation*100000);
-  // DEBUG_TELEMETRY.print(" ");
-  // DEBUG_TELEMETRY.println(yaw_IMU);
-  // Madgwick6DOF(GyroX, GyroY, GyroZ, AccX, AccY, AccZ,  dt);
-  //Compute desired state
-  // Serial.println(dt);
   if (1) {
     getCommandsRadio();
-    //Yaw, stablize on rate from GyroZ
-    // error_yaw = yaw_des - yaw_IMU;
-    // if(error_yaw>180)error_yaw-=360;
-    // if(error_yaw<-180)error_yaw+=360;
-    // integral_yaw = integral_yaw_prev + error_yaw * dt/1000000.0;
-    // if (channel_1_pwm < 1060) {   //don't let integrator build if throttle is too low
-    //   integral_yaw = 0;
-    // }
-    // integral_yaw = constrain(integral_yaw, -i_limit, i_limit); //saturate integrator to prevent unsafe buildup
-    // derivative_yaw = (error_yaw - error_yaw_prev) / dt*10000000.0;
-    // yaw_PID = .3 * (Kp_yaw * error_yaw + Ki_yaw * integral_yaw + Kd_yaw * derivative_yaw); //scaled by .01 to bring within -1 to 1 range
-    // error_yaw_prev = error_yaw;
-    // Serial.println((channel_4_pwm-1500)/5000.0);
-    //send command to motors
-    // Serial.println(yaw_IMU);
+
 
     if (channel_5_pwm < 1500) {
       // imu.resetYaw();
@@ -464,7 +410,7 @@ String commandString;
 void updateCommandBus() {
   while (DEBUG_TELEMETRY.available()) {
     uint8_t bytein = DEBUG_TELEMETRY.read();
-    DEBUG_TELEMETRY.print(bytein);
+    // DEBUG_TELEMETRY.print(bytein);
     if (commandString.length() < COMMAND_LEN_MAX) commandString += (char)bytein;
     if (bytein == '\n')  //end of command
     {
@@ -503,7 +449,7 @@ void updateCommandBus() {
       }
       else if(commandString.startsWith("$COM"))
       {
-        // robot.processCommand(commandString);
+        robot->processCommand(commandString);
       }
       commandString = "";
     }
@@ -519,28 +465,6 @@ void getCommandsRadio() {
      is running a bunch of interrupts to continuously update the radio readings. If using an SBUS receiver, the alues are pulled from the SBUS library directly.
      The raw radio commands are filtered with a first order low-pass filter to eliminate any really high frequency noise.
   */
-
-#if defined USE_PPM_RX || defined USE_PWM_RX
-  channel_1_pwm = getRadioPWM(1);
-  channel_2_pwm = getRadioPWM(2);
-  channel_3_pwm = getRadioPWM(3);
-  channel_4_pwm = getRadioPWM(4);
-  channel_5_pwm = getRadioPWM(5);
-  channel_6_pwm = getRadioPWM(6);
-
-#elif defined USE_SBUS_RX
-  if (sbus.read(&sbusChannels[0], &sbusFailSafe, &sbusLostFrame)) {
-    //sBus scaling below is for Taranis-Plus and X4R-SB
-    float scale = 0.615;
-    float bias = 895.0;
-    channel_1_pwm = sbusChannels[0] * scale + bias;
-    channel_2_pwm = sbusChannels[1] * scale + bias;
-    channel_3_pwm = sbusChannels[2] * scale + bias;
-    channel_4_pwm = sbusChannels[3] * scale + bias;
-    channel_5_pwm = sbusChannels[4] * scale + bias;
-    channel_6_pwm = sbusChannels[5] * scale + bias;
-  }
-#endif
 
   //Low-pass the critical commands and update previous values
   float b = 0.2;  //lower=slower, higher=noiser
@@ -703,7 +627,7 @@ void loopBlink() {
   */
   if (current_time - blink_counter > blink_delay) {
     blink_counter = micros();
-    // digitalWrite(13, blinkAlternate); //pin 13 is built in LED
+    digitalWrite(13, blinkAlternate); //pin 13 is built in LED
 
     if (blinkAlternate == 1) {
       blinkAlternate = 0;
@@ -714,8 +638,6 @@ void loopBlink() {
     }
   }
 }
-
-
 
 void printRadioData() {
 
@@ -829,11 +751,12 @@ void printLoopRate() {
   Serial.print(F("dt = "));
   Serial.println(dt * 1000000.0);
 }
-static void inputDataUpdate() {todo:reset error
+static void inputDataUpdate() {
 
   updateCommandBus();  //read Serial Commands
-  robot.update();
+  robot->update();
 }
 static void controlUpdate() {
   // motorDriver.update(yaw_IMU);
+  robot->executeMotion();
 }

@@ -1,5 +1,5 @@
 #include "mti.h"
-unsigned long channel_1_raw, channel_2_raw, channel_3_raw, channel_4_raw, channel_5_raw, channel_6_raw;
+
 //INTERRUPT SERVICE ROUTINES (for reading PWM and PPM)
 
 float bytesToFloat(unsigned char  b0, unsigned char  b1, unsigned char b2, unsigned char  b3)
@@ -39,9 +39,9 @@ IMU_driver::IMU_driver()
     yawCalcMode = 0;
 }
 
-void IMU_driver::IMU_init(Stream &porti)
+void IMU_driver::IMU_init(Stream *porti)
 {
-    port = &porti;
+    port = porti;
     // port->setTimeout(100);
     isConnected = false;
       gyroZBias =0;
@@ -140,8 +140,7 @@ bool IMU_driver::gotoConfig()
                   while(measurement.gyroyaw>360.0)measurement.gyroyaw-=360.0;
                   while(measurement.gyroyaw<0)measurement.gyroyaw+=360.0;
                 }
-                // Serial.println(measurement.yaw);
-                // Serial.println("new euler angles");
+                isUpdated =true;
               }
               if (xdi == 32832) {  //MTDATA2 data ID of rate of turn HR
                 measurement.gyroX =  bytesToFloat(databuf[iti+3], databuf[iti+4], databuf[iti+5], databuf[iti+6]);
@@ -183,7 +182,7 @@ bool IMU_driver::gotoConfig()
                 measurement.gyroZold = measurement.gyroZ;
                 // Serial.print(measurement.gyroZ);
                 // Serial.print(" ");
-                dataUpdated =true;
+                isUpdated =true;
                 // Serial.println("new gyro data");
               }
               if (xdi == 16448) {  //MTDATA2 data ID of acceleration HR
@@ -198,9 +197,7 @@ bool IMU_driver::gotoConfig()
                 }
                 else noMotionCount++;
                 measurement.accZ = newaccZ;
-                
-                
-                // Serial.println("new acc data");
+                isUpdated =true;
               }
               iti+=leni+1;
             }
@@ -238,6 +235,7 @@ bool IMU_driver::gotoConfig()
     if (isSuccess) {
       Serial.print(trycount);
       Serial.println(" try counts, gotoMeasurement ok");
+      this->isConnected=true;
     } else Serial.println("gotoMeasurement failed");
     return isSuccess;
   }

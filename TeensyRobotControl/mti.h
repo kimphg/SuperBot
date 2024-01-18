@@ -21,7 +21,7 @@ public:
   float yawShift;
   int yawCalcMode ;
   IMU_driver();
-  void IMU_init(Stream &porti) ;
+  void IMU_init(Stream *porti) ;
   void resetYaw();
   bool Connect() ;
   bool gotoMeasurement();
@@ -32,13 +32,14 @@ public:
   void updateData() ;
   
   inline IMUData getMeasurement() {
-    dataUpdated=false;
+    isUpdated=false;
     return measurement;
   }
-  bool dataUpdated;
+  bool isUpdated;
   int noMotionCount;
   float gyroZBiasCompensation;
 private:
+  void sendControlPacket();
   float gyroZBias;
   
   int gyroZBiasCount;

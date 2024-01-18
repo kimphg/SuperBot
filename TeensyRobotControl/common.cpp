@@ -84,3 +84,26 @@ void radioSetup()
     Serial.flush();
 
 }
+
+std::vector<String> splitString(String input)
+{
+  if(input.length()<1)return;
+  std::vector<String> tokens;
+  int last_sep_pos=0;
+  while(1)
+  {
+    int sep_pos = input.indexOf(',',last_sep_pos);
+    if(sep_pos<0){
+      break;
+    }
+    String token = input.substring(last_sep_pos,sep_pos);
+    last_sep_pos = sep_pos+1;
+    tokens.push_back(token);
+  }
+  DPRINTLN(tokens.size());
+  for(int i=0;i<tokens.size();i++)
+  {
+    DPRINTLN(tokens[i]);
+  }
+  return tokens;
+}
