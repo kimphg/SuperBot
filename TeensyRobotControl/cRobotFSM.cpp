@@ -99,7 +99,7 @@ void RobotDriver::gotoStandby()
 {
 
 }
-void RobotDriver::executeMotion()
+void RobotDriver::calculateControlLoop()
 {
   unsigned long int newTime = millis();
   int dt = newTime-timeMillis;//check dt, should be 20ms
@@ -178,19 +178,39 @@ void RobotDriver::update()
 
 void RobotDriver::sendControlPacket()
 {
-
-  if(desMotorSpeedLeft>0)controlPacket[3]=(0xAB);else controlPacket[3]=(0xBA);
-  controlPacket[4]=((unsigned char)(abs(desMotorSpeedLeft)*255));
-  if(desMotorSpeedRight>0)controlPacket[5]=(0xAB);else controlPacket[5]=(0xBA);
-  controlPacket[6]=((unsigned char)(abs(desMotorSpeedRight)*255));
-  if(desMotorSpeedLift>0)controlPacket[7] = (0xAB);
-  else controlPacket[7] = (0xBA);
-  controlPacket[8] = ((unsigned char)(abs(desMotorSpeedLift)*255));
-  unsigned char CS=0;
-  for(int i=0;i<CONTROL_LEN-1;i++)
-  {
-    CS^=controlPacket[i];
+  // control left motor 
+  controlPacket[2] = 0x01;
+  if(desMotorSpeedLeft>0)controlPacket[4]=(0xAB);else controlPacket[4]=(0xBA);
+  controlPacket[3]=((unsigned char)(abs(desMotorSpeedLeft)*255));
+  controlPacket[5]=0x00;//Operation Mode
+  int cs = 0;
+  for (int i = 0; i < 6; i++) {
+    cs ^= controlPacket[i];
   }
-  controlPacket[CONTROL_LEN-1]=CS;
-  portMotor->write(controlPacket,CONTROL_LEN);
+  controlPacket[6] = cs;
+  portMotor->write(controlPacket,7);
+  //portMotor->flush();
+  // control right motor 
+  controlPacket[2] = 0x02;
+  if(desMotorSpeedRight>0)controlPacket[4]=(0xAB);else controlPacket[4]=(0xBA);
+  controlPacket[3]=((unsigned char)(abs(desMotorSpeedRight)*255));
+  controlPacket[5]=0x00;//Operation Mode
+  int cs = 0;
+  for (int i = 0; i < 6; i++) {
+    cs ^= controlPacket[i];
+  }
+  controlPacket[6] = cs;
+  portMotor->write(controlPacket,7);
+  // control lift motor 
+  controlPacket[2] = 0x03;
+  if(desMotorSpeedLift>0)controlPacket[4]=(0xAB);else controlPacket[4]=(0xBA);
+  controlPacket[3]=((unsigned char)(abs(desMotorSpeedLift)*255));
+  controlPacket[5]=0x00;//Operation Mode
+  int cs = 0;
+  for (int i = 0; i < 6; i++) {
+    cs ^= controlPacket[i];
+  }
+  controlPacket[6] = cs;
+
+  portMotor->write(controlPacket,7);
 }

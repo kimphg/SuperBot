@@ -758,5 +758,5 @@ static void inputDataUpdate() {
 }
 static void controlUpdate() {
   // motorDriver.update(yaw_IMU);
-  robot->executeMotion();
+  robot->calculateControlLoop();
 }

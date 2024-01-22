@@ -148,6 +148,7 @@ void sendReport()
   Serial.write(reportPacket,6);
 }
 void setSpeed(int speed) {
+  analogWrite(LED_1, output_speed);
   if (speed != 0) digitalWrite(LED_BUILTIN, LOW);
   else digitalWrite(LED_BUILTIN, HIGH);
   switch (MOTOR_ID) {

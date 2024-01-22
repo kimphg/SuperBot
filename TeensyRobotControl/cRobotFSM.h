@@ -22,9 +22,9 @@ class RobotDriver
   RobotDriver();
   void processCommand(String command);
   void update();
-  void executeMotion();
-private:
-  void sendControlPacket();
+void calculateControlLoop();
+  private:
+void sendControlPacket();
   IMUData imu_data;
   int encoderPos=0;
   bool isActive=false;
@@ -40,7 +40,7 @@ private:
   Stream *portIMU;
   Stream *portSenBus;
   Stream *portMotor;
-  unsigned long int timeMillis=0;
+unsigned long int timeMillis=0;
   float desMotorSpeedLeft=0,desMotorSpeedRight=0,desMotorSpeedLift=0;
   int botState;
   SenBusDriver sbus;
