@@ -16,16 +16,26 @@
 #define DT_CONTROL 0.02 //50hz control loop
 #define ACC_MAX 0.05/DT_CONTROL
 #define BASE_LEN 0.5
+#define COMMAND_LEN_MAX 100
+#define MODE_STANDBY 0
+#define MODE_MOVE 1
+#define MODE_ROTATE 2
+#define MODE_LIFT 2
 class RobotDriver
 {
   public:
-  RobotDriver();
-  void processCommand(String command);
-  void update();
-void calculateControlLoop();
+      
+      RobotDriver();
+      void processCommand(String command);
+      void update();
+      void calculateControlLoop();
   private:
-void sendControlPacket();
+  bool initOK = false;
+  void updateCommandBus();
+  void sendControlPacket(uint8_t id,float speed,uint8_t mode);
+  void processMotorReport(uint8_t inbyte);
   IMUData imu_data;
+  int bot_mode = MODE_STANDBY;
   int encoderPos=0;
   bool isActive=false;
   float i_limit_yaw = 3.0; 
@@ -35,18 +45,19 @@ void sendControlPacket();
   float error_pos, error_pos_prev, integral_pos,  derivative_pos, pos_PID = 0;
   float error_yaw, error_yaw_prev, integral_yaw,  derivative_yaw, yaw_PID = 0;
   void gotoStandby();
-  
+  void posUpdate();
+
   IMU_driver imu;
   Stream *portIMU;
   Stream *portSenBus;
   Stream *portMotor;
 unsigned long int timeMillis=0;
   float desMotorSpeedLeft=0,desMotorSpeedRight=0,desMotorSpeedLift=0;
-  int botState;
+  int botState = 0;
   SenBusDriver sbus;
-  float botx,boty;
-  float botangle;
-  float desPos=0;
+  float botx = 0,boty = 0;
+  float botangle = 0;
+  float desX=100,desY=0;
   float desAngle=0;
   float curSpeed=0;
   int CurTagid;

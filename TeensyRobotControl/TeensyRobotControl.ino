@@ -229,15 +229,15 @@ RobotDriver *robot;
 void setup() {
   
   Serial.begin(115200);          //usb serial
-  DEBUG_TELEMETRY.begin(57600);  //telemetry serial
+  // DEBUG_TELEMETRY.begin(57600);  //telemetry serial
   Serial.print("Setup started");
   delay(200);
-  robot= new RobotDriver();
+  
   //Initialize radio communication
   // radioSetup();
-  timer_data_input.begin(inputDataUpdate, 300);  //
-  timer_control_loop.begin(controlUpdate, int(DT_CONTROL * 1000000));
+
   DPRINTF("IMU timer started");
+  robot= new RobotDriver();
   //Set radio channels to default (safe) values before entering main loop
   // channel_1_pwm = channel_1_fs;
   // channel_2_pwm = channel_2_fs;
@@ -247,13 +247,14 @@ void setup() {
   // channel_6_pwm = channel_6_fs;
   // indicateErrorLed(0);
   prev_time = 0;
-  
+  timer_data_input.begin(inputDataUpdate, 300);  //
+  timer_control_loop.begin(controlUpdate, int(DT_CONTROL * 1000000));
 }
 
 
 
 int debugID = 0;
-#define COMMAND_LEN_MAX 200
+
 // uint8_t udpBuff[300];
 int commandBuffIndex = 0;
 //========================================================================================================================//
@@ -280,7 +281,7 @@ void loop() {
   loopBlink(); //indicate we are in main loop with short blink every 1.5 seconds
 
   if (1) {
-    getCommandsRadio();
+    // getCommandsRadio();
 
 
     if (channel_5_pwm < 1500) {
@@ -406,55 +407,7 @@ void updateSensors() {
   // Serial.print(" ");
   // Serial.println(imu.yawCalcMode-100);
 }
-String commandString;
-void updateCommandBus() {
-  while (DEBUG_TELEMETRY.available()) {
-    uint8_t bytein = DEBUG_TELEMETRY.read();
-    // DEBUG_TELEMETRY.print(bytein);
-    if (commandString.length() < COMMAND_LEN_MAX) commandString += (char)bytein;
-    if (bytein == '\n')  //end of command
-    {
-      int dataLen = commandString.length();
-      // DEBUG_TELEMETRY.println(dataLen);
 
-      if (commandString.startsWith("yaw="))  //angle set command
-      {
-
-        // float angle
-        //   DEBUG_TELEMETRY.print(imu.gyroZBiasCompensation*100000);
-        yaw_des = commandString.substring(4, dataLen - 1).toFloat();
-        DEBUG_TELEMETRY.print("yaw_des set:");
-        DEBUG_TELEMETRY.println(yaw_des);
-        //   DEBUG_TELEMETRY.println(yaw_IMU);
-      } else if (commandString.startsWith("pos="))  //angle set command
-      {
-
-        // float angle
-        //   DEBUG_TELEMETRY.print(imu.gyroZBiasCompensation*100000);
-        pos_des = commandString.substring(4, dataLen - 1).toFloat();
-        DEBUG_TELEMETRY.print("pos_des set:");
-        DEBUG_TELEMETRY.println(pos_des);
-        //   DEBUG_TELEMETRY.println(yaw_IMU);
-      } else if (commandString.startsWith("resetyaw"))  //angle set command
-      {
-        // imu.resetYaw();
-      } else if (commandString.startsWith("stt="))  //active set command
-      {
-
-        // float angle
-        //   DEBUG_TELEMETRY.print(imu.gyroZBiasCompensation*100000);
-        int newstat = commandString.substring(4, dataLen - 1).toFloat();
-        gotoState(newstat);
-        //   DEBUG_TELEMETRY.println(yaw_IMU);
-      }
-      else if(commandString.startsWith("$COM"))
-      {
-        robot->processCommand(commandString);
-      }
-      commandString = "";
-    }
-  }
-}
 
 
 void getCommandsRadio() {
@@ -753,10 +706,10 @@ void printLoopRate() {
 }
 static void inputDataUpdate() {
 
-  updateCommandBus();  //read Serial Commands
+  // updateCommandBus();  //read Serial Commands
   robot->update();
 }
 static void controlUpdate() {
   // motorDriver.update(yaw_IMU);
-  robot->calculateControlLoop();
+  // robot->calculateControlLoop();
 }

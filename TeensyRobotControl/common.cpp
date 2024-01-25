@@ -55,23 +55,17 @@ void setupBlink(int numBlinks, int upTime, int downTime)
     digitalWrite(13, LOW);
   }
 }
-
-void indicateErrorLed(int errorCode)
-{
-  if (errorCode == 0) {
-    digitalWrite(13, LOW);
-    delay(500);
-    digitalWrite(13, HIGH);
-    delay(1000);
-    digitalWrite(13, LOW);
-    delay(500);
-
-  } else {
-
-    setupBlink(errorCode, 300, 100);  //numBlinks, upTime (ms), downTime (ms)
-    delay(2000);
+void blink(int n) {
+  for (int i = 0; i < n; i++) {
+    digitalWrite(LED_BUILTIN, LOW);
+    delay(200);
+    digitalWrite(LED_BUILTIN, HIGH);
+    delay(200);
   }
+    digitalWrite(LED_BUILTIN, LOW);
+    delay(1000);
 }
+
 
 void radioSetup()
 {
@@ -85,10 +79,20 @@ void radioSetup()
 
 }
 
+uint8_t calcCS8(uint8_t* startbyte, uint8_t len)
+{
+  int cs = 0;
+  for (int i = 0; i < len; i++) {
+    cs ^= startbyte[i];
+  }
+  return cs;
+}
+
 std::vector<String> splitString(String input)
 {
-  if(input.length()<1)return;
   std::vector<String> tokens;
+  if(input.length()<1)return tokens;
+  
   int last_sep_pos=0;
   while(1)
   {
@@ -100,10 +104,10 @@ std::vector<String> splitString(String input)
     last_sep_pos = sep_pos+1;
     tokens.push_back(token);
   }
-  DPRINTLN(tokens.size());
-  for(int i=0;i<tokens.size();i++)
-  {
-    DPRINTLN(tokens[i]);
-  }
+  // DPRINTLN(tokens.size());
+  // for(unsigned int i=0;i<tokens.size();i++)
+  // {
+  //   DPRINTLN(tokens[i]);
+  // }
   return tokens;
 }

@@ -72,7 +72,7 @@ bool IMU_driver::gotoConfig()
 
     int trycount = 0;
     bool isSuccess = false;
-
+    return false;
     unsigned char req[] = { 0xFA, 0xFF, 0x30, 0x00, 0xD1 };
     unsigned char ansExpected[] = { 0xFA, 0xFF, 0x31, 0x00, 0xD0 };
     unsigned char ansBuff[] = { 0x00, 0x00, 0x00, 0x00, 0x00 };
@@ -213,6 +213,7 @@ bool IMU_driver::gotoConfig()
   bool IMU_driver::gotoMeasurement()
   {
     Serial.println("gotoMeasurement");
+    return false;
     int trycount = 0;
     bool isSuccess = false;
     unsigned char req[] = { 0xFA, 0xFF, 0x10, 0x00, 0xF1 };

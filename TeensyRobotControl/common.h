@@ -1,15 +1,26 @@
 #ifndef COMMON_H
 #define COMMON_H
-#define RS485_IMU Serial1
-#define RS485_SENS Serial2
-#define RS485_MOTORS Serial3
-#define RS485_COM_INPUT Serial4
-#define DEBUG_TELEMETRY Serial
+#define SIMULATION
+#ifdef SIMULATION
+  #define RS485_IMU Serial1
+  #define RS485_SENS Serial2
+  #define RS485_MOTORS Serial
+  #define RS485_COM_INPUT Serial
+  #define DEBUG_TELEMETRY Serial
+#else
+  #define RS485_IMU Serial1
+  #define RS485_SENS Serial2
+  #define RS485_MOTORS Serial3
+  #define RS485_COM_INPUT Serial4
+  #define DEBUG_TELEMETRY Serial
+#endif
 #define DT_CONTROL 0.02 //50hz control loop
 #define PI2 6.2831853
 #ifndef PI
   #define PI 3.1415926535897932384626433832795
 #endif
+#define degrees(x) ((x)*57.295779513)
+#define radians(x) ((x)/57.295779513)
 #define DEBUG
 #ifdef DEBUG
 #define DPRINT(...)    Serial.print(__VA_ARGS__)
@@ -36,5 +47,7 @@
 void setupBlink(int numBlinks, int upTime, int downTime) ;
 void indicateErrorLed(int errorCode) ;
 void radioSetup() ;
+uint8_t calcCS8(uint8_t* startbyte, uint8_t len);
+void blink(int n);
 std::vector<String> splitString(String input);
 #endif  // COMMON_H
