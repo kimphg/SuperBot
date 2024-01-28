@@ -33,7 +33,7 @@ class RobotDriver
   bool initOK = false;
   void updateCommandBus();
   void sendControlPacket(uint8_t id,float speed,uint8_t mode);
-  void processMotorReport(uint8_t inbyte);
+  void processMotorReport(uint8_t bytein);
   IMUData imu_data;
   int bot_mode = MODE_STANDBY;
   int encoderPos=0;
