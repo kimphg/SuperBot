@@ -9,6 +9,7 @@
 #define ENC_B2 11
 #define ENC_A3 12
 #define ENC_B3 23
+#define ENC_Z3 5
 #define OUTPUT_1 2
 #define OUTPUT_2 3
 #define OUTPUT_3 4

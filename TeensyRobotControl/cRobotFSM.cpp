@@ -22,9 +22,9 @@ void EncIntRight()
 void EncIntLift()
 {
   if(digitalRead(ENC_B3)>0)
-  liftLevel--;
-  else liftLevel++;
-  
+  liftLevel++;
+  else liftLevel--;
+  if(liftLevel<0)liftLevel=0;
 }
 float constrainVal(float input,float min, float max)
 {
@@ -201,6 +201,8 @@ void RobotDriver::calculateControlLoop()
   error_yaw = desBearing - botangle;
   DPRINT("desBearing:");
   DPRINTLN(desBearing);
+  DPRINT("liftLevel:");
+  DPRINTLN(liftLevel);
   if(error_yaw>180)error_yaw-=360;
   if(error_yaw<-180)error_yaw+=360;
   
@@ -252,9 +254,9 @@ void RobotDriver::calculateControlLoop()
   // DPRINT("RightSpeed:");
   // DPRINTLN(desMotorSpeedRight);
   sendControlPacket(2,desMotorSpeedLeft,0);
-  // DPRINT("LeftSpeed:");
-  // DPRINTLN(desMotorSpeedLeft);
-  sendControlPacket(3,desMotorSpeedLift,0);
+  DPRINT("LeftSpeed:");
+  DPRINTLN(desMotorSpeedLeft);
+  sendControlPacket(3,0.1,0);
 
 }
 void RobotDriver::update()
@@ -292,7 +294,7 @@ void RobotDriver::sendControlPacket(uint8_t id,float speed,uint8_t mode)
   controlPacket[5]=mode;//Operation Mode
   controlPacket[6] = calcCS8(controlPacket,6);
   portMotor->write(controlPacket,7);
-  // DPRINTLN(millis());
+  DPRINTLN(millis());
  
 }
 uint8_t reportPacket[50];

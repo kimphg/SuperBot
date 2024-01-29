@@ -1,6 +1,6 @@
 #ifndef COMMON_H
 #define COMMON_H
-#define SIMULATION
+// #define SIMULATION
 #ifdef SIMULATION
   #define RS485_IMU Serial1
   #define RS485_SENS Serial2
