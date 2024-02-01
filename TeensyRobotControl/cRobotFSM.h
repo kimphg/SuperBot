@@ -31,6 +31,8 @@ class RobotDriver
       void update();
       void calculateControlLoop();
   private:
+  bool isLiftMinPos = false;
+  bool isLiftMaxPos = false;
   bool initOK = false;
   void updateCommandBus();
   void sendControlPacket(uint8_t id,float speed,uint8_t mode);

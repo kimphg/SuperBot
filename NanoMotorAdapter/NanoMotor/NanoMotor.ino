@@ -1,6 +1,8 @@
 //micro controller type: LGT8F328P
-#define LIFT_MOTOR
+// #define DEBUG
+#define WHEEL_MOTOR_LEFT
 #ifdef WHEEL_MOTOR_RIGHT
+#define MEN 2
 #define REV 2
 #define FWD 3
 #define ALM_RES 4
@@ -15,6 +17,7 @@
 #define MOTOR_ID 1
 #endif
 #ifdef WHEEL_MOTOR_LEFT
+#define MEN 2
 #define REV 2
 #define FWD 3
 #define ALM_RES 4
@@ -30,6 +33,7 @@
 #endif
 #ifdef LIFT_MOTOR
 #define MEN 2
+#define REV 2
 #define FWD 3
 #define ALM_RES 4
 #define SPEED 5
@@ -47,12 +51,23 @@
 #include <Arduino.h>
 int output_speed=0;
 int stackLevel = 0;
+unsigned long int lastUpdate = 0;
+unsigned int csFailCount=0;
+unsigned int hdFailCount=0;
 bool minOK=false, maxOK=false;
 void setSpeed(int speed);
 uint8_t commandBuff[COMMAND_LEN_MAX];
 uint8_t reportPacket[8];
 int commandBuffIndex = 0;
 uint8_t last_byte = 0;
+uint8_t calcCS8(uint8_t* startbyte, uint8_t len)
+{
+  int cs = 0;
+  for (int i = 0; i < len; i++) {
+    cs ^= startbyte[i];
+  }
+  return cs;
+}
 void blink(int n) {
   for (int i = 0; i < n; i++) {
     digitalWrite(LED_BUILTIN, LOW);
@@ -64,11 +79,12 @@ void blink(int n) {
     delay(1000);
 }
 bool updateBinaryCommand() {
+
   bool packetExecuted = false;
   while (DEBUG_TELEMETRY.available()) {
     uint8_t bytein = DEBUG_TELEMETRY.read();
-    // Serial.write(bytein);
-    if (commandBuffIndex < 7) {
+    // Serial.println(bytein);
+    if (commandBuffIndex < COMMAND_LEN_MAX-1) {
       commandBuff[commandBuffIndex] = bytein;
       commandBuffIndex++;
     } else commandBuffIndex = 0;
@@ -84,8 +100,7 @@ bool updateBinaryCommand() {
     }
     last_byte = bytein;
     if (commandBuffIndex > 6) {
-      if (commandBuff[1] == 0x55)
-        if (commandBuff[0] == 0xaa) {
+      if ((commandBuff[1] == 0x55)&&(commandBuff[0] == 0xaa) ){
           int packetLen = 6;
           int motorID = commandBuff[2];
           if (MOTOR_ID == motorID) {
@@ -94,10 +109,8 @@ bool updateBinaryCommand() {
             if (commandBuff[4] == 0xBA) motorDir = -1;
             int speed = motorDir * commandBuff[3];
             int motorMode = commandBuff[5];
-            int cs = 0;
-            for (int i = 0; i < 6; i++) {
-              cs ^= commandBuff[i];
-            }
+            uint8_t cs = calcCS8(commandBuff,6);
+            
             if (cs == commandBuff[6]) {
 #ifdef DEBUG
               Serial.print("Speed: ");
@@ -106,6 +119,13 @@ bool updateBinaryCommand() {
               setSpeed(speed);
               
               packetExecuted = true;
+              csFailCount=0;
+              // digitalWrite(13,LOW);
+            }
+            else 
+            {
+              csFailCount++;
+              
             }
 #ifdef DEBUG
             for (int i = 0; i < 6; i++) {
@@ -119,8 +139,10 @@ bool updateBinaryCommand() {
 #endif
           }
           commandBuffIndex = 0;
+          hdFailCount=0;
         } else {
           commandBuffIndex = 0;
+          hdFailCount++;
 #ifdef DEBUG
           Serial.print("wrong header: ");
           Serial.println(commandBuff[0]);
@@ -131,12 +153,16 @@ bool updateBinaryCommand() {
     
   }
   digitalWrite(LED_1, packetExecuted);
+  if(csFailCount>5){blink(5);
+              csFailCount=0;}
+  if(hdFailCount>10){blink(6);
+              hdFailCount=0;}
   return packetExecuted;
 }
 
 void sendReport()
 {
-    
+  delay(MOTOR_ID);
   reportPacket[2] = (0x80+MOTOR_ID);
   reportPacket[3] = ((abs(output_speed))&0xff);
   if(output_speed>=0)
@@ -153,18 +179,18 @@ void sendReport()
 }
 void setSpeed(int speed) {
   
-  if (speed != 0) digitalWrite(LED_BUILTIN, LOW);
-  else digitalWrite(LED_BUILTIN, HIGH);
+  // if (speed != 0) digitalWrite(LED_BUILTIN, LOW);
+  // else digitalWrite(LED_BUILTIN, HIGH);
   switch (MOTOR_ID) {
     case 1:  //WHEEL_MOTOR_RIGHT
       output_speed = speed;
       if (output_speed > 0) {
         digitalWrite(FWD, LOW);
-        digitalWrite(MEN, HIGH);
+        digitalWrite(REV, HIGH);
         analogWrite(SPEED, 255 - output_speed);
       } else {
         digitalWrite(FWD, HIGH);
-        digitalWrite(MEN, LOW);
+        digitalWrite(REV, LOW);
         analogWrite(SPEED, 255 + output_speed);
       }
       break;
@@ -172,21 +198,24 @@ void setSpeed(int speed) {
       output_speed = -speed;
       if (output_speed > 0) {
         digitalWrite(FWD, LOW);
-        digitalWrite(MEN, HIGH);
+        digitalWrite(REV, HIGH);
         analogWrite(SPEED, 255 - output_speed);
       } else {
         digitalWrite(FWD, HIGH);
-        digitalWrite(MEN, LOW);
+        digitalWrite(REV, LOW);
         analogWrite(SPEED, 255 + output_speed);
       }
       break;
     case 3:  //LIFT_MOTOR
       output_speed = speed;
-      digitalWrite(MEN, HIGH);
+      
+      
       if (!minOK)
         if (output_speed < 0) output_speed = 0;
       if (!maxOK)
         if (output_speed > 0) output_speed = 0;
+      if(output_speed==0)digitalWrite(MEN, LOW);
+      else digitalWrite(MEN, HIGH);
       if (output_speed > 0) {
         digitalWrite(FWD, LOW);
         analogWrite(SPEED, 255 - output_speed);
@@ -222,7 +251,8 @@ void setup() {
   reportPacket[0]=0xAA;
   reportPacket[1]=0x55;
   blink(MOTOR_ID);
-  Serial.begin(115200);
+  Serial.begin(500000);
+#ifdef LIFT_MOTOR
   while(digitalRead(MIN_LIM))
   {
     maxOK = (digitalRead(MAX_LIM));
@@ -241,18 +271,20 @@ void setup() {
      delay(10);
      sendReport();
   }
+#endif
   setSpeed(0);
   digitalWrite(LED_1, LOW);
 }
-unsigned long int lastUpdate = 0;
+
 void loop() {
   maxOK = (digitalRead(MAX_LIM));
   minOK = (digitalRead(MIN_LIM));
   if((minOK&&maxOK)==false)digitalWrite(LED_BUILTIN,HIGH);
   else digitalWrite(LED_BUILTIN,LOW);
+  if(!(minOK|maxOK))blink(4);
   if (updateBinaryCommand()) {
     lastUpdate = millis();
-    
+    sendReport();
   }
   if (millis() - lastUpdate > 1000)
   { setSpeed(0);//failsafe if no connection

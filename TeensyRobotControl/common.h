@@ -6,7 +6,7 @@
   #define RS485_SENS Serial2
   #define RS485_MOTORS Serial
   #define RS485_COM_INPUT Serial
-  #define DEBUG_TELEMETRY Serial
+  #define DEBUG_TELEMETRY Serialww
 #else
   #define RS485_IMU Serial1
   #define RS485_SENS Serial2
@@ -29,6 +29,7 @@
 #define DPRINTF(...)    Serial.print(F(__VA_ARGS__))
 #define DPRINTLNF(...) Serial.println(F(__VA_ARGS__)) //printing text using the F macro
 #define DBEGIN(...)    Serial.begin(__VA_ARGS__)
+
 #else
 #define DPRINT(...)     //blank line
 #define DPRINTLN(...)   //blank line

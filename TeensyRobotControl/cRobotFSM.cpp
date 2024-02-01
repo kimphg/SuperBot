@@ -2,8 +2,15 @@
 #include "cRobotFSM.h"
 long int encoderPosLeft=0;
 long int encoderPosRight=0;
+long int encoderPosLefto=0;
+long int encoderPosRighto=0;
 long int liftLevel = 0;
+long int reportCount = 0;
+bool liftLevelDefined = false;
+
 #define CONTROL_LEN 10
+// #define MAX_LIFT_H 12000
+int liftMaxLevel = 0;
 unsigned char controlPacket[CONTROL_LEN];
 void EncIntLeft()
 {
@@ -21,10 +28,13 @@ void EncIntRight()
 }
 void EncIntLift()
 {
-  if(digitalRead(ENC_B3)>0)
-  liftLevel++;
+  if(digitalRead(ENC_B3)>0){
+    liftLevel++;
+    if(liftLevel>liftMaxLevel)liftMaxLevel = liftLevel;
+  }
   else liftLevel--;
   if(liftLevel<0)liftLevel=0;
+  // if(liftLevel>MAX_LIFT_H)liftLevel=MAX_LIFT_H;
 }
 float constrainVal(float input,float min, float max)
 {
@@ -107,7 +117,7 @@ RobotDriver::RobotDriver()
 {
   RS485_IMU.begin(921600);//IMU
   RS485_SENS.begin(1000000);//sens bus
-  RS485_MOTORS.begin(115200);
+  RS485_MOTORS.begin(500000);
   RS485_COM_INPUT.begin(115200);
   
   portIMU=&RS485_IMU;
@@ -155,16 +165,26 @@ void RobotDriver::gotoStandby()
 }
 void RobotDriver::posUpdate()
 {
-  // float distanceLeft  = (encoderPosLeft)*0.6135923151/0.05;
-  // float distanceRight = (encoderPosRight)*0.6135923151/0.05;
-  // float distance    = (distanceLeft+distanceRight)/2.0;
-  // encoderPosLeft    = 0;
-  // encoderPosRight   = 0;
-  // float diff        = (distanceLeft-distanceRight);
-  // float rotation    = degrees((diff/(0.5*BASE_LEN)));
-  // botangle += rotation;
-  // botx += sin(radians(botangle))*distance;
-  // boty += cos(radians(botangle))*distance;
+  float distanceLeft  = (encoderPosLeft-encoderPosLefto)*0.6135923151;
+  float distanceRight = (encoderPosRight-encoderPosRighto)*0.6135923151;
+  float distance    = (distanceLeft+distanceRight)/2.0;
+  encoderPosLefto    = encoderPosLeft;
+  encoderPosRighto   = encoderPosRight;
+  float diff        = (distanceLeft-distanceRight);
+  float rotation    = degrees((diff/(0.5*1000*BASE_LEN)));
+  botangle += rotation;
+  while (botangle>=180)botangle-=360;
+  while (botangle<-180)botangle+=360;
+  botx += sin(radians(botangle))*distance;
+  boty += cos(radians(botangle))*distance;
+  DPRINT("!$ x,y,a:");
+  DPRINTLN(botx);
+  DPRINTLN(boty);
+  DPRINTLN(botangle);
+  DPRINTLN(distanceLeft*1000);
+  DPRINTLN(distanceRight*1000);
+  DPRINT("#");
+  Serial.flush();
   // liftLevel += liftLevel;
 }
 void RobotDriver::calculateControlLoop()
@@ -181,10 +201,11 @@ void RobotDriver::calculateControlLoop()
   //error calculation
   float dx = desX-botx;
   float dy = desY-boty;
-  DPRINT("!dx:");
+  DPRINT("!$dx,dy:");
   DPRINTLN(dx);
-  DPRINT("!dy:");
+  
   DPRINTLN(dy);
+  DPRINT("#");
   float desBearing = 0;
   if(dy==0&&dx>=0) desBearing = 90;
   else if(dy==0&&dx<0) desBearing = -90;
@@ -199,10 +220,10 @@ void RobotDriver::calculateControlLoop()
   if(desDistance>100)desAngle = desBearing;
   
   error_yaw = desBearing - botangle;
-  DPRINT("desBearing:");
-  DPRINTLN(desBearing);
-  DPRINT("liftLevel:");
-  DPRINTLN(liftLevel);
+  DPRINT("!$desBearing:");
+  DPRINTLN(desBearing);DPRINT("#");
+  DPRINT("!$liftLevel:");
+  DPRINTLN(liftLevel);DPRINT("#");
   if(error_yaw>180)error_yaw-=360;
   if(error_yaw<-180)error_yaw+=360;
   
@@ -212,7 +233,7 @@ void RobotDriver::calculateControlLoop()
   yaw_PID = (Kp_yaw * error_yaw + Ki_yaw * integral_yaw + Kd_yaw * derivative_yaw); //scaled by .01 to bring within -1 to 1 range
   error_yaw_prev = error_yaw;
 // calculate curSpeed
-  float targetSpeedRotation = 0.3*yaw_PID*(1.0-curSpeed);//high curSpeed less rotation
+  float targetSpeedRotation = -0.3*yaw_PID*(1.0-curSpeed);//high curSpeed less rotation
   targetSpeedRotation = constrainVal(targetSpeedRotation,-1,1);
   // float distance = 0;//(encoderPos-oldEncoderPos)/3.1;
   // oldEncoderPos = encoderPos;
@@ -250,13 +271,13 @@ void RobotDriver::calculateControlLoop()
   acc = constrainVal(acc,-ACC_MAX*2,ACC_MAX*2);
   desMotorSpeedLeft+=acc;
   desMotorSpeedLeft=constrainVal(desMotorSpeedLeft,-1.0,1.0);
-  sendControlPacket(1,desMotorSpeedRight,0);
-  // DPRINT("RightSpeed:");
-  // DPRINTLN(desMotorSpeedRight);
-  sendControlPacket(2,desMotorSpeedLeft,0);
-  DPRINT("LeftSpeed:");
-  DPRINTLN(desMotorSpeedLeft);
-  sendControlPacket(3,0.1,0);
+  sendControlPacket(1,-0.1,0);
+  DPRINT("!$RightSpeed:");
+  DPRINTLN(desMotorSpeedRight);DPRINT("#");
+  sendControlPacket(2,0.1,0);
+  DPRINT("!$LeftSpeed:");
+  DPRINTLN(desMotorSpeedLeft);DPRINT("#");
+  if(isLiftMinPos==false)sendControlPacket(3,-0.1,0);
 
 }
 void RobotDriver::update()
@@ -294,14 +315,14 @@ void RobotDriver::sendControlPacket(uint8_t id,float speed,uint8_t mode)
   controlPacket[5]=mode;//Operation Mode
   controlPacket[6] = calcCS8(controlPacket,6);
   portMotor->write(controlPacket,7);
-  DPRINTLN(millis());
+  // DPRINTLN(millis());
  
 }
 uint8_t reportPacket[50];
 int MotorReportBuffID=0;
 void RobotDriver::processMotorReport(uint8_t bytein)
 {
-
+    // DPRINTLN(bytein);
     uint8_t lastByte = reportPacket[MotorReportBuffID];
     if((bytein==0x55)&&(lastByte==0xaa))
     {
@@ -315,12 +336,37 @@ void RobotDriver::processMotorReport(uint8_t bytein)
       if (MotorReportBuffID >= 49)MotorReportBuffID = 0;
       reportPacket[MotorReportBuffID] = bytein;
     }
-    if (MotorReportBuffID > 6) {
+    if (MotorReportBuffID > 7) {
       if (reportPacket[1] == 0x55)
         if (reportPacket[0] == 0xaa) {
-          if(reportPacket[2]== 0xf1)
+          if(reportPacket[2]== 0x83)//lift motor report
           {
+              uint8_t cs = calcCS8(reportPacket,7);
+              DPRINT("!$CS:");
+              DPRINTLN(cs);
+              DPRINT("#");
+              if(cs==reportPacket[7])
+              {
+                isLiftMinPos =( reportPacket[5]==0);
+                isLiftMaxPos = (reportPacket[6]==0);
+                if(isLiftMinPos)liftLevelDefined=true;
+                DPRINT("!$Limits:");
+                DPRINTLN(isLiftMinPos);
+                DPRINTLN(isLiftMaxPos);
+                DPRINT("#");
+                reportCount++;
+                DPRINT("!$reportCount:");
+                DPRINTLN(reportCount);
+                DPRINT("#");
+              }
+              else{
+                DPRINT("!$CSfail:");
+                DPRINTLN(cs);
+                DPRINTLN(reportPacket[7]);
+                DPRINT("#");
+              }
 
+              
           }
         }
       // MotorReportBuffID=0;
@@ -332,17 +378,12 @@ void RobotDriver::processMotorReport(uint8_t bytein)
     if (reportPacket[4] == 0xff)
     if (reportPacket[5] == 0x03)
     {
-      DPRINTLN("\npacketOK");
+      // DPRINTLN("\npacketOK");
       int x =     (reportPacket[6]<<24)  + (reportPacket[7]<<16)  + (reportPacket[8]<<8)  +   reportPacket[9] ;
       int y =     (reportPacket[10]<<24) + (reportPacket[11]<<16) + (reportPacket[12]<<8) +   reportPacket[13] ;
       float angle = (reportPacket[14]<<8) +   reportPacket[15] ;
       angle/=10.0;
-      DPRINT("report x:");
-      DPRINTLN(x);
-      DPRINT("report y:");
-      DPRINTLN(y);
-      DPRINT("report angle:");
-      DPRINTLN(angle);
+      
       botangle = angle;
       
     }
