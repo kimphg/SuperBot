@@ -1,6 +1,7 @@
 //micro controller type: LGT8F328P
-// #define DEBUG
-#define WHEEL_MOTOR_LEFT
+// #define LIFT_MOTOR
+// #define WHEEL_MOTOR_LEFT
+#define WHEEL_MOTOR_RIGHT
 #ifdef WHEEL_MOTOR_RIGHT
 #define MEN 2
 #define REV 2
@@ -87,7 +88,12 @@ bool updateBinaryCommand() {
     if (commandBuffIndex < COMMAND_LEN_MAX-1) {
       commandBuff[commandBuffIndex] = bytein;
       commandBuffIndex++;
-    } else commandBuffIndex = 0;
+    } else 
+    {
+      commandBuffIndex = 0;
+      commandBuff[commandBuffIndex] = bytein;
+      commandBuffIndex++;
+    }
 
     if (bytein == 0x55)  //end of command header
     {
@@ -101,14 +107,10 @@ bool updateBinaryCommand() {
     last_byte = bytein;
     if (commandBuffIndex > 6) {
       if ((commandBuff[1] == 0x55)&&(commandBuff[0] == 0xaa) ){
-          int packetLen = 6;
+          // int packetLen = 6;
           int motorID = commandBuff[2];
           if (MOTOR_ID == motorID) {
-            int motorDir = 0;
-            if (commandBuff[4] == 0xAB) motorDir = 1;
-            if (commandBuff[4] == 0xBA) motorDir = -1;
-            int speed = motorDir * commandBuff[3];
-            int motorMode = commandBuff[5];
+            
             uint8_t cs = calcCS8(commandBuff,6);
             
             if (cs == commandBuff[6]) {
@@ -116,8 +118,12 @@ bool updateBinaryCommand() {
               Serial.print("Speed: ");
               Serial.println(speed);
 #endif
+            int motorDir = 0;
+            if (commandBuff[4] == 0xAB) motorDir = 1;
+            else if (commandBuff[4] == 0xBA) motorDir = -1;
+            int speed = motorDir * commandBuff[3];
+            int motorMode = commandBuff[5];
               setSpeed(speed);
-              
               packetExecuted = true;
               csFailCount=0;
               // digitalWrite(13,LOW);
@@ -162,7 +168,7 @@ bool updateBinaryCommand() {
 
 void sendReport()
 {
-  delay(MOTOR_ID);
+  delay(1+MOTOR_ID);
   reportPacket[2] = (0x80+MOTOR_ID);
   reportPacket[3] = ((abs(output_speed))&0xff);
   if(output_speed>=0)

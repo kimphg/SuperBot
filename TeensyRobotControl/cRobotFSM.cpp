@@ -7,7 +7,8 @@ long int encoderPosRighto=0;
 long int liftLevel = 0;
 long int reportCount = 0;
 bool liftLevelDefined = false;
-
+bool liftLevelMaxDefined = false;
+int liftTargetLevel = 0;
 #define CONTROL_LEN 10
 // #define MAX_LIFT_H 12000
 int liftMaxLevel = 0;
@@ -277,8 +278,8 @@ void RobotDriver::calculateControlLoop()
   sendControlPacket(2,0.1,0);
   DPRINT("!$LeftSpeed:");
   DPRINTLN(desMotorSpeedLeft);DPRINT("#");
-  if(isLiftMinPos==false)sendControlPacket(3,-0.1,0);
-
+  if(liftLevelDefined==true)
+  sendControlPacket(3,0.1,0);
 }
 void RobotDriver::update()
 {
@@ -350,6 +351,7 @@ void RobotDriver::processMotorReport(uint8_t bytein)
                 isLiftMinPos =( reportPacket[5]==0);
                 isLiftMaxPos = (reportPacket[6]==0);
                 if(isLiftMinPos)liftLevelDefined=true;
+                if(liftLevelDefined&&isLiftMaxPos)liftLevelMaxDefined = true;
                 DPRINT("!$Limits:");
                 DPRINTLN(isLiftMinPos);
                 DPRINTLN(isLiftMaxPos);
