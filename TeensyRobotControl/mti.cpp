@@ -108,6 +108,7 @@ bool IMU_driver::gotoConfig()
   }
   void IMU_driver::updateData()
  {
+  return;
     while (port->available() > 0) {
       if (buffIndex >= BUF_SIZE_IMU) buffIndex = 0;
       uint8_t bytein = port->read();

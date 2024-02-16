@@ -1,7 +1,7 @@
 //micro controller type: LGT8F328P
-// #define LIFT_MOTOR
+#define LIFT_MOTOR
 // #define WHEEL_MOTOR_LEFT
-#define WHEEL_MOTOR_RIGHT
+// #define WHEEL_MOTOR_RIGHT
 #ifdef WHEEL_MOTOR_RIGHT
 #define MEN 2
 #define REV 2
@@ -168,7 +168,7 @@ bool updateBinaryCommand() {
 
 void sendReport()
 {
-  delay(1+MOTOR_ID);
+  delay(2+MOTOR_ID*2);
   reportPacket[2] = (0x80+MOTOR_ID);
   reportPacket[3] = ((abs(output_speed))&0xff);
   if(output_speed>=0)
@@ -257,7 +257,7 @@ void setup() {
   reportPacket[0]=0xAA;
   reportPacket[1]=0x55;
   blink(MOTOR_ID);
-  Serial.begin(500000);
+  Serial.begin(230400);
 #ifdef LIFT_MOTOR
   while(digitalRead(MIN_LIM))
   {
@@ -292,6 +292,7 @@ void loop() {
     lastUpdate = millis();
     sendReport();
   }
+  
   if (millis() - lastUpdate > 1000)
   { setSpeed(0);//failsafe if no connection
     digitalWrite(LED_1, LOW);

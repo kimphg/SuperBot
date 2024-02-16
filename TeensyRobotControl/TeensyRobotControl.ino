@@ -1,7 +1,8 @@
-#include <Arduino.h>
+
+// #include <Arduino.h>
 #include "common.h"
 
-#include <SPI.h>
+// #include <SPI.h>
 
 #include "cRobotFSM.h"
 // #include "motorBLVPWM.h"
@@ -153,13 +154,7 @@ int s1_command_PWM, s2_command_PWM, s3_command_PWM, s4_command_PWM, s5_command_P
 
 int currState = 0;
 int stateStepID = 0;
-void gotoState(int state) {
-  currState = state;
-  stateStepID = 0;
-  // motorDriver.resetPosition();
-  DEBUG_TELEMETRY.print("gotoState:");
-  DEBUG_TELEMETRY.println(state);
-}
+
 void loopState() {
 
   if (currState == 4)  //Tag searching sequence
@@ -266,7 +261,7 @@ int loopRatePeriodUS = 50000;
 int loopCountActive = 0;
 void loop() {
   current_time = micros();            //looprate limiter
-  dt = (current_time - prev_time);    //
+  dt = (current_time - prev_time);  
   if (dt < loopRatePeriodUS) return;  //
   if (dt > loopRatePeriodUS + 10) {
     DPRINTF("loop too slow error:");
@@ -592,97 +587,9 @@ void loopBlink() {
   }
 }
 
-void printRadioData() {
 
-  DEBUG_TELEMETRY.print(F(" CH1: "));
-  DEBUG_TELEMETRY.print(channel_1_pwm);
-  DEBUG_TELEMETRY.print(F(" CH2: "));
-  DEBUG_TELEMETRY.print(channel_2_pwm);
-  DEBUG_TELEMETRY.print(F(" CH3: "));
-  DEBUG_TELEMETRY.print(channel_3_pwm);
-  DEBUG_TELEMETRY.print(F(" CH4: "));
-  DEBUG_TELEMETRY.print(channel_4_pwm);
-  DEBUG_TELEMETRY.print(F(" CH5: "));
-  DEBUG_TELEMETRY.print(channel_5_pwm);
-  DEBUG_TELEMETRY.print(F(" CH6: "));
-  DEBUG_TELEMETRY.println(channel_6_pwm);
-}
 
-void printDesiredState() {
 
-  DEBUG_TELEMETRY.print(F("thro_des: "));
-  DEBUG_TELEMETRY.print(spd_des);
-  DEBUG_TELEMETRY.print(F(" roll_des: "));
-  DEBUG_TELEMETRY.print(roll_des);
-  DEBUG_TELEMETRY.print(F(" pitch_des: "));
-  DEBUG_TELEMETRY.print(pitch_des);
-  DEBUG_TELEMETRY.print(F(" yaw_des: "));
-  DEBUG_TELEMETRY.println(yaw_des);
-}
-
-void printGyroData() {
-
-  Serial.print(F("GyroX: "));
-  Serial.print(GyroX);
-  Serial.print(F(" GyroY: "));
-  Serial.print(GyroY);
-  Serial.print(F(" GyroZ: "));
-  Serial.println(GyroZ);
-}
-
-void printAccelData() {
-
-  Serial.print(F("AccX: "));
-  Serial.print(AccX);
-  Serial.print(F(" AccY: "));
-  Serial.print(AccY);
-  Serial.print(F(" AccZ: "));
-  Serial.println(AccZ);
-}
-
-void printMagData() {
-
-  Serial.print(F("MagX: "));
-  Serial.print(MagX);
-  Serial.print(F(" MagY: "));
-  Serial.print(MagY);
-  Serial.print(F(" MagZ: "));
-  Serial.println(MagZ);
-}
-
-void printRollPitchYaw() {
-
-  Serial.print(F("roll: "));
-  Serial.print(roll_IMU);
-  Serial.print(F(" pitch: "));
-  Serial.print(pitch_IMU);
-  Serial.print(F(" yaw: "));
-  Serial.print(yaw_IMU);
-  Serial.print(F(" gyroZBiasCompensation: "));
-  // Serial.println(imu.gyroZBiasCompensation * 1000);
-}
-
-void printPIDoutput() {
-
-  // Serial.print(F("roll_PID: "));
-  // Serial.print(roll_PID);
-  // Serial.print(F(" pitch_PID: "));
-  // Serial.print(pitch_PID);
-  // Serial.print(F(" yaw_PID: "));
-  // Serial.println(yaw_PID);
-}
-
-void printMotorCommands() {
-
-  DEBUG_TELEMETRY.print(F("  yaw_des: "));
-  DEBUG_TELEMETRY.print(yaw_des);
-  DEBUG_TELEMETRY.print(F("  yaw_IMU: "));
-  DEBUG_TELEMETRY.print(yaw_IMU);
-  // DEBUG_TELEMETRY.print(F("motor left: "));
-  // DEBUG_TELEMETRY.print(motorLset);
-  // DEBUG_TELEMETRY.print(F(" motor right: "));
-  // DEBUG_TELEMETRY.println(motorRset);
-}
 
 void printServoCommands() {
   Serial.print(F("s1_command: "));

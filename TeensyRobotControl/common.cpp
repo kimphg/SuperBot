@@ -2,6 +2,22 @@
 // unsigned long channel_1_raw, channel_2_raw, channel_3_raw, channel_4_raw, channel_5_raw, channel_6_raw;
 int ppm_counter = 0;
 unsigned long time_ms = 0;
+float ConvXYtoAngle(double x, double y)
+{
+  float azi=0;
+    if(!y)
+    {
+        azi = x>0? PI_CHIA2:(PI_NHAN2-PI_CHIA2);
+        
+    }
+    else
+    {
+        azi = atanf(x/y);
+        if(y<0)azi+=PI;
+        if(azi<0)azi += PI_NHAN2;
+    }
+  return degrees(azi);
+}
 // void getPPM()
 // {
 //   // Serial.println("getppm");
@@ -66,6 +82,12 @@ void blink(int n) {
     delay(1000);
 }
 
+bool isPrintable(uint8_t ch)
+{
+    if(ch>=0x21&&ch<=0x7e)return true;
+    if(ch==0x0d||ch==0x0a)return true;
+    return false;
+}
 
 void radioSetup()
 {
@@ -88,7 +110,7 @@ uint8_t calcCS8(uint8_t* startbyte, uint8_t len)
   return cs;
 }
 
-std::vector<String> splitString(String input)
+std::vector<String> splitString(String input,char sep)
 {
   std::vector<String> tokens;
   if(input.length()<1)return tokens;
@@ -96,7 +118,7 @@ std::vector<String> splitString(String input)
   int last_sep_pos=0;
   while(1)
   {
-    int sep_pos = input.indexOf(',',last_sep_pos);
+    int sep_pos = input.indexOf(sep,last_sep_pos);
     if(sep_pos<0){
       break;
     }

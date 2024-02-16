@@ -15,8 +15,8 @@
 #define OUTPUT_3 4
 #define OUTPUT_4 5
 #define DT_CONTROL 0.02 //50hz control loop
-#define ACC_MAX 0.05/DT_CONTROL
-#define BASE_LEN 0.5
+#define ACC_MAX 0.022/DT_CONTROL
+#define BASE_LEN 0.45
 #define COMMAND_LEN_MAX 100
 #define MODE_STANDBY 0
 #define MODE_MOVE 1
@@ -29,10 +29,18 @@ class RobotDriver
       RobotDriver();
       void processCommand(String command);
       void update();
+      void sendSyncPacket();
       void calculateControlLoop();
+
   private:
+  int debugCounter=0;
+  unsigned long int curTime =0;;
+  float botRotationSpeed = 0;
   bool isLiftMinPos = false;
   bool isLiftMaxPos = false;
+  float desRotSpd=0;
+  float  desDistance = 0;
+  float desBearing = 0;
   bool initOK = false;
   void updateCommandBus();
   void sendControlPacket(uint8_t id,float speed,uint8_t mode);
@@ -41,27 +49,29 @@ class RobotDriver
   int bot_mode = MODE_STANDBY;
   int encoderPos=0;
   bool isActive=false;
-  float i_limit_yaw = 3.0; 
+  float i_limit_yaw = 10.0; 
   float i_limit_pos = 30.0; 
   float Kp_yaw ,Ki_yaw , Kd_yaw ;   
   float Kp_pos ,Ki_pos, Kd_pos ;  
-  float error_pos, error_pos_prev, integral_pos,  derivative_pos, pos_PID = 0;
-  float error_yaw, error_yaw_prev, integral_yaw,  derivative_yaw, yaw_PID = 0;
+  float error_pos, error_pos_prev, integral_pos=0,  derivative_pos, pos_PID = 0;
+  float error_yaw, error_yaw_prev, integral_yaw=0,  derivative_yaw, yaw_PID = 0;
   void gotoStandby();
   void posUpdate();
-
+  void DebugReport();
+  int motionMode = 0; // 0:standby, 1: move, 2:rotate
   IMU_driver imu;
   Stream *portIMU;
   Stream *portSenBus;
   Stream *portMotor;
 unsigned long int timeMillis=0;
-  float desMotorSpeedLeft=0,desMotorSpeedRight=0,desMotorSpeedLift=0;
+  float desMotSpdL=0,desMotSpdR=0,desMotorSpeedLift=0;
   int botState = 0;
   SenBusDriver sbus;
   float botx = 0,boty = 0;
   float botangle = 0;
-  float desX=100,desY=0;
+  float desX=0,desY=0;
   float desAngle=0;
   float curSpeed=0;
+  float desLiftSpeed = 0;
   int CurTagid;
 } ;
