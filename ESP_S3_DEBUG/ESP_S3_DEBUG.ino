@@ -28,7 +28,7 @@ bool connected = false;
 void setup() {
   pinMode(LED_BUILTIN, OUTPUT);
 
-  Serial.begin(115200);
+  Serial.begin(2000000);
   Serial.println();
   Serial.println("Configuring access point...");
 
@@ -46,13 +46,35 @@ void setup() {
 connected=true;
   Serial.println("Server started");
 }
-
-void loop() {
-    if(connected){
-    //Send a packet
+uint8_t inputBuff[200];
+uint8_t buffIndex=0;
+uint8_t lastByte =0;
+void sendPacket(uint8_t* data,int len)
+{
     udp.beginPacket(udpAddress,udpPort);
-    udp.printf("Seconds since boot: %lu", millis()/1000);
+    udp.write(data,len);
     udp.endPacket();
+}
+void loop() {
+  while(Serial.available())
+  {
+    uint8_t bytein = Serial.read();
+    inputBuff[buffIndex]=bytein; 
+    buffIndex++;
+    if(buffIndex>=100)buffIndex=0;
+    if((bytein=='$')&&(lastByte=='!'))
+    {
+      inputBuff[0]='!';
+      inputBuff[1]='$';
+      buffIndex=2;
+    }
+    else if (bytein=='#'){
+        sendPacket( inputBuff, buffIndex+1);
+    }
+    lastByte = bytein;
+       
+  }
+    if(connected){ 
   }
   //Wait for 1 second
   delay(1000);
