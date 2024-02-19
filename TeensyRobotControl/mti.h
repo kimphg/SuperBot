@@ -11,7 +11,7 @@ typedef struct
   int mid;
   int dataLen;
   int xdi;
-  float roll, pitch, yaw,gyroyaw;
+  float roll, pitch, yaw, gyroyaw;
   float gyroX,gyroY,gyroZ,gyroZold;
   float accX,accY,accZ;
 
@@ -26,7 +26,9 @@ public:
   bool Connect() ;
   bool gotoMeasurement();
   inline bool getIsConnected() {
-    return isConnected;
+     isConnected = isUpdated;
+     isUpdated = false;
+     return isConnected;
   }
   bool gotoConfig() ;
   void updateData() ;
@@ -44,7 +46,7 @@ private:
   
   int gyroZBiasCount;
   unsigned char databuf[BUF_SIZE_IMU];
-  int buffIndex;
+  int buffIndex=0;
   
   unsigned char lastbyte;
   IMUData measurement;

@@ -202,12 +202,12 @@ void RobotDriver::updateCommandBus() {
   }
 }
 RobotDriver::RobotDriver() {
-  S_DEBUG.begin(921600);    //IMU
+  S_IMU.begin(921600);    //IMU
   S_SENSORS.begin(1000000);  //sens bus
   S_MOTORS.begin(230400);
   S_COMMAND.begin(57600);
   S_DEBUG.begin(2000000);
-  portIMU = &S_DEBUG;
+  portIMU = &S_IMU;
   portSenBus = &S_SENSORS;
   portMotor = &S_MOTORS;
   imu.IMU_init(portIMU);
@@ -288,16 +288,16 @@ void RobotDriver::DebugReport()
   lastDebugTime = curTime;
   // debugCounter=0;
   debugCounter++;
-  if(debugCounter>3)debugCounter=0;
+  if(debugCounter>4)debugCounter=0;
   if(debugCounter==0){
-  DPRINT("!$dx,dy,dd,da:");  DPRINTLN(desX);  DPRINTLN(desY);  DPRINTLN(desDistance);  DPRINTLN(desBearing);  DPRINT("#");
-  DPRINT("!$ x,y,ang,spd:");  DPRINTLN(botx);  DPRINTLN(boty);  DPRINTLN(botangle);  DPRINTLN(curSpeed);  DPRINT("#");
+    DPRINT("!$dx,dy,dd,da:");  DPRINTLN(desX);  DPRINTLN(desY);  DPRINTLN(desDistance);  DPRINTLN(desBearing);  DPRINT("#");
+    DPRINT("!$ x,y,ang,spd:");  DPRINTLN(botx);  DPRINTLN(boty);  DPRINTLN(botangle);  DPRINTLN(curSpeed);  DPRINT("#");
   }
 
   if(debugCounter==1){
-  DPRINT("!$PID yaw:");       DPRINTLN(Kp_yaw * error_yaw);DPRINTLN(Ki_yaw * integral_yaw);DPRINTLN(Kd_yaw * derivative_yaw);DPRINT("#");
-  DPRINT("!$PID pos:");       DPRINTLN(Kp_pos * error_pos);DPRINTLN(Ki_pos * integral_pos);DPRINTLN(Kd_pos * derivative_pos);DPRINT("#");
-  DPRINT("!$error yaw pos:");     DPRINTLN(error_yaw);  DPRINTLN(error_pos); DPRINT("#");  
+    DPRINT("!$PID yaw:");       DPRINTLN(Kp_yaw * error_yaw);DPRINTLN(Ki_yaw * integral_yaw);DPRINTLN(Kd_yaw * derivative_yaw);DPRINT("#");
+    DPRINT("!$PID pos:");       DPRINTLN(Kp_pos * error_pos);DPRINTLN(Ki_pos * integral_pos);DPRINTLN(Kd_pos * derivative_pos);DPRINT("#");
+    DPRINT("!$error yaw pos:");     DPRINTLN(error_yaw);  DPRINTLN(error_pos); DPRINT("#");  
   }
   if(debugCounter==2){
   DPRINT("!$Lift Status:");   DPRINTLN(liftLevel);   DPRINTLN(liftLevel / 1400.0);   DPRINT("#");
@@ -307,6 +307,10 @@ void RobotDriver::DebugReport()
   DPRINT("!$DesMotSpd RLL:");  DPRINTLN(desMotSpdR);   DPRINTLN(desMotSpdL); DPRINTLN(desLiftSpeed);  DPRINT("#");
   DPRINT("!$desRotSpd:");     DPRINTLN(desRotSpd);   DPRINT("#");
   DPRINT("!$Limits:");        DPRINTLN(isLiftMinPos); DPRINTLN(isLiftMaxPos);  DPRINT("#");
+  }
+  if(debugCounter==4){
+  DPRINT("!$GyroYaw:");  DPRINTLN(imu_data.gyroyaw);  DPRINT("#");
+  DPRINT("!$GyroConnect:");  DPRINTLN(imu.getIsConnected());  DPRINT("#");
   }
   S_DEBUG.print('@');
 

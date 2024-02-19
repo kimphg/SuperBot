@@ -7,7 +7,7 @@
 #define S_SENSORS Serial2
 #define S_MOTORS  Serial3
 #define S_COMMAND Serial1
-#define S_DEBUG   Serial5
+#define S_DEBUG   Serial
 #ifdef SIMULATION
   #define S_DEBUG Serial
   #define RS485_PPU_PSU Serial
