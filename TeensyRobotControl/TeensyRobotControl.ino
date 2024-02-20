@@ -104,7 +104,7 @@ float Kd_pitch_rate = 0.0002;  //Pitch D-gain - rate mode (be careful when incre
 
 //General stuff
 float dt;
-unsigned long current_time, prev_time;
+unsigned long current_time=0, prev_time=0;
 unsigned long print_counter, serial_counter;
 unsigned long blink_counter, blink_delay;
 bool blinkAlternate;
@@ -264,8 +264,9 @@ void loop() {
   dt = (current_time - prev_time);  
   if (dt < loopRatePeriodUS) return;  //
   if (dt > loopRatePeriodUS + 10) {
-    DPRINTF("loop too slow error:");
+    DPRINTF("!$ERROR:loop too slow, ");
     DPRINTLN(dt);
+    DPRINTLN('#');
   }
 
   prev_time = current_time;  //

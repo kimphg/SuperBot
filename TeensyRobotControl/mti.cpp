@@ -56,8 +56,8 @@ void IMU_driver::resetYaw()
 {
   measurement.gyroyaw = 0;
   yawShift = measurement.gyroyaw - measurement.yaw;
-  while(yawShift>360.0)yawShift-=360.0;
-                while(yawShift<0)yawShift+=360.0;
+  while(yawShift>180.0)yawShift-=360.0;
+  while(yawShift<-180)yawShift+=360.0;
 }
 
 bool IMU_driver::Connect()
@@ -132,25 +132,25 @@ bool IMU_driver::gotoConfig()
               if (xdi == 8240) {  //MTDATA2 data ID of euler angles
                 measurement.roll =  bytesToFloat(databuf[iti+3], databuf[iti+4], databuf[iti+5], databuf[iti+6]);
                 measurement.pitch = bytesToFloat(databuf[iti+7], databuf[iti+8], databuf[iti+9], databuf[iti+10]);
-                measurement.yaw =   bytesToFloat(databuf[iti+11], databuf[iti+12], databuf[iti+13], databuf[iti+17]);
+                measurement.yaw =   -bytesToFloat(databuf[iti+11], databuf[iti+12], databuf[iti+13], databuf[iti+17]);
                 if(yawCalcMode==0){
                   yawShift = measurement.gyroyaw-measurement.yaw;
-                  while(yawShift>360.0)yawShift-=360.0;
-                  while(yawShift<0)yawShift+=360.0;
+                  while(yawShift>180.0)yawShift-=360.0;
+                  while(yawShift<-180)yawShift+=360.0;
                 }
                 else
                 {
                   measurement.gyroyaw = measurement.yaw+yawShift;
-                  while(measurement.gyroyaw>360.0)measurement.gyroyaw-=360.0;
-                  while(measurement.gyroyaw<0)measurement.gyroyaw+=360.0;
+                  while(measurement.gyroyaw>180.0)measurement.gyroyaw-=360.0;
+                  while(measurement.gyroyaw<-180)measurement.gyroyaw+=360.0;
                 }
                 isUpdated =true;
               }
               if (xdi == 32832) {  //MTDATA2 data ID of rate of turn HR
                 measurement.gyroX =  bytesToFloat(databuf[iti+3], databuf[iti+4], databuf[iti+5], databuf[iti+6]);
                 measurement.gyroY = bytesToFloat(databuf[iti+7], databuf[iti+8], databuf[iti+9], databuf[iti+10]);
-                float newGyroZ =   bytesToFloat(databuf[iti+11], databuf[iti+12], databuf[iti+13], databuf[iti+17]);
-                if(abs(newGyroZ<0.1))
+                float newGyroZ =   -bytesToFloat(databuf[iti+11], databuf[iti+12], databuf[iti+13], databuf[iti+17]);
+                if(abs(newGyroZ)<0.1)
                 {
                   if(yawCalcMode>0)
                   yawCalcMode--;
@@ -180,8 +180,8 @@ bool IMU_driver::gotoConfig()
                   
                   measurement.gyroyaw+= (measurement.gyroZ+measurement.gyroZold)/1000.0*57.2958;// todo: add dt later
                   
-                  while(measurement.gyroyaw>360.0)measurement.gyroyaw-=360.0;
-                  while(measurement.gyroyaw<0)measurement.gyroyaw+=360.0;
+                  while(measurement.gyroyaw>180.0)measurement.gyroyaw-=360.0;
+                  while(measurement.gyroyaw<-180)measurement.gyroyaw+=360.0;
                 }
                 measurement.gyroZold = measurement.gyroZ;
                 // Serial.print(measurement.gyroZ);

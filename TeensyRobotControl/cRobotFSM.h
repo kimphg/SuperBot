@@ -15,13 +15,13 @@
 #define OUTPUT_3 4
 #define OUTPUT_4 5
 #define DT_CONTROL 0.02 //50hz control loop
-#define ACC_MAX 0.022/DT_CONTROL
+#define ACC_MAX 0.005/DT_CONTROL
 #define BASE_LEN 0.45
 #define COMMAND_LEN_MAX 100
 #define MODE_STANDBY 0
 #define MODE_MOVE 1
 #define MODE_ROTATE 2
-#define MODE_LIFT 2
+#define MODE_LIFT 3
 class RobotDriver
 {
   public:
@@ -29,8 +29,12 @@ class RobotDriver
       RobotDriver();
       void processCommand(String command);
       void update();
+
+      void gotoMode(int mode);
+
+
       void sendSyncPacket();
-      void calculateControlLoop();
+      
 
   private:
   int debugCounter=0;
@@ -42,15 +46,21 @@ class RobotDriver
   float  desDistance = 0;
   float desBearing = 0;
   bool initOK = false;
+  
+  void loopRotate();
   void updateCommandBus();
   void sendControlPacket(uint8_t id,float speed,uint8_t mode);
   void processMotorReport(uint8_t bytein);
+  void loopMove();
+  void loopLift();
+  void loopStandby();
   IMUData imu_data;
   int bot_mode = MODE_STANDBY;
-  int encoderPos=0;
+  int stillCount=0;
+  
   bool isActive=false;
   float i_limit_yaw = 10.0; 
-  float i_limit_pos = 30.0; 
+  float i_limit_pos = 100.0; 
   float Kp_yaw ,Ki_yaw , Kd_yaw ;   
   float Kp_pos ,Ki_pos, Kd_pos ;  
   float error_pos, error_pos_prev, integral_pos=0,  derivative_pos, pos_PID = 0;
@@ -58,12 +68,13 @@ class RobotDriver
   void gotoStandby();
   void posUpdate();
   void DebugReport();
-  int motionMode = 0; // 0:standby, 1: move, 2:rotate
+  void controlLoop();
   IMU_driver imu;
   Stream *portIMU;
   Stream *portSenBus;
   Stream *portMotor;
-unsigned long int timeMillis=0;
+unsigned long int lastLoopMillis=0;
+unsigned long int lastPosUpdateMillis=0;
   float desMotSpdL=0,desMotSpdR=0,desMotorSpeedLift=0;
   int botState = 0;
   SenBusDriver sbus;
@@ -72,6 +83,9 @@ unsigned long int timeMillis=0;
   float desX=0,desY=0;
   float desAngle=0;
   float curSpeed=0;
+  float curSpeedL=0;
+  float curSpeedR=0;
+  float curSpeedLift=0;
   float desLiftSpeed = 0;
   int CurTagid;
 } ;
