@@ -48,6 +48,7 @@ class RobotDriver
   bool initOK = false;
   
   void loopRotate();
+  void liftStabilize();
   void updateCommandBus();
   void sendControlPacket(uint8_t id,float speed,uint8_t mode);
   void processMotorReport(uint8_t bytein);
@@ -59,8 +60,8 @@ class RobotDriver
   int stillCount=0;
   
   bool isActive=false;
-  float i_limit_yaw = 10.0; 
-  float i_limit_pos = 100.0; 
+  float i_limit_yaw = 5.0; 
+  float i_limit_pos = 150.0; 
   float Kp_yaw ,Ki_yaw , Kd_yaw ;   
   float Kp_pos ,Ki_pos, Kd_pos ;  
   float error_pos, error_pos_prev, integral_pos=0,  derivative_pos, pos_PID = 0;
@@ -87,5 +88,8 @@ unsigned long int lastPosUpdateMillis=0;
   float curSpeedR=0;
   float curSpeedLift=0;
   float desLiftSpeed = 0;
+  int liftLevelA0 = 340;
+  float liftLevelAngle =0.0;
+  float liftAngle =0.0;
   int CurTagid;
 } ;
