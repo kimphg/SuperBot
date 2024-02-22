@@ -1,6 +1,6 @@
 // #include "core_pins.h"
 #include <stdint.h>
-#define LIFT_PPR 1392.6//1360
+#define LIFT_PPR 1392.64//1360
 // #include "usb_serial.h"
 #include <math.h>
 
@@ -518,7 +518,7 @@ void RobotDriver::loopRotate()
 }
 void RobotDriver::liftStabilize()
 {
-    desLiftSpeed = desRotSpd/9.0;//+botRotationSpeed/40.0;//+= dliftSpeed;
+    desLiftSpeed = desRotSpd/8.5;//+botRotationSpeed/40.0;//+= dliftSpeed;
   desLiftSpeed = constrainVal(desLiftSpeed, -0.18, 0.18);
     if (liftLevelMinDefined && liftLevelInitOK)
    sendControlPacket(3, desLiftSpeed, 0);

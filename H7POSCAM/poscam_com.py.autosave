@@ -7,18 +7,37 @@ import sensor, image, time, math
 from pyb import Pin, Timer
 sensor.reset()
 sensor.set_pixformat(sensor.GRAYSCALE)
-sensor.set_framesize(sensor.QQVGA) # we run out of memory if the resolution is much bigger...
-sensor.skip_frames(time = 1000)
-sensor.set_auto_gain(False)  # must turn this off to prevent image washout...
-sensor.set_auto_whitebal(False)  # must turn this off to prevent image washout...
-sensor.set_auto_exposure(     False, exposure_us=2000 )
-sensor.set_auto_gain(False, gain_db=30)
-
+def setMode(mode):
+    if(mode==1):
+        sensor.set_framesize(sensor.QQVGA) # we run out of memory if the resolution is much bigger...
+        sensor.skip_frames(time = 500)
+        sensor.set_auto_gain(False)  # must turn this off to prevent image washout...
+        sensor.set_auto_whitebal(False)  # must turn this off to prevent image washout...
+        sensor.set_auto_exposure(     False, exposure_us=2000 )
+        sensor.set_auto_gain(False, gain_db=30)
+        sensor.skip_frames(time = 500)
+    if(mode==2):
+        sensor.set_framesize(sensor.QVGA) # we run out of memory if the resolution is much bigger...
+        sensor.skip_frames(time = 500)
+        sensor.set_auto_gain(False)  # must turn this off to prevent image washout...
+        sensor.set_auto_whitebal(False)  # must turn this off to prevent image washout...
+        sensor.set_auto_exposure(False, exposure_us=4000 )
+        sensor.set_auto_gain(False, gain_db=28)
+        sensor.skip_frames(time = 500)
+    if(mode==3):
+        sensor.set_framesize(sensor.VGA) # we run out of memory if the resolution is much bigger...
+        sensor.skip_frames(time = 500)
+        sensor.set_auto_gain(False)  # must turn this off to prevent image washout...
+        sensor.set_auto_whitebal(False)  # must turn this off to prevent image washout...
+        sensor.set_auto_exposure(False, exposure_us=6000 )
+        sensor.set_auto_gain(False, gain_db=26)
+        sensor.skip_frames(time = 500)
+setMode(1)
 clock = time.clock()
 from pyb import UART
 
-uart = UART(1, 1000000, timeout_char=1000)                         # init with given baudrate
-uart.init(1000000, bits=8, parity=None, stop=1, timeout_char=1000) # init with given parameters
+uart = UART(3, 921600, timeout_char=1000)                         # init with given baudrate
+uart.init(921600, bits=8, parity=None, stop=1, timeout_char=1000) # init with given parameters
 # Note! Unlike find_qrcodes the find_apriltags method does not need lens correction on the image to work.
 
 # The apriltag code supports up to 6 tag families which can be processed at the same time.
@@ -35,6 +54,11 @@ def crc16(data : bytearray, offset , length):
             else:
                 crc = crc << 1
     return crc & 0xFFFF
+def crc8(data : bytearray, offset , length):
+    cs=0
+    for i in range(0, length):
+        cs ^= data[offset + i]
+    return cs
 tag_families = 0
 #tag_families |= image.TAG16H5 # comment out to disable this family
 #tag_families |= image.TAG25H7 # comment out to disable this family
@@ -76,35 +100,41 @@ masterFrameLen=6
 workMode=1
 frameWidth = sensor.width()
 frameHeight = sensor.height()
+fps_cam=0
+uart.init(921600)
 while(True):
     clock.tick()
 #    print(sensor.get_exposure_us())
     img = sensor.snapshot()
 
     #img.save ("example.jpg")
-    while uart
-    if(workMode>0):
+
+    if(workMode==1):#high speed mode
         tagCount=0
+        packet="$CAM1,"
+        packet+=(str(workMode))
+        packet+=(",")
+        packet+=(str(fps_cam))
+        packet+=(",")
         for tag in img.find_apriltags(families=tag_families):
-            packet=bytearray((b'\xaa\x55\x01\x11'))
-#            packet.append(byte())
-            packet.append((tag.id()>>8))
-            packet.append((tag.id()&0xff))
-            packet.append(int(tag.cx()/frameWidth*255))
-            packet.append(int(tag.cy()/frameHeight*255))
-            rotationDeg = (180 * tag.rotation()) / math.pi*10
-            if(rotationDeg<0):
-                rotationDeg+=3600
-            outputDeg = int(rotationDeg)
-            packet.append((outputDeg>>8))
-            packet.append((outputDeg&0xff))
-            datalen = len(packet)-2;
-            cs_byte = crc16(packet,2,datalen)
-            packet.append(cs_byte>>8)
-            packet.append(cs_byte&0xff)
-            tagCount=tagCount+1
-            uart.write(packet)
-            print(tag.id())
+            packet += ("TD")
+            packet += (",")
+            packet += (str(tag.id()))
+            packet += (",")
+            packet += (str(int(tag.cx()/frameWidth*100)))
+            packet += (",")
+            packet += (str(int(tag.cy()/frameHeight*100)))
+            packet += (",")
+            packet += (str(int(tag.rotation()*1800.0/3.141592653589793)))
+            packet += (",")
+        datalen = len(packet);
+        packetBytes = bytearray(packet,'ascii')
+        cs_byte = crc8(packetBytes,0,datalen)
+        packet += (str(cs_byte))
+        packet += ("#")
+        tagCount=tagCount+1
+        uart.write(packet)
+        print(packet)
         # defaults to TAG36H11 without "families".
 #        img.draw_rectangle(tag.rect(), color = (255))
 #        img.draw_cross(tag.cx(), tag.cy(), color = (0, 255, 0))
@@ -142,4 +172,4 @@ while(True):
                     workMode=0
     if(len(uartBuff)>1000):
         uartBuff=[]
-    print(clock.fps())
+    fps_cam = int(clock.fps())
