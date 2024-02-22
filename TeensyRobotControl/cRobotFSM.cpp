@@ -5,10 +5,10 @@
 #include <math.h>
 
 #include "cRobotFSM.h"
-long int encoderPosLeft = 0;
-long int encoderPosRight = 0;
-long int encoderPosLefto = 0;
-long int encoderPosRighto = 0;
+long int encPosRight = 0;
+long int encPosLeft = 0;
+long int encRighto = 0;
+long int encLefto = 0;
 long int liftLevel = 0;
 long int liftLevelo = 0;
 // long int reportCount = 0;
@@ -21,15 +21,15 @@ int M1Fail = 0, M2Fail = 0, M3Fail = 0;
 // #define MAX_LIFT_H 12000
 int liftMaxLevel = 0;
 unsigned char controlPacket[CONTROL_LEN];
-void EncIntLeft() {
+void encRightInt() {
   if (digitalRead(ENC_B1) > 0)
-    encoderPosLeft++;
-  else encoderPosLeft--;
+    encPosRight++;
+  else encPosRight--;
 }
-void EncIntRight() {
+void EncLeftInt() {
   if (digitalRead(ENC_B2) > 0)
-    encoderPosRight--;
-  else encoderPosRight++;
+    encPosLeft--;
+  else encPosLeft++;
 }
 void EncIntLift() {
   if (digitalRead(ENC_B3) > 0) {
@@ -249,8 +249,8 @@ RobotDriver::RobotDriver() {
   pinMode(ENC_A2, INPUT);
   pinMode(ENC_B2, INPUT);
 
-  attachInterrupt(digitalPinToInterrupt(ENC_A1), EncIntLeft, RISING);
-  attachInterrupt(digitalPinToInterrupt(ENC_A2), EncIntRight, RISING);
+  attachInterrupt(digitalPinToInterrupt(ENC_A1), encRightInt, RISING);
+  attachInterrupt(digitalPinToInterrupt(ENC_A2), EncLeftInt, RISING);
   attachInterrupt(digitalPinToInterrupt(ENC_A3), EncIntLift, RISING);
   Kp_yaw = 0.8;   //Yaw P-gain
   Ki_yaw = 0.2;   //Yaw I-gain
@@ -273,13 +273,13 @@ void RobotDriver::posUpdate() {
   lastPosUpdateMillis= curTime;
 #ifdef SIMULATION
 
-  float distanceRight = desMotSpdL * 12.0;  //(encoderPosLeft-encoderPosLefto)*0.6135923151;
-  float distanceLeft = desMotSpdR  * 12.0;    //(encoderPosRight-encoderPosRighto)*0.6135923151;
+  float distanceRight = desMotSpdL * 12.0;  //(encoderPosLeft-encRighto)*0.6135923151;
+  float distanceLeft = desMotSpdR  * 12.0;    //(encPosLeft-encLefto)*0.6135923151;
   liftLevel+=desLiftSpeed*DT_CONTROL/360.0*1400.0;
 #else
   float liftLevelDistance = liftLevel - liftLevelo;
-  float distanceLeft = -(encoderPosLeft - encoderPosLefto) * 0.69;
-  float distanceRight = -(encoderPosRight - encoderPosRighto) * 0.69;
+  float distanceRight = -(encPosRight - encRighto) * 0.69;
+  float distanceLeft = -(encPosLeft - encLefto) * 0.69;
 #endif
   // Serial.println(curSpeedLift);
   float distance = (distanceLeft + distanceRight) / 2.0;
@@ -287,8 +287,8 @@ void RobotDriver::posUpdate() {
   curSpeedL = distanceLeft / 1000.0 / DT_CONTROL;
   curSpeedR = distanceRight / 1000.0 / DT_CONTROL;
   curSpeedLift = liftLevelDistance/LIFT_PPR/DT_CONTROL;//round per Sec
-  encoderPosLefto = encoderPosLeft;
-  encoderPosRighto = encoderPosRight;
+  encRighto = encPosRight;
+  encLefto = encPosLeft;
   liftLevelo = liftLevel;
   liftLevelAngle=-(liftLevel-liftLevelA0)*360.0/LIFT_PPR;
   // while (liftLevelAngle<-180)liftLevelAngle+=360;
@@ -396,11 +396,14 @@ void RobotDriver::loopMove() {
   error_yaw_prev = error_yaw;  
   //PID speed
   error_pos = desDistance * cos((error_yaw)/DEG_RAD);
-  
-    if (abs(error_yaw) > 10) {
-      error_pos/=(abs(error_yaw)/10.0);
+    if (abs(error_yaw) > 90) {
+      error_yaw-=180;
+      while (error_yaw<-180)error_yaw+=360;
     }
-
+    // if (abs(error_yaw) > 10) {
+    //   error_pos/=(abs(error_yaw)/10.0);
+    // }
+    
     if((abs(error_pos) < 30)&&(abs(desMotSpdL)<0.1)&&(abs(desMotSpdR)<0.1))
     {
       stillCount++;
@@ -420,7 +423,7 @@ void RobotDriver::loopMove() {
   derivative_pos = (error_pos - error_pos_prev) / DT_CONTROL;
   pos_PID = .12 * (Kp_pos * error_pos + Ki_pos * integral_pos + Kd_pos * derivative_pos);  //scaled by .01 to bring within -1 to 1 range
   error_pos_prev = error_pos;
-  float desSpeed = constrainVal(pos_PID, -0.32, 0.32);
+  float desSpeed = constrainVal(pos_PID, -MAX_MOTION_SPEED, MAX_MOTION_SPEED);
   // calculate curSpeed
   // if(desSpeed)
   desRotSpd = 0.1 * yaw_PID * (1.0 - abs(desSpeed));  //high curSpeed less rotation
@@ -432,7 +435,7 @@ void RobotDriver::loopMove() {
   acc = desSpeed + desRotSpd * BASE_LEN / 2.0 - desMotSpdL;
   acc = constrainVal(acc, -ACC_MAX , ACC_MAX );
   desMotSpdL += acc;
-  desMotSpdL*=1.08;
+  desMotSpdL*=1;
   desMotSpdL = constrainVal(desMotSpdL, -1.0, 1.0);
   
   // float errorLift = desLiftLevel-liftLevel;

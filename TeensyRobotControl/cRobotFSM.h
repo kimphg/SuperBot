@@ -22,6 +22,7 @@
 #define MODE_MOVE 1
 #define MODE_ROTATE 2
 #define MODE_LIFT 3
+#define MAX_MOTION_SPEED 1.0
 class RobotDriver
 {
   public:

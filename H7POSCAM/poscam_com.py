@@ -7,7 +7,7 @@ import sensor, image, time, math
 from pyb import Pin, Timer
 sensor.reset()
 sensor.set_pixformat(sensor.GRAYSCALE)
-def setMode(mode)
+def setMode(mode):
     if(mode==1):
         sensor.set_framesize(sensor.QQVGA) # we run out of memory if the resolution is much bigger...
         sensor.skip_frames(time = 500)
@@ -21,15 +21,23 @@ def setMode(mode)
         sensor.skip_frames(time = 500)
         sensor.set_auto_gain(False)  # must turn this off to prevent image washout...
         sensor.set_auto_whitebal(False)  # must turn this off to prevent image washout...
-        sensor.set_auto_exposure(False, exposure_us=2000 )
-        sensor.set_auto_gain(False, gain_db=30)
+        sensor.set_auto_exposure(False, exposure_us=4000 )
+        sensor.set_auto_gain(False, gain_db=28)
         sensor.skip_frames(time = 500)
-
+    if(mode==3):
+        sensor.set_framesize(sensor.VGA) # we run out of memory if the resolution is much bigger...
+        sensor.skip_frames(time = 500)
+        sensor.set_auto_gain(False)  # must turn this off to prevent image washout...
+        sensor.set_auto_whitebal(False)  # must turn this off to prevent image washout...
+        sensor.set_auto_exposure(False, exposure_us=6000 )
+        sensor.set_auto_gain(False, gain_db=26)
+        sensor.skip_frames(time = 500)
+setMode(1)
 clock = time.clock()
 from pyb import UART
 
-uart = UART(1, 1000000, timeout_char=1000)                         # init with given baudrate
-uart.init(1000000, bits=8, parity=None, stop=1, timeout_char=1000) # init with given parameters
+uart = UART(3, 921600, timeout_char=1000)                         # init with given baudrate
+uart.init(921600, bits=8, parity=None, stop=1, timeout_char=1000) # init with given parameters
 # Note! Unlike find_qrcodes the find_apriltags method does not need lens correction on the image to work.
 
 # The apriltag code supports up to 6 tag families which can be processed at the same time.
@@ -85,7 +93,7 @@ ch.pulse_width_percent(50)
 p1 = Pin('P9') # P4 has TIM2, CH3
 p1.init(Pin.IN,pull = Pin.PULL_UP)
 count=0
-uartBuff = []
+uartBuff = ""
 newFrameDetected = False
 newFramePos = 0
 masterFrameLen=6
@@ -93,6 +101,7 @@ workMode=1
 frameWidth = sensor.width()
 frameHeight = sensor.height()
 fps_cam=0
+uart.init(921600)
 while(True):
     clock.tick()
 #    print(sensor.get_exposure_us())
@@ -136,31 +145,10 @@ while(True):
     datalen = uart.any()
     if(datalen):
         if(len(uartBuff)+datalen>1000):
-            uartBuff=[]
-            uart.read(datalen)
+            uartBuff= uart.read(datalen)
             continue
-        uartBuff.append(uart.read(datalen))
-        for i in range(len(uartBuff)-1):
-            if(uartBuff[i]==0xAA):
-                if(uartBuff[i+1]==0x55):
-                    newFrameDetected=True
-                    newFramePos=i
-    if(newFrameDetected):
-        uartBuff=[]
-        if(newFramePos<=(uartBuff.size()-6)):
-            addressByte = uartBuff[newFramePos+2]
-            if(addressByte==0x11):
-                commandByte=uartBuff[newFramePos+3]
-                if(commandByte==0x01):
-                    workMode=1
-                    sensor.set_pixformat(sensor.GRAYSCALE)
-                    sensor.set_framesize(sensor.QVGA)
-                elif(commandByte==0x02):
-                    workMode=2
-                    sensor.set_pixformat(sensor.GRAYSCALE)
-                    sensor.set_framesize(sensor.QQVGA)
-                else:
-                    workMode=0
+        uartBuff+=(uart.read(datalen).decode("ascii"))
+        print(uartBuff)
     if(len(uartBuff)>1000):
-        uartBuff=[]
+        uartBuff=""
     fps_cam = int(clock.fps())
