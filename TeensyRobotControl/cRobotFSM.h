@@ -22,7 +22,7 @@
 #define MODE_MOVE 1
 #define MODE_ROTATE 2
 #define MODE_LIFT 3
-#define MAX_MOTION_SPEED 1.0
+#define MAX_MOTION_SPEED 1.3
 class RobotDriver
 {
   public:
@@ -33,11 +33,17 @@ class RobotDriver
 
       void gotoMode(int mode);
 
+      
 
       void sendSyncPacket();
       
 
   private:
+  float maxBotSpeed = 0.3;
+  float maxBotAcc = 0.005/DT_CONTROL;
+  float maxBotRotSpd = 1.0;//radian/s
+  float CalcPIDyaw(float targetAngle);
+  float CalcPIDPos(float epos);
   int debugCounter=0;
   unsigned long int curTime =0;;
   float botRotationSpeed = 0;
