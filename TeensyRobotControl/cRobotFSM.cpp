@@ -1,3 +1,4 @@
+#include "wiring.h"
 // #include "core_pins.h"
 #include <stdint.h>
 #define LIFT_PPR 1392.64//1360
@@ -252,9 +253,9 @@ RobotDriver::RobotDriver() {
   attachInterrupt(digitalPinToInterrupt(ENC_A1), encRightInt, RISING);
   attachInterrupt(digitalPinToInterrupt(ENC_A2), EncLeftInt, RISING);
   attachInterrupt(digitalPinToInterrupt(ENC_A3), EncIntLift, RISING);
-  Kp_yaw = 0.8;   //Yaw P-gain
+  Kp_yaw = 0.7;   //Yaw P-gain
   Ki_yaw = 0.2;   //Yaw I-gain
-  Kd_yaw = 0.03;  //Yaw D-gain (be careful when increasing too high, motors will begin to overheat!)
+  Kd_yaw = 0.14;  //Yaw D-gain (be careful when increasing too high, motors will begin to overheat!)
   desAngle = 0;
   Kp_pos = 0.010;  //Yaw P-gain
   Ki_pos = 0.002;  //Yaw I-gain
@@ -268,9 +269,9 @@ RobotDriver::RobotDriver() {
 void RobotDriver::gotoStandby() {
 }
 void RobotDriver::posUpdate() {
-  int dt = curTime - lastPosUpdateMillis;  //check dt, should be 20ms
-  if (dt < 50) return;  //dt minimum limit to 150 millis
-  lastPosUpdateMillis= curTime;
+  // int dt = curTime - lastPosUpdateMillis;  //check dt, should be 20ms
+  // if (dt < DT_POS_UPDATE*1000) return;  //dt minimum limit to 150 millis
+  // lastPosUpdateMillis= curTime;
 #ifdef SIMULATION
 
   float distanceRight = desMotSpdL * 12.0;  //(encoderPosLeft-encRighto)*0.6135923151;
@@ -283,10 +284,10 @@ void RobotDriver::posUpdate() {
 #endif
   // Serial.println(curSpeedLift);
   float distance = (distanceLeft + distanceRight) / 2.0;
-  curSpeed = distance / 1000.0 / DT_CONTROL;
-  curSpeedL = distanceLeft / 1000.0 / DT_CONTROL;
-  curSpeedR = distanceRight / 1000.0 / DT_CONTROL;
-  curSpeedLift = liftLevelDistance/LIFT_PPR/DT_CONTROL;//round per Sec
+  curSpeed = distance / 1000.0 / DT_POS_UPDATE;
+  curSpeedL = distanceLeft / 1000.0 / DT_POS_UPDATE;
+  curSpeedR = distanceRight / 1000.0 / DT_POS_UPDATE;
+  curSpeedLift = liftLevelDistance/LIFT_PPR/DT_POS_UPDATE;//round per Sec
   encRighto = encPosRight;
   encLefto = encPosLeft;
   liftLevelo = liftLevel;
@@ -297,7 +298,7 @@ void RobotDriver::posUpdate() {
   while (liftAngle<-180)liftAngle+=360;
   while (liftAngle>180)liftAngle-=360;
   float diff = (distanceRight- distanceLeft);
-  botRotationSpeed = DEG_RAD*((diff / ( 1000.0 * BASE_LEN)))/DT_CONTROL;
+  botRotationSpeed = DEG_RAD*((diff / ( 1000.0 * BASE_LEN)))/DT_POS_UPDATE;
   // botangle += botRotationSpeed*DT_CONTROL;
   // while (botangle >= 180) botangle -= 360;
   // while (botangle < -180) botangle += 360;
@@ -349,7 +350,7 @@ void RobotDriver::controlLoop()
   int dt = curTime - lastLoopMillis;  //check dt, should be 20ms
   if (dt < 20) return;  //dt minimum limit to 20 millis
   lastLoopMillis = curTime;
-  sendSyncPacket();
+  // sendSyncPacket();
   posUpdate();
   
   switch (bot_mode)
@@ -381,7 +382,7 @@ void RobotDriver::loopMove() {
   desDistance = sqrt(dx * dx + dy * dy);
   desBearing = ConvXYtoAngle(dx, dy);
 
-  yaw_PID =  CalcPIDyaw(desBearing);
+  yaw_PID =  calcPIDyaw(desBearing);
   
   //PID speed
   error_pos = desDistance * cos((error_yaw)/DEG_RAD);
@@ -393,7 +394,7 @@ void RobotDriver::loopMove() {
   //   error_pos/=(abs(error_yaw)/10.0);
   // }
   
-  if((abs(error_pos) < 30)&&(abs(desMotSpdL)<0.1)&&(abs(desMotSpdR)<0.1))
+  if((abs(error_pos) < 30))
   {
     stillCount++;
     if(stillCount>100)  gotoMode(MODE_ROTATE);
@@ -408,11 +409,12 @@ void RobotDriver::loopMove() {
   pos_PID =  calcPIDPos(error_pos);
   float desSpeed = constrainVal(pos_PID, -maxBotSpeed, maxBotSpeed);
   float maxRorationSpeed = (maxBotSpeed-abs(desSpeed))/maxBotSpeed;//high desSpeed less rotation speed
-  if(maxRorationSpeed<0.1)maxRorationSpeed=0.1;
-  desRotSpd = yaw_PID * maxRorationSpeed;  
-  desRotSpd = constrainVal(desRotSpd, -maxBotRotSpd, maxBotRotSpd);
-  setSpeedRight(- desRotSpd * BASE_LEN / 2.0);
-  setSpeedLeft(desRotSpd * BASE_LEN / 2.0);  
+  if(desDistance<150)maxRorationSpeed*=(desDistance/150.0);//less distance less rotation
+  if(maxRorationSpeed<0.05)maxRorationSpeed=0.05;
+  desRotSpd =  constrainVal(yaw_PID, -maxBotRotSpd, maxBotRotSpd);
+  desRotSpd*= maxRorationSpeed;  
+  setSpeedRight(desSpeed- desRotSpd * BASE_LEN / 2.0);
+  setSpeedLeft(desSpeed+desRotSpd * BASE_LEN / 2.0);  
   liftStabilize();
 
 }
@@ -450,8 +452,9 @@ void RobotDriver::gotoMode(int mode)
   error_yaw_prev=0;
   integral_yaw=0;
   error_yaw=0;
+  stillCount=0;
 }
-float RobotDriver::CalcPIDPos(float epos)
+float RobotDriver::calcPIDPos(float epos)
 {
   
   error_pos = epos;
@@ -464,42 +467,55 @@ float RobotDriver::CalcPIDPos(float epos)
   return pid_out;
 }
 
-float RobotDriver::CalcPIDyaw(float targetAngle)
+float RobotDriver::calcPIDyaw(float targetAngle)
 {
   error_yaw = targetAngle - botangle;
   // Serial.println(error_yaw);
   while (error_yaw > 180) error_yaw -= 360;
   while (error_yaw < -180) error_yaw += 360;
-  integral_yaw += error_yaw * DT_CONTROL*5;
-  integral_yaw = constrainVal(integral_yaw, -i_limit_yaw, i_limit_yaw);  //saturate integrator to prevent unsafe buildup
-  if(error_yaw_prev==0)error_yaw_prev=error_yaw;
-  derivative_yaw = (error_yaw - error_yaw_prev) / DT_CONTROL;
-  float pid_out = 0.1*(Kp_yaw * error_yaw + Ki_yaw * integral_yaw + Kd_yaw * derivative_yaw);  
-  error_yaw_prev = error_yaw;
+  float scaled_error_yaw=constrain(error_yaw, -60, 60);
+  integral_yaw += scaled_error_yaw *DT_CONTROL*5;
+  float scaledIlimit = i_limit_yaw;
+  if(scaledIlimit>5*abs(scaled_error_yaw))scaledIlimit=5*abs(scaled_error_yaw);
+  integral_yaw = constrainVal(integral_yaw, -scaledIlimit, scaledIlimit);  //saturate integrator to prevent unsafe buildup
+  if(error_yaw_prev==0)error_yaw_prev=scaled_error_yaw;
+  derivative_yaw = (scaled_error_yaw - error_yaw_prev) / DT_CONTROL;
+  float pid_out = 0.1*(Kp_yaw * scaled_error_yaw + Ki_yaw * integral_yaw + Kd_yaw * derivative_yaw);  
+  error_yaw_prev = scaled_error_yaw;
   return pid_out;
 }
 void RobotDriver::setSpeedRight(float value)
 {
+  value = constrainVal(value, -maxBotSpeed, maxBotSpeed);
   float acc = value- desMotSpdR;//todo: use curSpeedR for better accuracy
-  acc = constrainVal(acc, -maxBotAcc , maxBotAcc );
+  if(acc*desMotSpdR<0)acc = constrainVal(acc, -maxBotAcc*3, maxBotAcc*3 );
+  else acc = constrainVal(acc, -maxBotAcc , maxBotAcc );
   desMotSpdR += acc;
-  desMotSpdR = constrainVal(desMotSpdR, -maxBotSpeed, maxBotSpeed);
-  sendControlPacket(1, desMotSpdR, 0);
+  sendControlPacket(1, desMotSpdR/MAX_MOTION_SPEED, 0);
 }
 void RobotDriver::setSpeedLeft(float value)
 {
+  value = constrainVal(value, -maxBotSpeed, maxBotSpeed);
   float acc = value- desMotSpdL;//todo: use curSpeedL for better accuracy
-  acc = constrainVal(acc, -maxBotAcc , maxBotAcc );
+  if(acc*desMotSpdL<0)acc = constrainVal(acc, -maxBotAcc*3, maxBotAcc*3);
+  else acc = constrainVal(acc, -maxBotAcc , maxBotAcc );
   desMotSpdL += acc;
-  desMotSpdL = constrainVal(desMotSpdL, -maxBotSpeed, maxBotSpeed);
-  sendControlPacket(2, desMotSpdL, 0);
+  sendControlPacket(2, desMotSpdL/MAX_MOTION_SPEED, 0);
 }
 void RobotDriver::loopRotate()
 {
-  yaw_PID = CalcPIDyaw(desAngle);
-  if (abs(error_yaw) < 1.5)
+  yaw_PID = calcPIDyaw(desAngle);
+  if (abs(error_yaw) < 2)
   {
-    stillCount++;
+    stillCount+=1;
+    if(stillCount>100)  gotoMode(MODE_STANDBY);
+    integral_pos=0;
+    error_pos_prev=0;
+    error_pos=0;
+  }
+  else if (abs(error_yaw) < 1.2)
+  {
+    stillCount+=2;
     if(stillCount>100)  gotoMode(MODE_STANDBY);
     integral_pos=0;
     error_pos_prev=0;
@@ -524,8 +540,6 @@ void RobotDriver::liftStabilize()
 void RobotDriver::loopStandby()
 {
   // posUpdate();
-  desMotSpdR*=0.9;
-  desMotSpdL*=0.9;
   setSpeedLeft(desMotSpdL*0.9);
   setSpeedRight(desMotSpdR*0.9);
   if (liftLevelMinDefined == false)

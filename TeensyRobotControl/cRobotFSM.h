@@ -15,7 +15,7 @@
 #define OUTPUT_3 4
 #define OUTPUT_4 5
 #define DT_CONTROL 0.02 //50hz control loop
-#define ACC_MAX 0.005/DT_CONTROL
+#define DT_POS_UPDATE 0.02 //20hz  loop
 #define BASE_LEN 0.45
 #define COMMAND_LEN_MAX 100
 #define MODE_STANDBY 0
@@ -39,11 +39,10 @@ class RobotDriver
       
 
   private:
-  float maxBotSpeed = 0.3;
-  float maxBotAcc = 0.005/DT_CONTROL;
-  float maxBotRotSpd = 1.0;//radian/s
-  float CalcPIDyaw(float targetAngle);
-  float CalcPIDPos(float epos);
+  float maxBotSpeed = 0.6;
+  float maxBotAcc = 0.005;
+  float maxBotRotSpd = 1.5;//radian/s
+  
   int debugCounter=0;
   unsigned long int curTime =0;;
   float botRotationSpeed = 0;
@@ -67,7 +66,7 @@ class RobotDriver
   int stillCount=0;
   
   bool isActive=false;
-  float i_limit_yaw = 5.0; 
+  float i_limit_yaw = 10.0; 
   float i_limit_pos = 150.0; 
   float Kp_yaw ,Ki_yaw , Kd_yaw ;   
   float Kp_pos ,Ki_pos, Kd_pos ;  
@@ -75,6 +74,10 @@ class RobotDriver
   float error_yaw, error_yaw_prev, integral_yaw=0,  derivative_yaw, yaw_PID = 0;
   void gotoStandby();
   void posUpdate();
+  float calcPIDyaw(float targetAngle);
+  void setSpeedRight(float value);
+  void setSpeedLeft(float value);
+  float calcPIDPos(float epos);
   void DebugReport();
   void controlLoop();
   IMU_driver imu;
@@ -82,7 +85,7 @@ class RobotDriver
   Stream *portSenBus;
   Stream *portMotor;
 unsigned long int lastLoopMillis=0;
-unsigned long int lastPosUpdateMillis=0;
+// unsigned long int lastPosUpdateMillis=0;
   float desMotSpdL=0,desMotSpdR=0,desMotorSpeedLift=0;
   int botState = 0;
   SenBusDriver sbus;
