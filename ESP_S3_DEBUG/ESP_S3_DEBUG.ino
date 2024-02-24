@@ -9,7 +9,7 @@ const char * udpAddress = "192.168.4.2";
 const int udpPort = 3333;
 void setup()
 {
-  pinMode(LED_BUILTIN, OUTPUT);
+  // pinMode(LED_BUILTIN, OUTPUT);
   Serial.begin(2000000);
   Serial.println("Configuring access point...");
 
