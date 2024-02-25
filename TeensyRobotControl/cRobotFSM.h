@@ -28,7 +28,11 @@ struct RobotParam
   String paramName;
   float paraValue;
 };
-
+struct FloorTag
+{
+  int id;
+  int x,y;
+};
 #define PARAM_ID_YAW_KP 0
 #define PARAM_ID_YAW_KP 0
 #define PARAM_ID_YAW_KP 0
@@ -43,13 +47,8 @@ class RobotDriver
       void setParam(String id, float value);
       void processCommand(String command);
       void update();
-
       void gotoMode(int mode);
-
-      
-
       void sendSyncPacket();
-
       void loadParams();
 
   private:

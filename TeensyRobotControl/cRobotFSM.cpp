@@ -19,6 +19,7 @@ bool liftLevelInitOK = false;
 int desLiftLevel = 0;
 int M1Fail = 0, M2Fail = 0, M3Fail = 0;
 std::vector<RobotParam> paramTable;
+std::vector<FloorTag> floorMap;
 #define CONTROL_LEN 10
 // #define MAX_LIFT_H 12000
 int liftMaxLevel = 0;
@@ -208,6 +209,14 @@ void RobotDriver::updateCommandBus() {
   
   }
 }
+void addFloorTag(int id,int x,int y)
+{
+  FloorTag newfloorTag;
+  newfloorTag.id=id;
+  newfloorTag.x = x;
+  newfloorTag.y = y;
+  floorMap.push_back(newfloorTag);
+}
 RobotDriver::RobotDriver() {
   S_IMU.begin(921600);    //IMU
   S_SENSORS.begin(1000000);  //sens bus
@@ -220,6 +229,9 @@ RobotDriver::RobotDriver() {
   imu.IMU_init(portIMU);
   Serial.println("start");
   desLiftLevel = liftLevelA0;
+  addFloorTag(100,0,0);
+  addFloorTag(101, 1000, 0);
+  addFloorTag(102, 1000, 0);
 #ifdef SIMULATION
   liftLevel=0;
   liftLevelA0 = LIFT_PPR/4.0;
@@ -315,7 +327,7 @@ void RobotDriver::DebugReport()
   
   DPRINT("!$ curSpeed L R Li Ro:");  DPRINTLN(curSpeedL);  DPRINTLN(curSpeedR);  DPRINTLN(curSpeedLift); DPRINTLN(botRotationSpeed); DPRINT("#");
     DPRINT("!$DesMotSpd RLL:");  DPRINTLN(desMotSpdR);   DPRINTLN(desMotSpdL); DPRINTLN(desLiftSpeed);  DPRINT("#");
-  DPRINT("!$desRotSpd:");     DPRINTLN(desRotSpd);   DPRINT("#");
+  DPRINT("!$RotSpd des cur:");     DPRINTLN(desRotSpd); DPRINTLN(imu_data.gyroZ);  DPRINT("#");
   if(debugCounter==0){
     DPRINT("!$PID yaw:");       DPRINTLN(Kp_yaw * error_yaw);DPRINTLN(Ki_yaw * integral_yaw);DPRINTLN(Kd_yaw * derivative_yaw);DPRINT("#");
     DPRINT("!$PID pos:");       DPRINTLN(Kp_pos * error_pos);DPRINTLN(Ki_pos * integral_pos);DPRINTLN(Kd_pos * derivative_pos);DPRINT("#");
