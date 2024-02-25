@@ -108,7 +108,9 @@ bool IMU_driver::gotoConfig()
   }
   void IMU_driver::updateData()
  {
-  
+  if(failCount<100)failCount++;
+  if(failCount==100)this->isConnected=false;
+  else this->isConnected=true;
     while (port->available() > 0) {
       if (buffIndex >= BUF_SIZE_IMU) buffIndex = 0;
       uint8_t bytein = port->read();
@@ -144,7 +146,7 @@ bool IMU_driver::gotoConfig()
                   while(measurement.gyroyaw>180.0)measurement.gyroyaw-=360.0;
                   while(measurement.gyroyaw<-180)measurement.gyroyaw+=360.0;
                 }
-                isUpdated =true;
+                failCount=0;
               }
               if (xdi == 32832) {  //MTDATA2 data ID of rate of turn HR
                 measurement.gyroX =  bytesToFloat(databuf[iti+3], databuf[iti+4], databuf[iti+5], databuf[iti+6]);
@@ -186,7 +188,7 @@ bool IMU_driver::gotoConfig()
                 measurement.gyroZold = measurement.gyroZ;
                 // Serial.print(measurement.gyroZ);
                 // Serial.print(" ");
-                isUpdated =true;
+                failCount=0;
                 // Serial.println("new gyro data");
               }
               if (xdi == 16448) {  //MTDATA2 data ID of acceleration HR
@@ -201,7 +203,7 @@ bool IMU_driver::gotoConfig()
                 }
                 else noMotionCount++;
                 measurement.accZ = newaccZ;
-                isUpdated =true;
+                failCount=0;
               }
               iti+=leni+1;
             }
@@ -240,7 +242,7 @@ bool IMU_driver::gotoConfig()
     if (isSuccess) {
       Serial.print(trycount);
       Serial.println(" try counts, gotoMeasurement ok");
-      this->isConnected=true;
+      
     } else Serial.println("gotoMeasurement failed");
     return isSuccess;
   }

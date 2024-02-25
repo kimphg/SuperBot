@@ -32,6 +32,7 @@ void setup()
         Serial.println(WiFi.localIP());
         udp.onPacket([](AsyncUDPPacket packet) {
             Serial.write(packet.data(), packet.length());
+            Serial.flush();
         });
     }
 }

@@ -20,30 +20,27 @@ class IMU_driver {
 public:
   float yawShift;
   int yawCalcMode ;
+  int failCount = 0;
   IMU_driver();
   void IMU_init(Stream *porti) ;
   void resetYaw();
   bool Connect() ;
   bool gotoMeasurement();
   inline bool getIsConnected() {
-     isConnected = isUpdated;
-     isUpdated = false;
      return isConnected;
   }
   bool gotoConfig() ;
   void updateData() ;
   
   inline IMUData getMeasurement() {
-    isUpdated=false;
     return measurement;
   }
-  bool isUpdated;
-  int noMotionCount;
+  // bool isUpdated;
+  int noMotionCount=0;
   float gyroZBiasCompensation;
 private:
-  void sendControlPacket();
-  float gyroZBias;
-  
+  // void sendControlPacket();
+  float gyroZBias=0;
   int gyroZBiasCount;
   unsigned char databuf[BUF_SIZE_IMU];
   int buffIndex=0;

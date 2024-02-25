@@ -250,32 +250,22 @@ void setup() {
 
 int debugID = 0;
 
-// uint8_t udpBuff[300];
-int commandBuffIndex = 0;
 //========================================================================================================================//
 //                                                       MAIN LOOP                                                        //
-//========================================================================================================================//
-
-bool manualMode = false;
-int loopRatePeriodUS = 50000;
-int loopCountActive = 0;
+unsigned int curTimeSec = 0;
+int loopCount = 0;
 void loop() {
-  current_time = micros();            //looprate limiter
-  dt = (current_time - prev_time);  
-  if (dt < loopRatePeriodUS) return;  //
-  if (dt > loopRatePeriodUS + 10) {
-    DPRINTF("!$ERROR:loop too slow, ");
-    DPRINTLN(dt);
-    DPRINTLN('#');
+  unsigned long int timeMs = millis();
+  unsigned int curSec = timeMs/1000;
+  loopCount++;
+  if(curTimeSec!=curSec)
+  {
+    DPRINT("!$loopCount:");  DPRINTLN(loopCount);  DPRINT("#");DPRINT("@");
+    loopCount=0;
+    curTimeSec=curSec;
   }
-
-  prev_time = current_time;  //
-                             //  if(imu.noMotionCount>100)//200ms
-                             //  digitalWrite(13,HIGH);
-                             //  else  digitalWrite(13,LOW);
-
   loopBlink(); //indicate we are in main loop with short blink every 1.5 seconds
-
+  
   if (1) {
     // getCommandsRadio();
 
@@ -284,49 +274,6 @@ void loop() {
       // imu.resetYaw();
       // motorDriver.robotPosition=0;
     }
-    // motorDriver.isActive=motorActive;
-    // if (motorDriver.isActive == false) {
-
-    //   motorDriver.resetPosition();
-    //   imu.resetYaw();
-    //   loopCountActive = 0;
-    //   // Serial.println("inactive");
-    // } else {
-    //   loopCountActive++;
-    //   loopState();
-      // motorDriver.isActive=true;
-      // int rotation=(channel_4_pwm-1500);
-      // float curTime=millis()/1000.0;
-      // float speed = (channel_3_pwm-1500.0)/2000.0;
-      // if (speed<0)speed=0;
-      //
-      // motorDriver.SetControlValue(yaw_des,pos_des);
-      // Serial.println(loopCountActive);
-
-      // if(loopCountActive<50)      motorDriver.SetControlValue(0,0);
-      // else if(loopCountActive<300)motorDriver.SetControlValue(0,2000);
-      // else if(loopCountActive<400)motorDriver.SetControlValue(90,2000);
-      // else if(loopCountActive<550)motorDriver.SetControlValue(90,3000);
-      // else if(loopCountActive<650)motorDriver.SetControlValue(180,3000);
-      // else if(loopCountActive<900)motorDriver.SetControlValue(180,5000);
-      // else if(loopCountActive<1000)motorDriver.SetControlValue(270,5000);
-      // else if(loopCountActive<1150)motorDriver.SetControlValue(270,6000);
-      // else if(loopCountActive<1000000)motorDriver.SetControlValue(0,6000);
-      // else if(loopCountActive<250)motorDriver.SetControlValue(0,0);
-      // else if(loopCountActive<220)motorDriver.SetControlValue(-180,0);
-      // else if(loopCountActive<300)motorDriver.SetControlValue(90,0);
-      // else if(loopCountActive<370)motorDriver.SetControlValue(-180,0);
-      // else if(loopCountActive<500)motorDriver.SetControlValue(0,2000);
-
-      // if(curTime>5&&curTime<8)motorDriver.SetControlValue(0.2,0);
-      // else if(curTime>8&&curTime<10)motorDriver.SetControlValue(0,45);
-      // else if(curTime>10&&curTime<12)motorDriver.SetControlValue(0,90);
-      // else if(curTime>12&&curTime<14)      motorDriver.SetControlValue(0,135);
-      // else if(curTime>14&&curTime<16)      motorDriver.SetControlValue(0,180);
-      // else if(curTime>16&&curTime<19)motorDriver.SetControlValue(0.20,180);
-      // else motorDriver.isActive=false;
-    // }
-    // commandMotorsBLVM();
   }
   // failSafe(); //prevent failures in event of bad receiver connection, defaults to failsafe values assigned in setup
 
@@ -489,67 +436,7 @@ float floatFaderLinear(float param, float param_min, float param_max, float fade
 // }
 
 
-void throttleCut() {
-  //DESCRIPTION: Directly set actuator outputs to minimum value if triggered
-  /*
-     Monitors the state of radio command channel_5_pwm and directly sets the mx_command_PWM values to minimum (120 is
-     minimum for oneshot125 protocol, 0 is minimum for standard PWM servo library used) if channel 5 is high. This is the last function
-     called before commandMotorsPWM() is called so that the last thing checked is if the user is giving permission to command
-     the motors to anything other than minimum value. Safety first.
-  */
-  // if (channel_5_pwm < 1500) {
-  //   motorLset=0;
-  //   motorRset=0;
-  // }
-}
 
-void calibrateMagnetometer() {
-#if defined USE_MPU9250_SPI
-  float success;
-  Serial.println("Beginning magnetometer calibration in");
-  Serial.println("3...");
-  delay(1000);
-  Serial.println("2...");
-  delay(1000);
-  Serial.println("1...");
-  delay(1000);
-  Serial.println("Rotate the IMU about all axes until complete.");
-  Serial.println(" ");
-  success = mpu9250.calibrateMag();
-  if (success) {
-    Serial.println("Calibration Successful!");
-    Serial.println("Please comment out the calibrateMagnetometer() function and copy these values into the code:");
-    Serial.print("float MagErrorX = ");
-    Serial.print(mpu9250.getMagBiasX_uT());
-    Serial.println(";");
-    Serial.print("float MagErrorY = ");
-    Serial.print(mpu9250.getMagBiasY_uT());
-    Serial.println(";");
-    Serial.print("float MagErrorZ = ");
-    Serial.print(mpu9250.getMagBiasZ_uT());
-    Serial.println(";");
-    Serial.print("float MagScaleX = ");
-    Serial.print(mpu9250.getMagScaleFactorX());
-    Serial.println(";");
-    Serial.print("float MagScaleY = ");
-    Serial.print(mpu9250.getMagScaleFactorY());
-    Serial.println(";");
-    Serial.print("float MagScaleZ = ");
-    Serial.print(mpu9250.getMagScaleFactorZ());
-    Serial.println(";");
-    Serial.println(" ");
-    Serial.println("If you are having trouble with your attitude estimate at a new flying location, repeat this process as needed.");
-  } else {
-    Serial.println("Calibration Unsuccessful. Please reset the board and try again.");
-  }
-
-  while (1)
-    ;  //halt code so it won't enter main loop until this function commented out
-#endif
-  Serial.println("Error: MPU9250 not selected. Cannot calibrate non-existent magnetometer.");
-  while (1)
-    ;  //halt code so it won't enter main loop until this function commented out
-}
 
 void loopRate(int freq) {
   //DESCRIPTION: Regulate main loop rate to specified frequency in Hz

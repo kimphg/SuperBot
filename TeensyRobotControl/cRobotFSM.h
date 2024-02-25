@@ -23,11 +23,24 @@
 #define MODE_ROTATE 2
 #define MODE_LIFT 3
 #define MAX_MOTION_SPEED 1.3
+struct RobotParam
+{
+  String paramName;
+  float paraValue;
+};
+
+#define PARAM_ID_YAW_KP 0
+#define PARAM_ID_YAW_KP 0
+#define PARAM_ID_YAW_KP 0
+#define PARAM_ID_YAW_KP 0
+
 class RobotDriver
 {
   public:
       
       RobotDriver();
+      float loadParam(String id, float defaultValue);
+      void setParam(String id, float value);
       void processCommand(String command);
       void update();
 
@@ -36,9 +49,12 @@ class RobotDriver
       
 
       void sendSyncPacket();
-      
+
+      void loadParams();
 
   private:
+  int lastSyncSec=0;
+  int syncLossCount=0;
   float maxBotSpeed = 0.6;
   float maxBotAcc = 0.005;
   float maxBotRotSpd = 1.5;//radian/s
