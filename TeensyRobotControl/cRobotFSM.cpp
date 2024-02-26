@@ -229,9 +229,11 @@ RobotDriver::RobotDriver() {
   imu.IMU_init(portIMU);
   Serial.println("start");
   desLiftLevel = liftLevelA0;
-  addFloorTag(100,0,0);
+  addFloorTag(100, 0 , 0);
   addFloorTag(101, 1000, 0);
   addFloorTag(102, 1000, 0);
+  addFloorTag(103, 1000, 0);
+  addFloorTag(104, 1000, 0);
 #ifdef SIMULATION
   liftLevel=0;
   liftLevelA0 = LIFT_PPR/4.0;
@@ -591,12 +593,12 @@ void RobotDriver::loadParams()
   Kp_yaw = loadParam("Kp_yaw",0.7) ;   //Yaw P-gain
   Ki_yaw = loadParam("Ki_yaw",0.2);   //Yaw I-gain
   Kd_yaw = loadParam("Kd_yaw",0.14);  //Yaw D-gain (be careful when increasing too high, motors will begin to overheat!)
-
   Kp_pos = loadParam("Kp_pos",1.0);  //Yaw P-gain
   Ki_pos = loadParam("Ki_pos",0.2);  //Yaw I-gain
   Kd_pos = loadParam("Kd_pos",0.1);  //Yaw D-gain (be careful when increasing too high, motors will begin to overheat!)
   maxBotSpeed = loadParam("maxBotSpeed",0.3);
   maxBotRotSpd = loadParam("maxBotRotSpd",2);
+  maxBotAcc = loadParam ("maxBotRotSpd",0.005);
 }
 void RobotDriver::sendControlPacket(uint8_t id, float speed, uint8_t mode) {
   // control left motor
