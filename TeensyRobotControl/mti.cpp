@@ -52,9 +52,9 @@ void IMU_driver::IMU_init(Stream *porti)
     gotoMeasurement();
 }
 
-void IMU_driver::resetYaw()
+void IMU_driver::resetYaw(float newyaw)
 {
-  measurement.gyroyaw = 0;
+  measurement.gyroyaw = newyaw;
   yawShift = measurement.gyroyaw - measurement.yaw;
   while(yawShift>180.0)yawShift-=360.0;
   while(yawShift<-180)yawShift+=360.0;

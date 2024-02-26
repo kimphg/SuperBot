@@ -29,14 +29,14 @@ def setMode(mode):
         sensor.skip_frames(time = 500)
         sensor.set_auto_gain(False)  # must turn this off to prevent image washout...
         sensor.set_auto_whitebal(False)  # must turn this off to prevent image washout...
-        sensor.set_auto_exposure(False, exposure_us=6000 )
+        sensor.set_auto_exposure(False, exposure_us=10000 )
         sensor.set_auto_gain(False, gain_db=26)
         sensor.skip_frames(time = 500)
 setMode(1)
 clock = time.clock()
 from pyb import UART
 
-uart = UART(3, 921600, timeout_char=1000)                         # init with given baudrate
+uart = UART(1, 921600, timeout_char=1000)                         # init with given baudrate
 uart.init(921600, bits=8, parity=None, stop=1, timeout_char=1000) # init with given parameters
 # Note! Unlike find_qrcodes the find_apriltags method does not need lens correction on the image to work.
 
@@ -132,6 +132,7 @@ while(True):
         cs_byte = crc8(packetBytes,0,datalen)
         packet += (str(cs_byte))
         packet += ("#")
+        packet += ("\n")
         tagCount=tagCount+1
         uart.write(packet)
         print(packet)

@@ -23,7 +23,7 @@ public:
   int failCount = 0;
   IMU_driver();
   void IMU_init(Stream *porti) ;
-  void resetYaw();
+  void resetYaw(float newyaw);
   bool Connect() ;
   bool gotoMeasurement();
   inline bool getIsConnected() {

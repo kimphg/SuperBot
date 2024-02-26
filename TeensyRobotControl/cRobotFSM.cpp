@@ -82,8 +82,8 @@ void RobotDriver::processCommand(String command) {
   std::vector<String> tokens = splitString(command,',');
   if (tokens.size() >= 2) {
     if (tokens[1].indexOf("sync")>=0) {
-
         syncLossCount=0;
+        // Serial.print("sync");
       }
     else{
       DPRINT("!$Command:"); DPRINT(curTime); DPRINT(command); DPRINT("#");DPRINT("@");
@@ -107,7 +107,6 @@ void RobotDriver::processCommand(String command) {
       }
       
       if (tokens[1].equals("a")) {
-
         desAngle = (tokens[2].toFloat());
         // float comY = tokens[3].toFloat();
         // desX = comX;
@@ -144,7 +143,7 @@ void RobotDriver::processCommand(String command) {
         botangle=0;
         desAngle = 0;
         bot_mode = MODE_STANDBY;
-        imu.resetYaw();
+        imu.resetYaw(0);
         // DPRINTLN(comX);
         // DPRINTLN(comY);
       }
@@ -181,9 +180,8 @@ int commandMessagelen=0;
 uint8_t bytein1=0,bytein2=0;
 uint16_t commandCode=0;
 void RobotDriver::updateCommandBus() {
-  while (S_COMMAND.available()) {
-    
-    uint8_t bytein = S_COMMAND.read();
+  while (S_DEBUG.available()) {
+    uint8_t bytein = S_DEBUG.read();
     if((bytein==0xaa)&&(bytein1==0x55)&&(bytein2==0xaa))
     {
         commandMessageI=0;
@@ -219,9 +217,9 @@ void addFloorTag(int id,int x,int y)
 }
 RobotDriver::RobotDriver() {
   S_IMU.begin(921600);    //IMU
-  S_SENSORS.begin(1000000);  //sens bus
+  S_SENSORS.begin(921600);  //sens bus
   S_MOTORS.begin(230400);
-  S_COMMAND.begin(57600);
+  // S_COMMAND.begin(57600);
   S_DEBUG.begin(2000000);
   portIMU = &S_IMU;
   portSenBus = &S_SENSORS;
@@ -437,7 +435,10 @@ void RobotDriver::update() {
   // readSensBus
   while (portSenBus->available()) {
     unsigned char inputByte = portSenBus->read();
-    sbus.Input(inputByte);
+    if(sbus.Input(inputByte))
+    {
+      imu.resetYaw(sbus.tagAngle);
+    }
   }
   imu.updateData();
   imu_data = imu.getMeasurement();
@@ -531,7 +532,9 @@ void RobotDriver::loopRotate()
     error_pos_prev=0;
     error_pos=0;
   }
-  else {if(stillCount>0)stillCount--;}
+  else {
+    if(stillCount>0)stillCount--;
+  }
 
   desRotSpd = yaw_PID;  
   desRotSpd = constrainVal(desRotSpd, -maxBotRotSpd, maxBotRotSpd);
@@ -590,15 +593,15 @@ void RobotDriver::sendSyncPacket() {
 }
 void RobotDriver::loadParams()
 {
-  Kp_yaw = loadParam("Kp_yaw",0.7) ;   //Yaw P-gain
+  Kp_yaw = loadParam("Kp_yaw",0.6) ;   //Yaw P-gain
   Ki_yaw = loadParam("Ki_yaw",0.2);   //Yaw I-gain
   Kd_yaw = loadParam("Kd_yaw",0.14);  //Yaw D-gain (be careful when increasing too high, motors will begin to overheat!)
-  Kp_pos = loadParam("Kp_pos",1.0);  //Yaw P-gain
+  Kp_pos = loadParam("Kp_pos",1.5);  //Yaw P-gain
   Ki_pos = loadParam("Ki_pos",0.2);  //Yaw I-gain
   Kd_pos = loadParam("Kd_pos",0.1);  //Yaw D-gain (be careful when increasing too high, motors will begin to overheat!)
-  maxBotSpeed = loadParam("maxBotSpeed",0.3);
+  maxBotSpeed = loadParam("maxBotSpeed",0.4);
   maxBotRotSpd = loadParam("maxBotRotSpd",2);
-  maxBotAcc = loadParam ("maxBotRotSpd",0.005);
+  maxBotAcc = loadParam ("maxBotAcc",5.0)/1000.0;
 }
 void RobotDriver::sendControlPacket(uint8_t id, float speed, uint8_t mode) {
   // control left motor

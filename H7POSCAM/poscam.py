@@ -82,7 +82,7 @@ while(True):
     img = sensor.snapshot()
 
     #img.save ("example.jpg")
-    while uart
+#    while uart
     if(workMode>0):
         tagCount=0
         for tag in img.find_apriltags(families=tag_families):
