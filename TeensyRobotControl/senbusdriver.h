@@ -18,7 +18,7 @@ public:
   }
   CamData camh7data;
   bool Input(unsigned char inputByte);
-  void processCamera(String inputStr);
+  bool processCamera(String inputStr);
   
 float tagAngle=0;
   private:

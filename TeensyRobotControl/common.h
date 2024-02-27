@@ -49,7 +49,8 @@
 #define PI_CHIA2                    1.5707963268
 #define DEG_RAD 57.295779513f
 float ConvXYtoAngle(double x, double y);
-void setupBlink(int numBlinks, int upTime, int downTime) ;
+uint16_t gen_crc16(const uint8_t *data, uint16_t size);
+void setupBlink(int numBlinks, int upTime, int downTime);
 void indicateErrorLed(int errorCode) ;
 void radioSetup() ;
 uint8_t calcCS8(uint8_t* startbyte, uint8_t len);

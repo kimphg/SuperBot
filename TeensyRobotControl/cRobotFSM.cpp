@@ -47,6 +47,28 @@ float constrainVal(float input, float min, float max) {
   if (input > max) return max;
   return input;
 }
+uint8_t ppu_report[50];
+void RobotDriver::reportPPU()
+{
+  ppu_report[0]=0xaa;
+  ppu_report[1]=0x55;
+  ppu_report[2]=0xaa;
+  ppu_report[3]=0xF1;
+  ppu_report[4]=0xF2;
+  ppu_report[5]=0x04;
+  ppu_report[6]=0xFF;
+  ppu_report[7]=0x00;
+  ppu_report[8]=0x00;
+  ppu_report[9]=0x00;
+  uint8_t byte4 = 0;
+  if(bot_mode==MODE_STANDBY)byte4+=0x80;
+  else byte4+=0x40;
+  ppu_report[10]=byte4;
+  uint16_t crc = gen_crc16(ppu_report,9);
+  ppu_report[11]=crc>>8;
+  ppu_report[12]=crc&0xff;
+  S_COMMAND.write(ppu_report,13);
+}
 float RobotDriver::loadParam(String id, float defaultValue=0)
 {
   for (unsigned int i=0;i<paramTable.size();i++ )
@@ -197,11 +219,11 @@ void RobotDriver::updateCommandBus() {
         commandString = "";
       }
     }
-    while(S_COMMAND.available)
+    while(S_COMMAND.available())
     {
       bytein2 = bytein1;
       bytein1 = bytein;
-      uint8_t bytein = S_DEBUG.read();
+      uint8_t bytein = S_COMMAND.read();
       commandMessageI++;
       if(commandMessageI>=50)commandMessageI=50;
       if((bytein==0xaa)&&(bytein1==0x55)&&(bytein2==0xaa))
@@ -227,9 +249,9 @@ void RobotDriver::processCommandBytes()
           if(commandMessageI>=16)
           {
             commandMessageI=0;
-            desX = commandMessage[8]<<8+commandMessage[9];
+            desX = (commandMessage[8]<<8)+commandMessage[9];
             if(desX>32767)desX-=65536;
-            desY = commandMessage[10]<<8+commandMessage[11];
+            desY = (commandMessage[10]<<8)+commandMessage[11];
             if(desY>32767)desY-=65536;
             uint8_t action = commandMessage[14]&0x0f;
             uint8_t angle = action&0x03;
@@ -242,7 +264,7 @@ void RobotDriver::processCommandBytes()
           }
       }
     }
-    else commandMessage[0]==0xff;//deny current packet
+    else commandMessage[0]=0xff;//deny current packet
   }
 
 }
@@ -392,13 +414,14 @@ void RobotDriver::controlLoop()
   int dt = curTime - lastLoopMillis;  //check dt, should be 20ms
   if (dt < 20) return;  //dt minimum limit to 20 millis
   lastLoopMillis = curTime;
-  int timeSec = curTime/1000;
+  int times500ms = curTime/500;
   syncLossCount++;
   if(syncLossCount>100)gotoMode(MODE_STANDBY);
-  if(timeSec!=lastSyncSec)
+  if(times500ms!=lastSyncSec)
   {
     sendSyncPacket();
-    lastSyncSec = timeSec;
+    reportPPU();
+    lastSyncSec = times500ms;
   }
   posUpdate();
   DebugReport();

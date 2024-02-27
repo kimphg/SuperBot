@@ -44,6 +44,7 @@ class RobotDriver
   public:
       
       RobotDriver();
+      void reportPPU();
       float loadParam(String id, float defaultValue);
       void setParam(String id, float value);
       void processCommand(String command);

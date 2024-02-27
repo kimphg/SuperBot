@@ -24,7 +24,7 @@ bool SenBusDriver::Input(unsigned char inputByte) {
     if (sensBusBuffi >= 200) sensBusBuffi = 0;
     return result;
   }
-void SenBusDriver::processCamera(String inputStr)
+bool SenBusDriver::processCamera(String inputStr)
 {
     bool result =false;
     std::vector<String> tokens = splitString(inputStr,',');
