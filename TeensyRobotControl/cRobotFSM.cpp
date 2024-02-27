@@ -2,7 +2,7 @@
 // #include "wiring.h"
 // #include "core_pins.h"
 #include <stdint.h>
-#define LIFT_PPR 1392.64//1360
+
 // #include "usb_serial.h"
 #include <math.h>
 
@@ -148,8 +148,8 @@ void RobotDriver::processCommand(String command) {
         // DPRINTLN(comY);
       }
       if (tokens[1].equals("lift")) {
-
-        desLiftLevel += (tokens[2].toFloat())*LIFT_PPR;
+        if(tokens[2].toInt()==1)liftComm = 1;
+        if(tokens[2].toInt()==-1)liftComm = 0;
         gotoMode(MODE_LIFT);
         // DPRINT("!$Command:");  DPRINTLN(command);  DPRINT("#");
         
@@ -181,15 +181,8 @@ uint8_t bytein1=0,bytein2=0;
 uint16_t commandCode=0;
 void RobotDriver::updateCommandBus() {
   while (S_DEBUG.available()) {
-    uint8_t bytein = S_DEBUG.read();
-    if((bytein==0xaa)&&(bytein1==0x55)&&(bytein2==0xaa))
-    {
-        commandMessageI=0;
-    }
     
-    // Serial.println((bytein));
-    bytein2 = bytein1;
-    bytein1 = bytein;
+    uint8_t bytein = S_DEBUG.read();
     if(isPrintable (bytein))
     { 
       
@@ -204,8 +197,54 @@ void RobotDriver::updateCommandBus() {
         commandString = "";
       }
     }
+    while(S_COMMAND.available)
+    {
+      bytein2 = bytein1;
+      bytein1 = bytein;
+      uint8_t bytein = S_DEBUG.read();
+      commandMessageI++;
+      if(commandMessageI>=50)commandMessageI=50;
+      if((bytein==0xaa)&&(bytein1==0x55)&&(bytein2==0xaa))
+      {
+        commandMessage[0]=bytein2;
+        commandMessage[1]=bytein1;
+          commandMessageI=2;
+      }
+      commandMessage[commandMessageI] = bytein;
+      processCommandBytes();
+    }
   
   }
+}
+void RobotDriver::processCommandBytes()
+{
+  if((commandMessage[0]==0xaa)&&(commandMessage[1]==0x55)&&(commandMessage[2]==0xaa))
+  {
+    if((commandMessage[3]==0xf2)&&(commandMessage[4]==0x00))
+    {
+      if((commandMessage[5]==0x02)&&(commandMessage[6]==0x00))
+      {
+          if(commandMessageI>=16)
+          {
+            commandMessageI=0;
+            desX = commandMessage[8]<<8+commandMessage[9];
+            if(desX>32767)desX-=65536;
+            desY = commandMessage[10]<<8+commandMessage[11];
+            if(desY>32767)desY-=65536;
+            uint8_t action = commandMessage[14]&0x0f;
+            uint8_t angle = action&0x03;
+            if(angle==0)desAngle=0;
+            else if(angle==1)desAngle=90;
+            else if(angle==2)desAngle=-90;
+            else if(angle==3)desAngle=180;
+            liftComm = (action&0x0c)>>2;
+            
+          }
+      }
+    }
+    else commandMessage[0]==0xff;//deny current packet
+  }
+
 }
 void addFloorTag(int id,int x,int y)
 {
@@ -226,7 +265,7 @@ RobotDriver::RobotDriver() {
   portMotor = &S_MOTORS;
   imu.IMU_init(portIMU);
   Serial.println("start");
-  desLiftLevel = liftLevelA0;
+  desLiftLevel = liftLevelDown;
   addFloorTag(100, 0 , 0);
   addFloorTag(101, 1000, 0);
   addFloorTag(102, 1000, 0);
@@ -234,7 +273,7 @@ RobotDriver::RobotDriver() {
   addFloorTag(104, 1000, 0);
 #ifdef SIMULATION
   liftLevel=0;
-  liftLevelA0 = LIFT_PPR/4.0;
+  liftLevelDown = LIFT_PPR/4.0;
   liftLevelMaxDefined=true;
   liftLevelMinDefined = true;
   
@@ -294,7 +333,7 @@ void RobotDriver::posUpdate() {
   encRighto = encPosRight;
   encLefto = encPosLeft;
   liftLevelo = liftLevel;
-  liftLevelAngle=-(liftLevel-liftLevelA0)*360.0/LIFT_PPR;
+  liftLevelAngle=-(liftLevel-liftLevelDown)*360.0/LIFT_PPR;
   // while (liftLevelAngle<-180)liftLevelAngle+=360;
   // while (liftLevelAngle>180)liftLevelAngle-=360;
   liftAngle=botangle+liftLevelAngle;
@@ -404,10 +443,10 @@ void RobotDriver::loopMove() {
   //   error_pos/=(abs(error_yaw)/10.0);
   // }
   
-  if((abs(error_pos) < 30))
+  if((abs(error_pos) < 40))
   {
     stillCount++;
-    if(stillCount>100)  gotoMode(MODE_ROTATE);
+    if(stillCount>100)  gotoMode(MODE_LIFT);
     integral_pos=0;
     error_pos_prev=0;
     error_pos=0;
@@ -559,11 +598,11 @@ void RobotDriver::loopStandby()
     desMotorSpeedLift=-0.1;
     else if (liftLevelInitOK == false)
     {
-      desMotorSpeedLift=(liftLevelA0-liftLevel)/1000.0;
+      desMotorSpeedLift=(liftLevelDown-liftLevel)/1000.0;
       desMotorSpeedLift=constrainVal(desMotorSpeedLift,-0.2,0.2);
     }
   else  desMotorSpeedLift*=0.8;
-  if (liftLevelMinDefined && (liftLevel>liftLevelA0)) liftLevelInitOK = true;
+  if (liftLevelMinDefined && (liftLevel>liftLevelDown)) liftLevelInitOK = true;
   sendControlPacket(3, desMotorSpeedLift, 0);
 }
 void RobotDriver::sendSyncPacket() {
@@ -648,7 +687,7 @@ void RobotDriver::processMotorReport(uint8_t bytein) {
             if (isLiftMinPos&&(liftLevelMinDefined==false)) 
             {
               liftLevelMinDefined = true;
-              // desLiftLevel=liftLevelA0;
+              // desLiftLevel=liftLevelDown;
               // gotoMode(MODE_LIFT);
             }
             
@@ -688,13 +727,30 @@ void RobotDriver::processMotorReport(uint8_t bytein) {
 }
 void RobotDriver::loopLift()
 {
+  switch (liftComm)
+  {
+  case 0:
+    desLiftLevel = liftLevelDown;
+    break;
+  case 1:
+    desLiftLevel = liftLevelUp;
+    break;
+  case 2:
+    desLiftLevel = liftLevelDown;
+    break;
+  case 3:
+    desLiftLevel = liftLevelUp;
+    break;
+  default:
+    break;
+  }
   float desLiftLevelError = desLiftLevel-liftLevel;
   desLiftSpeed = desLiftLevelError/1100.0;
   desLiftSpeed = constrainVal(desLiftSpeed, -0.1, 0.1);
   sendControlPacket(3, desLiftSpeed, 0);
-  if(abs(desLiftLevelError)<10)stillCount++;
+  if(abs(desLiftLevelError)<1000)stillCount++;
   else stillCount=0;
-  if(abs(desLiftLevelError)<10&&stillCount>100)gotoMode(MODE_STANDBY);
+  if(abs(desLiftLevelError)<1000&&stillCount>100)gotoMode(MODE_ROTATE);
   // curSpeed
   desRotSpd = desLiftSpeed*9.4;//botRotationSpeed*9.2;
   // desRotSpd=desRotSpd-liftAngle/30.0;

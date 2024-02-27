@@ -23,6 +23,7 @@
 #define MODE_ROTATE 2
 #define MODE_LIFT 3
 #define MAX_MOTION_SPEED 1.3
+#define LIFT_PPR 1392.64
 struct RobotParam
 {
   String paramName;
@@ -67,11 +68,12 @@ class RobotDriver
   float  desDistance = 0;
   float desBearing = 0;
   bool initOK = false;
-  
+  uint8_t liftComm=0;
   void loopRotate();
   void liftStabilize();
   void updateCommandBus();
-  void sendControlPacket(uint8_t id,float speed,uint8_t mode);
+  void processCommandBytes();
+  void sendControlPacket(uint8_t id, float speed, uint8_t mode);
   void processMotorReport(uint8_t bytein);
   void loopMove();
   void loopLift();
@@ -113,7 +115,8 @@ unsigned long int lastLoopMillis=0;
   float curSpeedR=0;
   float curSpeedLift=0;
   float desLiftSpeed = 0;
-  int liftLevelA0 = 340;
+  int liftLevelDown =  LIFT_PPR*0.3;
+  int liftLevelUp = LIFT_PPR*7.0;
   float liftLevelAngle =0.0;
   float liftAngle =0.0;
   int CurTagid;
