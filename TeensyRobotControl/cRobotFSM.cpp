@@ -1,3 +1,4 @@
+#include "core_pins.h"
 // #include "usb_serial.h"
 // #include "wiring.h"
 // #include "core_pins.h"
@@ -49,6 +50,16 @@ float constrainVal(float input, float min, float max) {
 }
 void addFloorTag(int id,int x,int y)
 {
+  for (int i=0;i<floorMap.size();i++)
+  {
+    if(floorMap[i].id==id)
+    {
+      floorMap[i].x = x;
+      floorMap[i].y = y;
+      return;
+    }
+    
+  }
   FloorTag newfloorTag;
   newfloorTag.id=id;
   newfloorTag.x = x;
@@ -337,11 +348,16 @@ RobotDriver::RobotDriver() {
   imu.IMU_init(portIMU);
   Serial.println("start");
   desLiftLevel = liftLevelDown;
-  addFloorTag(100, 0 , 0);
-  addFloorTag(101, 1000, 0);
-  addFloorTag(102, 1000, 0);
-  addFloorTag(103, 1000, 0);
-  addFloorTag(104, 1000, 0);
+  // addFloorTag(100, 0 , 0);
+  // addFloorTag(101, 1000, 0);
+  // addFloorTag(102, 1000, 0);
+  // addFloorTag(103, 1000, 0);
+  // addFloorTag(104, 1000, 0);
+  pinMode(PIN_OUT_1, OUTPUT);
+  pinMode(PIN_OUT_2, OUTPUT);
+  pinMode(PIN_OUT_3, OUTPUT);
+  pinMode(PIN_OUT_4, OUTPUT);
+ 
 #ifdef SIMULATION
   liftLevel=0;
   liftLevelDown = LIFT_PPR/4.0;

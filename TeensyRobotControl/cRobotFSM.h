@@ -24,6 +24,7 @@
 #define MODE_LIFT 3
 #define MAX_MOTION_SPEED 1.3
 #define LIFT_PPR 1392.64
+
 struct RobotParam
 {
   String paramName;

@@ -2,7 +2,10 @@
 #ifndef COMMON_H
 #define COMMON_H
 // #define SIMULATION
-
+#define PIN_OUT_1 2
+#define PIN_OUT_2 3
+#define PIN_OUT_3 4 
+#define PIN_OUT_4 5 
 #define S_IMU     Serial4
 #define S_SENSORS Serial2
 #define S_MOTORS  Serial3

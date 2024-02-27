@@ -264,7 +264,7 @@ void loop() {
     loopCount=0;
     curTimeSec=curSec;
   }
-  loopBlink(); //indicate we are in main loop with short blink every 1.5 seconds
+  // loopBlink(); //indicate we are in main loop with short blink every 1.5 seconds
   
   if (1) {
     // getCommandsRadio();
