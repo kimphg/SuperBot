@@ -27,13 +27,17 @@ bool SenBusDriver::Input(unsigned char inputByte) {
 bool SenBusDriver::processCamera(String inputStr)
 {
     bool result =false;
+    
     std::vector<String> tokens = splitString(inputStr,',');
     if (tokens.size() >= 7) {
       if(tokens[3].equals("TD"))
       {
+        int tagID = tokens[4].toInt();
         DPRINT("!$Camera data:");DPRINT(inputStr); DPRINT("#");DPRINT("@");
-        tagAngle = tokens[7].toFloat()/10.0;
-        result=true;
+        if((tagID>=1)&&(tagID<=7)){
+          tagAngle = tokens[7].toFloat()/10.0;
+          result=true;
+        }
       }
     }
     

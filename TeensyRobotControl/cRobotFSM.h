@@ -74,6 +74,7 @@ class RobotDriver
   void liftStabilize();
   void updateCommandBus();
   void processCommandBytes();
+  void sendPPUack(uint8_t commandCode);
   void sendControlPacket(uint8_t id, float speed, uint8_t mode);
   void processMotorReport(uint8_t bytein);
   void loopMove();

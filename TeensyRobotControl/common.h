@@ -6,7 +6,7 @@
 #define S_IMU     Serial4
 #define S_SENSORS Serial2
 #define S_MOTORS  Serial3
-#define S_COMMAND Serial5
+#define S_COMMAND Serial1
 #define S_DEBUG   Serial5
 #ifdef SIMULATION
   #define S_DEBUG Serial

@@ -47,6 +47,14 @@ float constrainVal(float input, float min, float max) {
   if (input > max) return max;
   return input;
 }
+void addFloorTag(int id,int x,int y)
+{
+  FloorTag newfloorTag;
+  newfloorTag.id=id;
+  newfloorTag.x = x;
+  newfloorTag.y = y;
+  floorMap.push_back(newfloorTag);
+}
 uint8_t ppu_report[50];
 void RobotDriver::reportPPU()
 {
@@ -64,7 +72,7 @@ void RobotDriver::reportPPU()
   if(bot_mode==MODE_STANDBY)byte4+=0x80;
   else byte4+=0x40;
   ppu_report[10]=byte4;
-  uint16_t crc = gen_crc16(ppu_report,9);
+  uint16_t crc = gen_crc16(ppu_report,11);
   ppu_report[11]=crc>>8;
   ppu_report[12]=crc&0xff;
   S_COMMAND.write(ppu_report,13);
@@ -208,22 +216,23 @@ void RobotDriver::updateCommandBus() {
     if(isPrintable (bytein))
     { 
       
-      if (commandString.length() < COMMAND_LEN_MAX) commandString += (char)bytein;
-      else commandString = "";
+      if (commandString.length() >= COMMAND_LEN_MAX) commandString = "";
+      commandString += (char)bytein;
       if (bytein == '\n')  //end of command
       {
         if (commandString.indexOf("$COM")>=0) {
           processCommand(commandString);
-          
         }
         commandString = "";
       }
     }
-    while(S_COMMAND.available())
+    
+  }
+  while(S_COMMAND.available())
     {
-      bytein2 = bytein1;
-      bytein1 = bytein;
       uint8_t bytein = S_COMMAND.read();
+      Serial.println(bytein);
+      Serial.flush();
       commandMessageI++;
       if(commandMessageI>=50)commandMessageI=50;
       if((bytein==0xaa)&&(bytein1==0x55)&&(bytein2==0xaa))
@@ -232,11 +241,11 @@ void RobotDriver::updateCommandBus() {
         commandMessage[1]=bytein1;
           commandMessageI=2;
       }
+      bytein2 = bytein1;
+      bytein1 = bytein;
       commandMessage[commandMessageI] = bytein;
       processCommandBytes();
     }
-  
-  }
 }
 void RobotDriver::processCommandBytes()
 {
@@ -248,11 +257,19 @@ void RobotDriver::processCommandBytes()
       {
           if(commandMessageI>=16)
           {
+            uint16_t crc = gen_crc16(commandMessage,15);
+            uint16_t real_crc = (commandMessage[15]<<8)+commandMessage[16];
+            if(crc==real_crc)sendPPUack(2);
+            else {
+              DPRINT("!$ERROR CRC:");  DPRINTLN(crc);  DPRINTLN(real_crc); DPRINT("#");
+            }
             commandMessageI=0;
             desX = (commandMessage[8]<<8)+commandMessage[9];
             if(desX>32767)desX-=65536;
+            desX*=100.0;
             desY = (commandMessage[10]<<8)+commandMessage[11];
             if(desY>32767)desY-=65536;
+            desY*=100.0;
             uint8_t action = commandMessage[14]&0x0f;
             uint8_t angle = action&0x03;
             if(angle==0)desAngle=0;
@@ -260,27 +277,59 @@ void RobotDriver::processCommandBytes()
             else if(angle==2)desAngle=-90;
             else if(angle==3)desAngle=180;
             liftComm = (action&0x0c)>>2;
+            DPRINT("!$PPU_COMAND XYLA:");  DPRINTLN(desX); DPRINTLN(desY);DPRINTLN(liftComm);DPRINTLN(angle); DPRINT("#");
+            if(bot_mode==MODE_STANDBY)gotoMode(MODE_MOVE);
             
           }
+      }
+      else if((commandMessage[5]==0x05)&&(commandMessage[6]==0x00))// map data
+      {
+        if(commandMessageI>=14)
+          {
+            uint16_t crc = gen_crc16(commandMessage,13);
+            uint16_t real_crc = (commandMessage[13]<<8)+commandMessage[14];
+            if(1)sendPPUack(5);
+            else {
+              DPRINT("!$ERROR CRC:");  DPRINTLN(commandMessage[5]); DPRINTLN(crc);  DPRINTLN(real_crc); DPRINT("#");
+            }
+            commandMessageI=0;
+            int newtagX = (commandMessage[7]<<8)+commandMessage[8];
+            if(newtagX>32767)newtagX-=65536;
+            int newtagY = (commandMessage[9]<<8)+commandMessage[10];
+            if(newtagY>32767)newtagY-=65536;
+            int id = (commandMessage[11]<<8)+commandMessage[12];
+            addFloorTag(id,newtagX*100,newtagY*100);
+            DPRINT("!$Command:"); DPRINTLN("new tag");DPRINTLN(newtagX); DPRINTLN(newtagY);DPRINTLN(id); DPRINT("#");DPRINT("@");S_DEBUG.flush();
+
+            
+          }
+        
       }
     }
     else commandMessage[0]=0xff;//deny current packet
   }
-
 }
-void addFloorTag(int id,int x,int y)
+uint8_t ppu_ack[10];
+void RobotDriver::sendPPUack(uint8_t commandCode = 0)
 {
-  FloorTag newfloorTag;
-  newfloorTag.id=id;
-  newfloorTag.x = x;
-  newfloorTag.y = y;
-  floorMap.push_back(newfloorTag);
+  ppu_ack[0]=0xaa;
+  ppu_ack[1]=0x55;
+  ppu_ack[2]=0xaa;
+  ppu_ack[3]=0xF1;
+  ppu_ack[4]=0xF2;
+  ppu_ack[5]=0x05;
+  ppu_ack[6]=0xFF;
+  uint16_t crc = gen_crc16(ppu_ack,7);
+  ppu_ack[7]=crc>>8;
+  ppu_ack[8]=crc&0xff;
+  S_COMMAND.write(ppu_ack,9);
 }
+
 RobotDriver::RobotDriver() {
   S_IMU.begin(921600);    //IMU
   S_SENSORS.begin(921600);  //sens bus
   S_MOTORS.begin(230400);
-  // S_COMMAND.begin(57600);
+  S_COMMAND.begin(921600);
   S_DEBUG.begin(2000000);
   portIMU = &S_IMU;
   portSenBus = &S_SENSORS;
@@ -397,15 +446,18 @@ void RobotDriver::DebugReport()
   if(debugCounter==1){
     DPRINT("!$dx,dy,dd,da:");  DPRINTLN(desX);  DPRINTLN(desY);  DPRINTLN(desDistance);  DPRINTLN(desAngle);  DPRINT("#");
     DPRINT("!$x,y,ba,la:");  DPRINTLN(botx);  DPRINTLN(boty);  DPRINTLN(botangle); DPRINTLN(liftAngle);  DPRINT("#");
+    DPRINT("!$floorMap:");  DPRINTLN(floorMap.size());   DPRINT("#");
+    
   }
   if(debugCounter==2){
   DPRINT("!$GyroYaw:");  DPRINTLN(imu_data.gyroyaw);  DPRINT("#");
-  DPRINT("!$PID err YP:");     DPRINTLN(error_yaw);  DPRINTLN(error_pos); DPRINT("#");  
+  DPRINT("!$PIDerr YP:");     DPRINTLN(error_yaw);  DPRINTLN(error_pos); DPRINT("#");  
   DPRINT("!$curtime cursyns:");     DPRINTLN(curTime);  DPRINTLN(syncLossCount); DPRINT("#");  
   
 //  sendSyncPacket() ;
   }
   S_DEBUG.print('@');
+  S_DEBUG.flush();
 
 }
 
@@ -414,13 +466,13 @@ void RobotDriver::controlLoop()
   int dt = curTime - lastLoopMillis;  //check dt, should be 20ms
   if (dt < 20) return;  //dt minimum limit to 20 millis
   lastLoopMillis = curTime;
-  int times500ms = curTime/500;
+  int times500ms = curTime/1000;
   syncLossCount++;
   if(syncLossCount>100)gotoMode(MODE_STANDBY);
   if(times500ms!=lastSyncSec)
   {
     sendSyncPacket();
-    reportPPU();
+    // reportPPU();
     lastSyncSec = times500ms;
   }
   posUpdate();
@@ -499,7 +551,7 @@ void RobotDriver::update() {
     unsigned char inputByte = portSenBus->read();
     if(sbus.Input(inputByte))
     {
-      imu.resetYaw(sbus.tagAngle);
+      // imu.resetYaw(sbus.tagAngle);
     }
   }
   imu.updateData();
@@ -768,12 +820,13 @@ void RobotDriver::loopLift()
     break;
   }
   float desLiftLevelError = desLiftLevel-liftLevel;
+  if(abs(desLiftLevelError)<1000)stillCount++;
+  else stillCount=0;
+  if(abs(desLiftLevelError)<1000&&stillCount>0)gotoMode(MODE_ROTATE);
   desLiftSpeed = desLiftLevelError/1100.0;
   desLiftSpeed = constrainVal(desLiftSpeed, -0.1, 0.1);
   sendControlPacket(3, desLiftSpeed, 0);
-  if(abs(desLiftLevelError)<1000)stillCount++;
-  else stillCount=0;
-  if(abs(desLiftLevelError)<1000&&stillCount>100)gotoMode(MODE_ROTATE);
+  
   // curSpeed
   desRotSpd = desLiftSpeed*9.4;//botRotationSpeed*9.2;
   // desRotSpd=desRotSpd-liftAngle/30.0;
