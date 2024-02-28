@@ -50,7 +50,7 @@ float constrainVal(float input, float min, float max) {
 }
 void addFloorTag(int id,int x,int y)
 {
-  for (int i=0;i<floorMap.size();i++)
+  for (unsigned int i=0;i<floorMap.size();i++)
   {
     if(floorMap[i].id==id)
     {
@@ -476,12 +476,13 @@ void RobotDriver::DebugReport()
   S_DEBUG.flush();
 
 }
-
 void RobotDriver::controlLoop()
 {
   int dt = curTime - lastLoopMillis;  //check dt, should be 20ms
   if (dt < 20) return;  //dt minimum limit to 20 millis
   lastLoopMillis = curTime;
+
+  
   int times500ms = curTime/1000;
   syncLossCount++;
   if(syncLossCount>100)gotoMode(MODE_STANDBY);
@@ -493,6 +494,10 @@ void RobotDriver::controlLoop()
   }
   posUpdate();
   DebugReport();
+
+
+  // Serial.println(sin(led_circle/500.0)*200.0);
+  // else digitalWrite(PIN_OUT_1,LOW);
   switch (bot_mode)
   {
   case MODE_STANDBY:
@@ -511,7 +516,21 @@ void RobotDriver::controlLoop()
   default:
     break;
   }
-  
+  if(bot_mode==MODE_STANDBY)
+  {
+    int led_circle = (curTime%4000)/2;
+    analogWrite(PIN_OUT_1,(sin(led_circle/159.2)+1)*120.0);
+    analogWrite(PIN_OUT_2,(sin(3.14+led_circle/159.2)+1)*120.0);
+  }
+  else
+  {
+
+    int led_circle = (curTime%2000);//0 to 2000
+    int led_step = led_circle/150;//0 to 20
+    int led_on = led_step%2;
+    if(led_step<bot_mode*2){digitalWrite(PIN_OUT_1,led_on);digitalWrite(PIN_OUT_2,led_on);}
+    else {digitalWrite(PIN_OUT_1,LOW);digitalWrite(PIN_OUT_2,LOW);}
+  }
 }
 void RobotDriver::loopMove() {
 
@@ -695,6 +714,7 @@ void RobotDriver::loopStandby()
   else  desMotorSpeedLift*=0.8;
   if (liftLevelMinDefined && (liftLevel>liftLevelDown)) liftLevelInitOK = true;
   sendControlPacket(3, desMotorSpeedLift, 0);
+  
 }
 void RobotDriver::sendSyncPacket() {
   for(unsigned int i =0;i<paramTable.size();i++)
