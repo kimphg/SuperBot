@@ -162,6 +162,14 @@ uint8_t calcCS8(uint8_t* startbyte, uint8_t len)
   }
   return cs;
 }
+uint8_t calcMinus(uint8_t* startbyte, uint8_t len)
+{
+  uint8_t cs = 0;
+  for (int i = 0; i < len; i++) {
+    cs -= startbyte[i];
+  }
+  return cs;
+}
 
 std::vector<String> splitString(String input,char sep)
 {

@@ -35,7 +35,7 @@ bool SenBusDriver::processCamera(String inputStr)
         int tagID = tokens[4].toInt();
         DPRINT("!$Camera data:");DPRINT(inputStr); DPRINT("#");DPRINT("@");
         if((tagID>=1)&&(tagID<=7)){
-          tagAngle = tokens[7].toFloat()/10.0;
+          // tagAngle = tokens[7].toFloat()/10.0;
           result=true;
         }
       }

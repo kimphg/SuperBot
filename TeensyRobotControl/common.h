@@ -57,6 +57,7 @@ void setupBlink(int numBlinks, int upTime, int downTime);
 void indicateErrorLed(int errorCode) ;
 void radioSetup() ;
 uint8_t calcCS8(uint8_t* startbyte, uint8_t len);
+uint8_t calcMinus(uint8_t* startbyte, uint8_t len);
 void blink(int n);
 bool isPrintable(uint8_t ch);
 std::vector<String> splitString(String input,char sep);

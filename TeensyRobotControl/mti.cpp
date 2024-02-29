@@ -1,3 +1,5 @@
+// #include "usb_serial.h"
+#include <stdint.h>
 #include "mti.h"
 
 //INTERRUPT SERVICE ROUTINES (for reading PWM and PPM)
@@ -106,6 +108,18 @@ bool IMU_driver::gotoConfig()
     if (!isSuccess) Serial.println("gotoConfig failed");
     return isSuccess;
   }
+  /*
+  0F 40 40 0C BE BE 3E 80 3E 8B 36 E0 41 1B C4 99 5E
+0F 80 40 0C BA A9 2C 00 B8 6D 00 00 38 70 80 00 14
+0F 40 40 0C BE C0 B2 00 3E 8B 43 C0 41 1B C4 41 D3
+0F 80 40 0C BA A8 B4 00 3A 84 A0 00 3A 92 A8 00 08
+0F 20 30 0C 3F D3 A6 E1 40 0F 53 69 43 21 3B 15 08
+0F 40 40 0C BE C0 8E 40 3E 8D B2 00 41 1B 9C E4 8B
+0F 80 40 0C 3A 5D 68 00 3A 80 08 00 3A 96 5C 00 03
+0F 40 40 0C BE BB C9 A0 3E 8D 9E 60 41 1B D8 8B C6
+0F 80 40 0C B9 52 C0 00 3A 81 E0 00 38 8D 80 00 45
+0F 40 40 0C BE C3 31 00 3E 8B 52 A0 41 1B D7 90 00
+  */
   void IMU_driver::updateData()
  {
   if(failCount<100)failCount++;
@@ -121,91 +135,99 @@ bool IMU_driver::gotoConfig()
           // Serial.println("gyro update ");
           // Serial.flush();
           // printArray(databuf, buffIndex + 1);
-          if (buffIndex > 15) {
+          if (buffIndex > 17) {
             measurement.mid = databuf[1];
-            int dataLen = databuf[2];
-            int iti = 3;
-            while(iti<dataLen)
+            if(measurement.mid==0x36)
             {
-              
-              int xdi = (databuf[iti] << 8) | databuf[iti+1];
-              // Serial.println(xdi);
-              unsigned char leni = databuf[iti+2];
-              if (xdi == 8240) {  //MTDATA2 data ID of euler angles
-                measurement.roll =  bytesToFloat(databuf[iti+3], databuf[iti+4], databuf[iti+5], databuf[iti+6]);
-                measurement.pitch = bytesToFloat(databuf[iti+7], databuf[iti+8], databuf[iti+9], databuf[iti+10]);
-                measurement.yaw =   -bytesToFloat(databuf[iti+11], databuf[iti+12], databuf[iti+13], databuf[iti+17]);
-                if(yawCalcMode==0){
-                  yawShift = measurement.gyroyaw-measurement.yaw;
-                  while(yawShift>180.0)yawShift-=360.0;
-                  while(yawShift<-180)yawShift+=360.0;
+              int dataLen = databuf[2];
+              uint8_t cs = calcMinus(&databuf[0],dataLen+3);
+              uint8_t cs_received = databuf[dataLen+3];
+              // Serial.print(cs);
+              // Serial.print(" ");
+              // Serial.println(cs_received);
+              int iti = 3;
+              while(iti<dataLen)
+              {
+                
+                int xdi = (databuf[iti] << 8) | databuf[iti+1];
+                // Serial.println(xdi);
+                unsigned char leni = databuf[iti+2];
+                if (xdi == 8240) {  //MTDATA2 data ID of euler angles
+                  measurement.roll =  bytesToFloat(databuf[iti+3], databuf[iti+4], databuf[iti+5], databuf[iti+6]);
+                  measurement.pitch = bytesToFloat(databuf[iti+7], databuf[iti+8], databuf[iti+9], databuf[iti+10]);
+                  measurement.yaw =   -bytesToFloat(databuf[iti+11], databuf[iti+12], databuf[iti+13], databuf[iti+17]);
+                  if(yawCalcMode==0){//steady mode
+                    yawShift = measurement.gyroyaw-measurement.yaw;
+                    while(yawShift>180.0)yawShift-=360.0;
+                    while(yawShift<-180)yawShift+=360.0;
+                  }
+                  else
+                  {//high speed mode
+                    measurement.gyroyaw = measurement.yaw+yawShift;
+                    while(measurement.gyroyaw>180.0)measurement.gyroyaw-=360.0;
+                    while(measurement.gyroyaw<-180)measurement.gyroyaw+=360.0;
+                  }
+                  failCount=0;
                 }
-                else
-                {
-                  measurement.gyroyaw = measurement.yaw+yawShift;
-                  while(measurement.gyroyaw>180.0)measurement.gyroyaw-=360.0;
-                  while(measurement.gyroyaw<-180)measurement.gyroyaw+=360.0;
-                }
-                failCount=0;
-              }
-              if (xdi == 32832) {  //MTDATA2 data ID of rate of turn HR
-                measurement.gyroX =  bytesToFloat(databuf[iti+3], databuf[iti+4], databuf[iti+5], databuf[iti+6]);
-                measurement.gyroY = bytesToFloat(databuf[iti+7], databuf[iti+8], databuf[iti+9], databuf[iti+10]);
-                float newGyroZ =   -bytesToFloat(databuf[iti+11], databuf[iti+12], databuf[iti+13], databuf[iti+17]);
-                if(abs(newGyroZ)<0.1)
-                {
-                  if(yawCalcMode>0)
-                  yawCalcMode--;
-                }
-                else yawCalcMode=200;
-                if(yawCalcMode==0){
-                  if(abs(newGyroZ)>0.01)
+                if (xdi == 32832) {  //MTDATA2 data ID of rate of turn HR
+                  measurement.gyroX =  bytesToFloat(databuf[iti+3], databuf[iti+4], databuf[iti+5], databuf[iti+6]);
+                  measurement.gyroY = bytesToFloat(databuf[iti+7], databuf[iti+8], databuf[iti+9], databuf[iti+10]);
+                  float newGyroZ =   -bytesToFloat(databuf[iti+11], databuf[iti+12], databuf[iti+13], databuf[iti+17]);
+                  if(abs(newGyroZ)<0.1)
                   {
-                    // Serial.println(newGyroZ-measurement.gyroZ);
+                    if(yawCalcMode>0)
+                    yawCalcMode--;
+                  }
+                  else yawCalcMode=200;
+                  if(yawCalcMode==0){
+                    if(abs(newGyroZ)>0.01)
+                    {
+                      // Serial.println(newGyroZ-measurement.gyroZ);
+                      noMotionCount=0;
+                    }
+                    if(noMotionCount>100)
+                    {
+                      gyroZBias+=newGyroZ;
+                      gyroZBiasCount++;
+                      if(gyroZBiasCount>200)
+                      {
+                        float newBias = gyroZBias/gyroZBiasCount;
+                        gyroZBiasCount=0;
+                        gyroZBias=0;
+                        gyroZBiasCompensation+=0.4*(newBias-gyroZBiasCompensation);
+                        // Serial.println(1000*gyroZBiasCompensation);
+                      }
+                    }
+                    
+                    measurement.gyroZ=newGyroZ-gyroZBiasCompensation;
+                    
+                    measurement.gyroyaw+= (measurement.gyroZ+measurement.gyroZold)/1000.0*57.2958;// todo: add dt later
+                    
+                    while(measurement.gyroyaw>180.0)measurement.gyroyaw-=360.0;
+                    while(measurement.gyroyaw<-180)measurement.gyroyaw+=360.0;
+                  }
+                  measurement.gyroZold = measurement.gyroZ;
+                  // Serial.print(measurement.gyroZ);
+                  // Serial.print(" ");
+                  failCount=0;
+                  // Serial.println("new gyro data");
+                }
+                if (xdi == 16448) {  //MTDATA2 data ID of acceleration HR
+                  measurement.accX =  bytesToFloat(databuf[iti+3], databuf[iti+4], databuf[iti+5], databuf[iti+6]);
+                  measurement.accY =  bytesToFloat(databuf[iti+7], databuf[iti+8], databuf[iti+9], databuf[iti+10]);
+                  float newaccZ =   bytesToFloat(databuf[iti+11], databuf[iti+12], databuf[iti+13], databuf[iti+17]);
+                  // Serial.println(abs(newaccZ-measurement.accZ));
+                  if(abs(newaccZ-measurement.accZ)>0.3)
+                  {
+                    // Serial.println(noMotionCount);
                     noMotionCount=0;
                   }
-                  if(noMotionCount>100)
-                  {
-                    gyroZBias+=newGyroZ;
-                    gyroZBiasCount++;
-                    if(gyroZBiasCount>200)
-                    {
-                      float newBias = gyroZBias/gyroZBiasCount;
-                      gyroZBiasCount=0;
-                      gyroZBias=0;
-                      gyroZBiasCompensation+=0.4*(newBias-gyroZBiasCompensation);
-                      // Serial.println(1000*gyroZBiasCompensation);
-                    }
-                  }
-                  
-                  measurement.gyroZ=newGyroZ-gyroZBiasCompensation;
-                  
-                  measurement.gyroyaw+= (measurement.gyroZ+measurement.gyroZold)/1000.0*57.2958;// todo: add dt later
-                  
-                  while(measurement.gyroyaw>180.0)measurement.gyroyaw-=360.0;
-                  while(measurement.gyroyaw<-180)measurement.gyroyaw+=360.0;
+                  else noMotionCount++;
+                  measurement.accZ = newaccZ;
+                  failCount=0;
                 }
-                measurement.gyroZold = measurement.gyroZ;
-                // Serial.print(measurement.gyroZ);
-                // Serial.print(" ");
-                failCount=0;
-                // Serial.println("new gyro data");
+                iti+=leni+1;
               }
-              if (xdi == 16448) {  //MTDATA2 data ID of acceleration HR
-                measurement.accX =  bytesToFloat(databuf[iti+3], databuf[iti+4], databuf[iti+5], databuf[iti+6]);
-                measurement.accY =  bytesToFloat(databuf[iti+7], databuf[iti+8], databuf[iti+9], databuf[iti+10]);
-                float newaccZ =   bytesToFloat(databuf[iti+11], databuf[iti+12], databuf[iti+13], databuf[iti+17]);
-                // Serial.println(abs(newaccZ-measurement.accZ));
-                if(abs(newaccZ-measurement.accZ)>0.3)
-                {
-                  // Serial.println(noMotionCount);
-                  noMotionCount=0;
-                }
-                else noMotionCount++;
-                measurement.accZ = newaccZ;
-                failCount=0;
-              }
-              iti+=leni+1;
             }
           }
           buffIndex = 0;

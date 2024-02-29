@@ -109,6 +109,7 @@ unsigned long int lastLoopMillis=0;
   float desMotSpdL=0,desMotSpdR=0,desMotorSpeedLift=0;
   int botState = 0;
   SenBusDriver sbus;
+  float desSpeed;
   float botx = 0,boty = 0;
   float botangle = 0;
   float desX=0,desY=0;
