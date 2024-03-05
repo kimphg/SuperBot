@@ -26,8 +26,8 @@ public:
   void resetYaw(float newyaw);
   bool Connect() ;
   bool gotoMeasurement();
-  inline bool getIsConnected() {
-     return isConnected;
+  inline bool isConnected() {
+     return conected;
   }
   bool gotoConfig() ;
   void updateData() ;
@@ -48,7 +48,7 @@ private:
   unsigned char lastbyte;
   IMUData measurement;
   Stream *port;
-  bool isConnected;
+  bool conected;
   bool isMeasurement;
 };
 #endif

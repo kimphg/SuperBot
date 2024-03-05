@@ -126,11 +126,14 @@ void setupBlink(int numBlinks, int upTime, int downTime)
 }
 void blink(int n) {
   for (int i = 0; i < n; i++) {
+    digitalWrite(PIN_OUT_2, LOW);
     digitalWrite(PIN_OUT_1, LOW);
     delay(200);
+    digitalWrite(PIN_OUT_2, HIGH);
     digitalWrite(PIN_OUT_1, HIGH);
     delay(200);
   }
+    digitalWrite(PIN_OUT_2, LOW);
     digitalWrite(PIN_OUT_1, LOW);
     delay(1000);
 }

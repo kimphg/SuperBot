@@ -1,7 +1,7 @@
 // #include "wiring.h"
 #ifndef COMMON_H
 #define COMMON_H
-// #define SIMULATION
+#define SIMULATION
 #define PIN_OUT_1 2
 #define PIN_OUT_2 3
 #define PIN_OUT_3 4 
@@ -11,10 +11,7 @@
 #define S_MOTORS  Serial3
 #define S_COMMAND Serial1
 #define S_DEBUG   Serial5
-#ifdef SIMULATION
-  #define S_DEBUG Serial
-  #define RS485_PPU_PSU Serial
-#endif
+
 #define DT_CONTROL 0.02 //50hz control loop
 #define PI2 6.2831853
 #define PI 3.1415926535897932384626433832795
