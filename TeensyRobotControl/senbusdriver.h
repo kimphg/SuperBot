@@ -20,9 +20,11 @@ public:
   bool Input(unsigned char inputByte);
   bool processCamera(String inputStr);
   
-float tagAngle=0;
+  float tagAngle=0;
+  float tagX=0,tagY=0;
+  int tagID;
   private:
-  
+  int lastTagID=-1;
   String inputString;
   unsigned char sensBusBuff[100];
   unsigned char sensBusBuffo;

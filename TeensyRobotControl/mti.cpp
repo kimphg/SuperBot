@@ -216,7 +216,7 @@ void IMU_driver::updateData() {
             }
             else
             {
-              printArray(databuf, buffIndex + 1);
+              // printArray(databuf, buffIndex + 1);
             }
           }
         }

@@ -71,6 +71,24 @@ uint16_t gen_crc16(const uint8_t *data, uint16_t size)
 
     return crc;
 }
+void ConvXYToPolar(float x, float y, float* azi, float* range)
+{
+    if(abs(y)<0.001)
+    {
+        *azi = x>0? PI_CHIA2:(PI_NHAN2-PI_CHIA2);
+        *azi = *azi*DEG_RAD;
+        *range = abs(x);
+    }
+    else
+    {
+        *azi = atanf(x/y);
+        if(y<0)*azi+=PI;
+        if(*azi<0)*azi += PI_NHAN2;
+        *range = sqrt(x*x+y*y);
+        *azi = *azi*DEG_RAD;
+    }
+
+}
 // void getPPM()
 // {
 //   // Serial.println("getppm");

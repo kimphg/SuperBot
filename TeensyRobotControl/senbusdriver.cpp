@@ -32,12 +32,18 @@ bool SenBusDriver::processCamera(String inputStr)
     if (tokens.size() >= 7) {
       if(tokens[3].equals("TD"))
       {
-        int tagID = tokens[4].toInt();
-        DPRINT("!$Camera data:");DPRINT(inputStr); DPRINT("#");DPRINT("@");
-        if((tagID>=1)&&(tagID<=7)){
-          // tagAngle = tokens[7].toFloat()/10.0;
+        int newtagID = tokens[4].toInt();
+        
+        if(lastTagID == newtagID){
+          tagAngle = tokens[7].toFloat()/10.0;
+          if(tagAngle>180)tagAngle-=360;
+          tagX = -(50-tokens[5].toFloat())*1.44;
+          tagY = (50-tokens[6].toFloat())*1.44;
+          tagID = newtagID;
+          DPRINT("!$Camera data:");DPRINTLN(tagAngle);DPRINTLN(tagX);DPRINTLN(tagY); DPRINT("#");DPRINT("@");
           result=true;
         }
+        lastTagID = newtagID;
       }
     }
     

@@ -1,7 +1,7 @@
 // #include "wiring.h"
 #ifndef COMMON_H
 #define COMMON_H
-#define SIMULATION
+// #define SIMULATION
 #define PIN_OUT_1 2
 #define PIN_OUT_2 3
 #define PIN_OUT_3 4 
@@ -50,6 +50,7 @@
 #define DEG_RAD 57.295779513f
 float ConvXYtoAngle(double x, double y);
 uint16_t gen_crc16(const uint8_t *data, uint16_t size);
+void ConvXYToPolar(float x, float y, float* azi, float* range);
 void setupBlink(int numBlinks, int upTime, int downTime);
 void indicateErrorLed(int errorCode) ;
 void radioSetup() ;
