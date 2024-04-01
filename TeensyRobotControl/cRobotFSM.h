@@ -14,6 +14,8 @@
 #define OUTPUT_2 3
 #define OUTPUT_3 4
 #define OUTPUT_4 5
+#define STEP_PULSE OUTPUT_4
+#define STEP_DIR OUTPUT_3
 #define DT_CONTROL 0.02 //50hz control loop
 #define DT_POS_UPDATE 0.02 //20hz  loop
 #define BASE_LEN 0.45
@@ -23,8 +25,8 @@
 #define MODE_ROTATE 2
 #define MODE_LIFT 3
 #define MAX_MOTION_SPEED 1.3
-#define LIFT_PPR 1392.64
-
+#define LIFT_PPR 1485.0
+#define STEP_PPR 43520
 struct RobotParam
 {
   String paramName;
@@ -70,6 +72,10 @@ class RobotDriver
   float desRotSpd=0;
   float  desDistance = 0;
   float desBearing = 0;
+  int curLiftStep = 0;
+  int minLiftStep = 0;
+  int stepFreq = 1;
+  int desLiftStep = 0;
   bool initOK = false;
   uint8_t liftComm=0;
   void loopRotate();
@@ -81,6 +87,7 @@ class RobotDriver
   void processMotorReport(uint8_t bytein);
   void loopMove();
   void loopLift();
+  void stepOutput(int dir);
   void loopStandby();
   IMUData imu_data;
   int bot_mode = MODE_STANDBY;
@@ -122,6 +129,8 @@ unsigned long int lastLoopMillis=0;
   float curSpeedL=0;
   float curSpeedR=0;
   float curSpeedLift=0;
+  float maxLiftAcc = 0.001;
+  float liftStabDelay =15;
   float desLiftSpeed = 0;
   float desliftAngle = 0;
   int liftLevelDown =  LIFT_PPR/2.0;

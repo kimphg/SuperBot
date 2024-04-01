@@ -242,7 +242,7 @@ void setup() {
   // channel_6_pwm = channel_6_fs;
   // indicateErrorLed(0);
   prev_time = 0;
-  timer_data_input.begin(inputDataUpdate, 300);  //
+  timer_data_input.begin(inputDataUpdate, 150);  //
   timer_control_loop.begin(controlUpdate, int(DT_CONTROL * 1000000));
 }
 
