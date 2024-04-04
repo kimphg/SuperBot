@@ -32,7 +32,7 @@ def setMode(mode):
         sensor.set_auto_exposure(False, exposure_us=10000 )
         sensor.set_auto_gain(False, gain_db=20)
         sensor.skip_frames(time = 500)
-setMode(3)
+setMode(2)
 clock = time.clock()
 from pyb import UART
 

@@ -26,7 +26,7 @@
 #define MODE_LIFT 3
 #define MAX_MOTION_SPEED 1.3
 #define LIFT_PPR 1485.0
-#define STEP_PPR 43520
+#define STEP_PPR 87040
 struct RobotParam
 {
   String paramName;
@@ -38,9 +38,7 @@ struct FloorTag
   int x,y;
 };
 #define PARAM_ID_YAW_KP 0
-#define PARAM_ID_YAW_KP 0
-#define PARAM_ID_YAW_KP 0
-#define PARAM_ID_YAW_KP 0
+
 
 class RobotDriver
 {
@@ -55,7 +53,7 @@ class RobotDriver
       void gotoMode(int mode);
       void sendSyncPacket();
       void loadParams();
-
+  void motorUpdate();
   private:
   int lastSyncSec=0;
   int syncLossCount=0;
@@ -73,6 +71,7 @@ class RobotDriver
   float  desDistance = 0;
   float desBearing = 0;
   int curLiftStep = 0;
+  int lastFloorTagid = -1;
   int minLiftStep = 0;
   int stepFreq = 1;
   int desLiftStep = 0;
@@ -139,3 +138,4 @@ unsigned long int lastLoopMillis=0;
   float liftAngle =0.0;
   int CurTagid;
 } ;
+

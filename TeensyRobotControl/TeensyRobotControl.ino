@@ -11,7 +11,7 @@
 //                                                 USER-SPECIFIED DEFINES                                                 //
 //========================================================================================================================//
 IntervalTimer timer_data_input;
-IntervalTimer timer_control_loop;
+// IntervalTimer timer_control_loop;
 // motorBLVPWM motorDriver;
 #ifdef TEENSY41
 //networking configurations
@@ -151,7 +151,7 @@ int s1_command_PWM, s2_command_PWM, s3_command_PWM, s4_command_PWM, s5_command_P
 //                                                      VOID SETUP                                                        //
 //========================================================================================================================//
 
-
+// extern RobotDriver *robot;
 int currState = 0;
 int stateStepID = 0;
 
@@ -221,18 +221,28 @@ void loopState() {
   }
 }
 RobotDriver *robot;
+
+IntervalTimer motorTimer;
+IntervalTimer loopControlTimer;
+static void callbackMotorUpdate()
+{
+  robot->motorUpdate();
+}
+static void callbackControlLoop()
+{
+  robot->update();
+}
 void setup() {
   
   Serial.begin(115200);          //usb serial
   // DEBUG_TELEMETRY.begin(57600);  //telemetry serial
   Serial.print("Setup started");
   delay(200);
-  
+  robot= new RobotDriver();
   //Initialize radio communication
   // radioSetup();
 
   DPRINTF("IMU timer started");
-  robot= new RobotDriver();
   //Set radio channels to default (safe) values before entering main loop
   // channel_1_pwm = channel_1_fs;
   // channel_2_pwm = channel_2_fs;
@@ -242,8 +252,10 @@ void setup() {
   // channel_6_pwm = channel_6_fs;
   // indicateErrorLed(0);
   prev_time = 0;
-  timer_data_input.begin(inputDataUpdate, 150);  //
-  timer_control_loop.begin(controlUpdate, int(DT_CONTROL * 1000000));
+  // timer_data_input.begin(inputDataUpdate,100);  //
+  // timer_control_loop.begin(controlUpdate, int(DT_CONTROL * 1000000));
+    motorTimer.begin(callbackMotorUpdate, 1);//
+  loopControlTimer.begin(callbackControlLoop, 500);//
 }
 
 
@@ -499,12 +511,12 @@ void printLoopRate() {
   Serial.print(F("dt = "));
   Serial.println(dt * 1000000.0);
 }
-static void inputDataUpdate() {
+// static void inputDataUpdate() {
 
-  // updateCommandBus();  //read Serial Commands
-  robot->update();
-}
-static void controlUpdate() {
-  // motorDriver.update(yaw_IMU);
-  // robot->calculateControlLoop();
-}
+//   // updateCommandBus();  //read Serial Commands
+//   // robot->update();
+// }
+// static void controlUpdate() {
+//   // motorDriver.update(yaw_IMU);
+//   // robot->calculateControlLoop();
+// }
