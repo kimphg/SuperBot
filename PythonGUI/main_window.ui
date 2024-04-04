@@ -1,0 +1,397 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1836</width>
+    <height>1010</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>GCS</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QGridLayout" name="gridLayout_2">
+    <item row="2" column="1">
+     <widget class="QTableWidget" name="tableWidget_2">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="sortingEnabled">
+       <bool>true</bool>
+      </property>
+      <attribute name="horizontalHeaderVisible">
+       <bool>false</bool>
+      </attribute>
+      <attribute name="horizontalHeaderCascadingSectionResizes">
+       <bool>false</bool>
+      </attribute>
+      <attribute name="horizontalHeaderMinimumSectionSize">
+       <number>30</number>
+      </attribute>
+      <attribute name="horizontalHeaderDefaultSectionSize">
+       <number>200</number>
+      </attribute>
+      <attribute name="horizontalHeaderHighlightSections">
+       <bool>true</bool>
+      </attribute>
+      <attribute name="horizontalHeaderStretchLastSection">
+       <bool>true</bool>
+      </attribute>
+      <column>
+       <property name="text">
+        <string>Tham số</string>
+       </property>
+      </column>
+      <column>
+       <property name="text">
+        <string>Giá trị</string>
+       </property>
+      </column>
+     </widget>
+    </item>
+    <item row="0" column="0">
+     <widget class="QGroupBox" name="groupBox">
+      <property name="minimumSize">
+       <size>
+        <width>500</width>
+        <height>0</height>
+       </size>
+      </property>
+      <property name="title">
+       <string>GroupBox</string>
+      </property>
+      <layout class="QGridLayout" name="gridLayout">
+       <item row="1" column="2">
+        <widget class="QPushButton" name="pushButton_stop">
+         <property name="text">
+          <string>STOP</string>
+         </property>
+        </widget>
+       </item>
+       <item row="8" column="0">
+        <widget class="QPushButton" name="pushButton">
+         <property name="text">
+          <string>Custom Message1</string>
+         </property>
+        </widget>
+       </item>
+       <item row="9" column="2" colspan="2">
+        <widget class="QLineEdit" name="lineEdit_msg_2">
+         <property name="text">
+          <string>$COM,m,4,5,</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="0">
+        <widget class="QPushButton" name="pushButton_2">
+         <property name="text">
+          <string>FORWARD 1</string>
+         </property>
+        </widget>
+       </item>
+       <item row="8" column="2" colspan="2">
+        <widget class="QLineEdit" name="lineEdit_msg_1">
+         <property name="text">
+          <string>aa558300ab0101</string>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="0">
+        <widget class="QPushButton" name="pushButton_3">
+         <property name="text">
+          <string>RIGHT</string>
+         </property>
+        </widget>
+       </item>
+       <item row="9" column="0">
+        <widget class="QPushButton" name="pushButton_6">
+         <property name="text">
+          <string>Custom Message 2</string>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="0">
+        <widget class="QPushButton" name="pushButton_up">
+         <property name="text">
+          <string>UP</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="0">
+        <widget class="QPushButton" name="pushButton_5">
+         <property name="text">
+          <string>FORWARD 2</string>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="0">
+        <widget class="QPushButton" name="pushButton_4">
+         <property name="text">
+          <string>LEFT</string>
+         </property>
+        </widget>
+       </item>
+       <item row="6" column="0">
+        <widget class="QPushButton" name="pushButton_down">
+         <property name="text">
+          <string>DOWN</string>
+         </property>
+        </widget>
+       </item>
+       <item row="7" column="0" colspan="4">
+        <widget class="QGroupBox" name="groupBox_2">
+         <property name="title">
+          <string>GroupBox</string>
+         </property>
+         <layout class="QFormLayout" name="formLayout">
+          <item row="0" column="1">
+           <widget class="QLineEdit" name="lineEdit_des_x">
+            <property name="text">
+             <string>0</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="0">
+           <widget class="QLabel" name="label_connection_fps_2">
+            <property name="text">
+             <string>Des Y</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="QLineEdit" name="lineEdit_des_y">
+            <property name="text">
+             <string>0</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="0">
+           <widget class="QLabel" name="label_connection_fps_3">
+            <property name="text">
+             <string>Des ID</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="1">
+           <widget class="QLineEdit" name="lineEdit_des_id">
+            <property name="text">
+             <string>0</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="0">
+           <widget class="QLabel" name="label_connection_fps_4">
+            <property name="text">
+             <string>Des Angle</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="1">
+           <widget class="QLabel" name="label_des_a">
+            <property name="text">
+             <string>--</string>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="1">
+           <widget class="QSlider" name="horizontalSlider_2">
+            <property name="minimum">
+             <number>-1</number>
+            </property>
+            <property name="maximum">
+             <number>2</number>
+            </property>
+            <property name="pageStep">
+             <number>1</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="tickPosition">
+             <enum>QSlider::TicksAbove</enum>
+            </property>
+           </widget>
+          </item>
+          <item row="6" column="0" colspan="2">
+           <widget class="QPushButton" name="pushButton_send_command">
+            <property name="text">
+             <string>Send</string>
+            </property>
+           </widget>
+          </item>
+          <item row="5" column="0">
+           <widget class="QPushButton" name="pushButton_lift_before">
+            <property name="text">
+             <string>Lift</string>
+            </property>
+            <property name="checkable">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item row="5" column="1">
+           <widget class="QPushButton" name="pushButton_lift_after">
+            <property name="text">
+             <string>Lift</string>
+            </property>
+            <property name="checkable">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="0">
+           <widget class="QLabel" name="label_connection_stat">
+            <property name="text">
+             <string>Des X</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item row="0" column="1">
+        <widget class="QLabel" name="label_connection_fps">
+         <property name="text">
+          <string>--</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="0">
+        <widget class="QLabel" name="label_connection_stat_2">
+         <property name="text">
+          <string>Connection FPS</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="2">
+        <widget class="QPushButton" name="pushButton_stop_2">
+         <property name="text">
+          <string>RESET POSITION</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="2" colspan="2">
+        <widget class="QLabel" name="label_connection_last_msg">
+         <property name="text">
+          <string>--</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </item>
+    <item row="1" column="0">
+     <widget class="QPushButton" name="pushButton_8">
+      <property name="text">
+       <string>Reset data</string>
+      </property>
+     </widget>
+    </item>
+    <item row="2" column="0" rowspan="2">
+     <widget class="QTableWidget" name="tableWidget">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="sortingEnabled">
+       <bool>true</bool>
+      </property>
+      <attribute name="horizontalHeaderVisible">
+       <bool>false</bool>
+      </attribute>
+      <attribute name="horizontalHeaderCascadingSectionResizes">
+       <bool>false</bool>
+      </attribute>
+      <attribute name="horizontalHeaderMinimumSectionSize">
+       <number>30</number>
+      </attribute>
+      <attribute name="horizontalHeaderDefaultSectionSize">
+       <number>200</number>
+      </attribute>
+      <attribute name="horizontalHeaderHighlightSections">
+       <bool>true</bool>
+      </attribute>
+      <attribute name="horizontalHeaderStretchLastSection">
+       <bool>true</bool>
+      </attribute>
+      <column>
+       <property name="text">
+        <string>Tham số</string>
+       </property>
+      </column>
+      <column>
+       <property name="text">
+        <string>Giá trị</string>
+       </property>
+      </column>
+     </widget>
+    </item>
+    <item row="1" column="1">
+     <widget class="QPushButton" name="pushButton_9">
+      <property name="text">
+       <string>Upload param</string>
+      </property>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>1836</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuFile">
+    <property name="title">
+     <string>File</string>
+    </property>
+   </widget>
+   <widget class="QMenu" name="menuView">
+    <property name="title">
+     <string>View</string>
+    </property>
+   </widget>
+   <widget class="QMenu" name="menuTool">
+    <property name="title">
+     <string>Tool</string>
+    </property>
+    <addaction name="actionConnect"/>
+    <addaction name="actionDisconnect"/>
+   </widget>
+   <widget class="QMenu" name="menuOthers">
+    <property name="title">
+     <string>Others</string>
+    </property>
+   </widget>
+   <addaction name="menuFile"/>
+   <addaction name="menuView"/>
+   <addaction name="menuTool"/>
+   <addaction name="menuOthers"/>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+  <action name="actionConnect">
+   <property name="text">
+    <string>Connect</string>
+   </property>
+  </action>
+  <action name="actionDisconnect">
+   <property name="text">
+    <string>Disconnect</string>
+   </property>
+  </action>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

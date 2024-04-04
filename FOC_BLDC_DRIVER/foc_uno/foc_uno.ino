@@ -7,7 +7,7 @@
 // BLDCMotor motor = BLDCMotor(11);
 // BLDCDriver3PWM driver = BLDCDriver3PWM(pwmA, pwmB, pwmC, Enable(optional));
 // BLDCDriver3PWM driver = BLDCDriver3PWM(9, 5, 6, 8);
-BLDCMotor motor = BLDCMotor(6,1,1000);
+BLDCMotor motor = BLDCMotor(5,10);
 BLDCDriver3PWM driver = BLDCDriver3PWM(9, 5, 6, 8);
 // Stepper motor & driver instance
 //StepperMotor motor = StepperMotor(50);
@@ -26,11 +26,11 @@ void setup() {
 
   // driver config
   // power supply voltage [V]
-  driver.voltage_power_supply = 16;
+  driver.voltage_power_supply = 15;
   // limit the maximal dc voltage the driver can set
   // as a protection measure for the low-resistance motors
   // this value is fixed on startup
-  driver.voltage_limit = 6;
+  driver.voltage_limit = 7;
   driver.init();
   // link the motor and the driver
   motor.linkDriver(&driver);
@@ -39,10 +39,10 @@ void setup() {
   // limit the voltage to be set to the motor
   // start very low for high resistance motors
   // currnet = resistance*voltage, so try to be well under 1Amp
-  motor.voltage_limit = 10;   // [V]
+  motor.voltage_limit = 7;   // [V]
   // limit/set the velocity of the transition in between 
   // target angles
-  motor.velocity_limit = 20; // [rad/s] cca 50rpm
+  motor.velocity_limit = 1; // [rad/s] cca 50rpm
   // motor.accelerator_limit =0.1;
   // open loop control config
   motor.controller = MotionControlType::angle_openloop;
@@ -64,8 +64,12 @@ void setup() {
 void loop() {
   // open  loop angle movements
   // using motor.voltage_limit and motor.velocity_limit
-  motor.move(target_position);
-  
+  int st = (millis()/100000)%2;
+  if(st)
+  motor.move(0);
+  else
+  motor.move(3.14159265/3.0);
+  Serial.println(st);
   // user communication
   command.run();
 }
