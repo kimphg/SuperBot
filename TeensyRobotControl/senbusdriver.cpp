@@ -40,11 +40,12 @@ bool SenBusDriver::processCamera(String inputStr)
           tagX = -(50-tokens[5].toFloat())*1.44;
           tagY = (50-tokens[6].toFloat())*1.44;
           tagID = newtagID;
-          DPRINT("!$Camera data:");DPRINTLN(tagAngle);DPRINTLN(tagX);DPRINTLN(tagY); DPRINT("#");DPRINT("@");
+          
           result=true;
         }
         lastTagID = newtagID;
       }
+      DPRINT("!$Camera data:");DPRINTLN(tagAngle);DPRINTLN(tagX);DPRINTLN(tagY); DPRINT("#");DPRINT("@");
     }
     
     return result;

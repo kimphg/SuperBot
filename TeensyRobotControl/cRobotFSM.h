@@ -72,11 +72,12 @@ class RobotDriver
   float desBearing = 0;
   int curLiftStep = 0;
   int lastFloorTagid = -1;
-  int minLiftStep = 0;
+  int minLiftStep = -10000;
   int stepFreq = 1;
   int desLiftStep = 0;
   bool initOK = false;
   uint8_t liftComm=0;
+  int newliftComm = 0;
   void loopRotate();
   void liftStabilize();
   void updateCommandBus();

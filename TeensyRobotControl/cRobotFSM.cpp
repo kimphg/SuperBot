@@ -39,6 +39,7 @@ long int liftLevel = 0;
 long int liftLevelo = 0;
 // long int reportCount = 0;
 float liftAngleErroro = 0;
+float lift_gear_lash = 3.0;
 bool liftLevelInitOK = false;
 int desLiftLevel = 0;
 long int M1ComTime = 0, M2ComTime = 0, M3ComTime = 0;
@@ -343,7 +344,8 @@ void RobotDriver::processCommand(String command) {
         
       }
       if (tokens[1].equals("r")) {
-        desAngle += (tokens[2].toFloat())*90;
+        desAngle = (tokens[2].toFloat())*90;
+        if(desAngle>180)desAngle-=360;
         gotoMode(MODE_ROTATE);
       }
       if (tokens[1].equals("s")) {
@@ -431,6 +433,7 @@ void RobotDriver::processCommandBytes()
 {
   if((commandMessage[0]==0xaa)&&(commandMessage[1]==0x55)&&(commandMessage[2]==0xaa))
   {
+    syncLossCount=0;
     if((commandMessage[3]==0xf2)&&(commandMessage[4]==0x00))
     {
       if((commandMessage[5]==0x02)&&(commandMessage[6]==0x00))
@@ -456,9 +459,17 @@ void RobotDriver::processCommandBytes()
             else if(angle==1)desAngle=90;
             else if(angle==2)desAngle=-90;
             else if(angle==3)desAngle=180;
-            liftComm = (action&0x0c)>>2;
-            DPRINT("!$PPU_COMAND XYLA:");  DPRINTLN(desX); DPRINTLN(desY);DPRINTLN(liftComm);DPRINTLN(angle); DPRINT("#");
-            if(bot_mode==MODE_STANDBY)gotoMode(MODE_MOVE);
+            newliftComm = (action&0x0c)>>2;
+            
+            
+            if(bot_mode==MODE_STANDBY)
+            {
+              
+              DPRINT("!$Command:"); DPRINTLN("PPU ");DPRINTLN(newliftComm); DPRINTLN(angle);DPRINTLN(action); DPRINT("#");DPRINT("@");S_DEBUG.flush();
+              gotoMode(MODE_MOVE);
+              
+            }
+
             
           }
       }
@@ -484,6 +495,10 @@ void RobotDriver::processCommandBytes()
             
           }
         
+      }
+      else if((commandMessage[5]==0x04)&&(commandMessage[6]==0x00))
+      {
+        reportPPU();
       }
     }
     else commandMessage[0]=0xff;//deny current packet
@@ -519,10 +534,11 @@ RobotDriver::RobotDriver() {
   addFloorTag(0, 0,   0);
   addFloorTag(1, 0,   1000);
   addFloorTag(2, 1000, 0);
+  addFloorTag(8, 1000, 1000);
   addFloorTag(4, 2000, 0);
   addFloorTag(7, 2000, 1000);
   addFloorTag(6, 3000, 0);
-  addFloorTag(8, 4000, 0);
+  addFloorTag(5, 3000, 1000);
 
   desLiftLevel = liftLevelDown;
   // addFloorTag(100, 0 , 0);
@@ -648,7 +664,7 @@ void RobotDriver::DebugReport()
   if(debugCounter>=3)debugCounter=0;    
   
   DPRINT("!$ curSpeed L R Li Ro:");  DPRINTLN(curSpeedL);  DPRINTLN(curSpeedR);  DPRINTLN(curSpeedLift); DPRINTLN(botRotationSpeed); DPRINT("#");
-    DPRINT("!$DesMotSpd RLL:");  DPRINTLN(desMotSpdR);   DPRINTLN(desMotSpdL); DPRINTLN(desLiftSpeed);DPRINTLN(desSpeed);  DPRINT("#");
+  DPRINT("!$DesMotSpd RLL:");  DPRINTLN(desMotSpdR);   DPRINTLN(desMotSpdL); DPRINTLN(desLiftSpeed);DPRINTLN(desSpeed);  DPRINT("#");
   DPRINT("!$RotSpd des cur:");     DPRINTLN(desRotSpd); DPRINTLN(imu_data.gyroZ);  DPRINT("#");S_DEBUG.flush();S_DEBUG.print('@');
   if(debugCounter==0){
     DPRINT("!$PID yaw:");       DPRINTLN(Kp_yaw * error_yaw);DPRINTLN(Ki_yaw * integral_yaw);DPRINTLN(Kd_yaw * derivative_yaw);DPRINT("#");
@@ -684,13 +700,13 @@ void RobotDriver::controlLoop()
   lastLoopMillis = curTime;
 
   
-  int times500ms = curTime/1000;
+  int times500ms = curTime/2000;
   syncLossCount++;
   if((syncLossCount>100)&&(bot_mode!=MODE_STANDBY))gotoMode(MODE_STANDBY);
   if(times500ms!=lastSyncSec)
   {
     sendSyncPacket();
-    // reportPPU();
+    reportPPU();
     lastSyncSec = times500ms;
   }
   posUpdate();
@@ -744,6 +760,7 @@ void RobotDriver::loopMove() {
   desDistance = sqrt(dx * dx + dy * dy);
   desBearing = ConvXYtoAngle(dx, dy);
   yaw_PID =  calcPIDyaw(desBearing);
+  Serial.println(yaw_PID);
   //PID speed
   error_pos = desDistance * cos((error_yaw)/DEG_RAD);
   float error_pos_perpendic = desDistance * sin((error_yaw)/DEG_RAD);
@@ -758,10 +775,18 @@ void RobotDriver::loopMove() {
   if((abs(error_pos) < 40))
   {
     stillCount++;
-    if(stillCount>100)  gotoMode(MODE_STANDBY);
+    if(stillCount>100)  {
+      if(liftComm!=newliftComm)
+        {
+        liftComm=newliftComm;
+        gotoMode(MODE_LIFT);
+        }
+      else gotoMode(MODE_ROTATE);
+    }
     integral_pos=0;
     error_pos_prev=0;
     error_pos=0;
+    return;
   }
   else
     {
@@ -874,8 +899,8 @@ float RobotDriver::calcPIDyaw(float targetAngle)
   while (error_yaw > 180) error_yaw -= 360;
   while (error_yaw < -180) error_yaw += 360;
   int predictedLiftStep = (curLiftStep+STEP_PPR/360* error_yaw);
-  if(predictedLiftStep>(desLiftStep+STEP_PPR/2))error_yaw-=360;
-  if(predictedLiftStep<(desLiftStep-STEP_PPR/2))error_yaw+=360;
+  if(predictedLiftStep>(desLiftStep+STEP_PPR*0.55))error_yaw-=360;
+  if(predictedLiftStep<(desLiftStep-STEP_PPR*0.55))error_yaw+=360;
   float scaled_error_yaw=constrain(error_yaw, -60, 60);
   if(abs(error_yaw)<5)  setIntegralYaw( scaled_error_yaw);
   else   setIntegralYaw( 0);
@@ -914,7 +939,15 @@ void RobotDriver::loopRotate()
   if (abs(error_yaw) < 2)
   {
     stillCount+=1;
-    if(stillCount>100)  gotoMode(MODE_STANDBY);
+    if(stillCount>100)  
+    {
+      if(liftComm!=newliftComm)
+      {
+        liftComm=newliftComm;
+        gotoMode(MODE_LIFT);
+      
+      }else  gotoMode(MODE_STANDBY);
+    }
     integral_pos=0;
     error_pos_prev=0;
     error_pos=0;
@@ -922,7 +955,14 @@ void RobotDriver::loopRotate()
   else if (abs(error_yaw) < 1.2)
   {
     stillCount+=2;
-    if(stillCount>100)  gotoMode(MODE_STANDBY);
+    if(stillCount>100) {
+    if(liftComm!=newliftComm)
+      {
+        liftComm=newliftComm;
+        gotoMode(MODE_LIFT);
+      
+      }else  gotoMode(MODE_STANDBY);
+    }
     integral_pos=0;
     error_pos_prev=0;
     error_pos=0;
@@ -931,7 +971,10 @@ void RobotDriver::loopRotate()
     if(stillCount>0)stillCount--;
   }
 
-  desRotSpd = yaw_PID;  
+  float newdesRotSpd = yaw_PID;  
+  float desRotAcc = newdesRotSpd-desRotSpd;
+  desRotAcc = constrainVal(desRotAcc, -0.02, 0.02);
+  desRotSpd+=desRotAcc;
   desRotSpd = constrainVal(desRotSpd, -maxBotRotSpd, maxBotRotSpd);
   setSpeedRight(- desRotSpd * BASE_LEN / 2.0);
   setSpeedLeft(desRotSpd * BASE_LEN / 2.0);  
@@ -939,17 +982,22 @@ void RobotDriver::loopRotate()
   // liftStabilize();
   
 }
-
+float liftAngleErrori=0;
 void RobotDriver::liftStabilize()
 {
 
   float liftAngle = -curLiftStep*360.0/STEP_PPR;
-  if(bot_mode==MODE_LIFT)
+  if(1)
   {
-    if(desRotSpd>0)
-    liftAngle+=abs(4.0*desMotSpdR/maxBotSpeed);
-    else liftAngle-=abs(4.0*desMotSpdR/maxBotSpeed);
+    float bu_do_do = lift_gear_lash*desRotSpd*3;
+    liftAngle+=bu_do_do;
+
   }
+  // Serial.println(lift_gear_lash);
+  // Serial.print(" ");
+  // Serial.print(0.5);
+  // Serial.print(" ");
+  float liftAngleErroro=liftAngleError;
   liftAngleError=(liftAngle+botangle);
   
   while (liftAngleError>180)liftAngleError-=360;
@@ -959,7 +1007,18 @@ void RobotDriver::liftStabilize()
   // desLiftStep = botangle/360.0*STEP_PPR;
   // int errLiftStep = liftAngleError*STEP_PPR/360.0;
   // Serial.println(errLiftStep);
-  float newdesLiftSpeed = liftAngleError/5.0;
+  float liftAngleErrord = 1000*(liftAngleError-liftAngleErroro);
+  liftAngleErrori+=liftAngleError;
+  liftAngleErrori = constrainVal(liftAngleErrori,-1,1);
+  float liftPID = 0.2*(Kp_lift*liftAngleError+Ki_lift*liftAngleErrori+Kd_lift*liftAngleErrord);
+
+  // Serial.print(Kp_lift*liftAngleError);
+  // Serial.print(" ");
+  // Serial.print(Ki_lift*liftAngleErrori);
+  // Serial.print(" ");
+  // Serial.print(Kd_lift*liftAngleErrord);
+  // Serial.print(" ");
+  float newdesLiftSpeed = liftPID;
   float liftAcc = newdesLiftSpeed-desLiftSpeed;
   liftAcc = constrainVal(liftAcc, -0.0004, 0.0004);
   desLiftSpeed+=liftAcc;
@@ -967,8 +1026,9 @@ void RobotDriver::liftStabilize()
   desLiftSpeed = constrainVal(desLiftSpeed, -0.13, 0.13);
   stepFreq=abs(STEP_PPR*desLiftSpeed);
   pulse_period_us = 1000000/(stepFreq+1);
+  // Serial.println(desLiftSpeed);
   // stepFreq = (stepFreq*0.6+newstepFreq*0.4);
-  if(stepFreq>2000)Serial.println(stepFreq);
+  // if(stepFreq>2000)Serial.println(stepFreq);
   
     // liftAngleError = desliftAngle - liftAngle;
     // while (liftAngleError<-180)liftAngleError+=360;
@@ -991,8 +1051,8 @@ void RobotDriver::liftStabilize()
 }
 float descrease(float input)
 {
-    if(input>0.002)return input-0.002;
-    if(input<-0.002)return input+0.002;
+    if(input>0.01)return input-0.01;
+    if(input<-0.01)return input+0.01;
     return 0;
 }
 void RobotDriver::loopStandby()
@@ -1015,14 +1075,20 @@ void RobotDriver::sendSyncPacket() {
       DPRINTLN(paramTable[i].paraValue);
       DPRINT("#");DPRINT('@');S_DEBUG.flush();
     }
-    
+    for(unsigned int i =paramTable.size()-1;i>0;i--)
+    {
+      DPRINTF("!$PARAM:"); 
+      DPRINTLN(paramTable[i].paramName);
+      DPRINTLN(paramTable[i].paraValue);
+      DPRINT("#");DPRINT('@');S_DEBUG.flush();
+    }
     paramchanged=false;
   }
   DPRINT("!$lastSyncSec:");  DPRINTLN(lastSyncSec);  DPRINT("#");
   DPRINT("!$paramTable.size:");  DPRINTLN(paramTable.size());  DPRINT("#");
   DPRINT("!$GyroConnect:");  DPRINTLN(imu.isConnected());  DPRINT("#");
   DPRINT('@');S_DEBUG.flush();
-  DPRINT("!$Lift Status:");   DPRINTLN(curLiftStep);  DPRINTLN(desLiftStep); DPRINTLN(desLiftSpeed); DPRINTLN(isLiftMinPos);  DPRINT("#");
+  DPRINT("!$Lift Status:");   DPRINTLN(curLiftStep);DPRINTLN(minLiftStep);  DPRINTLN(desLiftStep); DPRINTLN(desLiftSpeed);   DPRINT("#");
   DPRINT("!$Motor Fail:");    DPRINTLN(M1ComTime);   DPRINTLN(M2ComTime);   DPRINTLN(M3ComTime);   DPRINT("#");
   DPRINT("!$bot_mode:");      DPRINTLN(bot_mode); DPRINTLN(stillCount); DPRINT("#");
   DPRINT('@');S_DEBUG.flush();
@@ -1037,14 +1103,14 @@ void RobotDriver::sendSyncPacket() {
 }
 void RobotDriver::loadParams()
 {
-  Kp_yaw = loadParam("Kp_yaw",5.5) ;   //Yaw P-gain
+  Kp_yaw = loadParam("Kp_yaw",8) ;   //Yaw P-gain
   Ki_yaw = loadParam("Ki_yaw",1.0);   //Yaw I-gain
   Kd_yaw = loadParam("Kd_yaw",1.5);  //Yaw D-gain (be careful when increasing too high, motors will begin to overheat!)
   Kp_pos = loadParam("Kp_pos",1.5);  //Yaw P-gain
   Ki_pos = loadParam("Ki_pos",9.0);  //Yaw I-gain
   Kd_pos = loadParam("Kd_pos",0.1);  //Yaw D-gain (be careful when increasing too high, motors will begin to overheat!)
-  Kp_lift = loadParam("Kp_lift",0.25);  
-  Ki_lift = loadParam("Ki_lift",0.05);  
+  Kp_lift = loadParam("Kp_lift",0.5);  
+  Ki_lift = loadParam("Ki_lift",0.0);  
   Kd_lift = loadParam("Kd_lift",0.05);  
   Ks_lift = loadParam("Ks_lift",0.6);  
   maxBotSpeed = loadParam("maxBotSpeed",0.4);
@@ -1052,6 +1118,7 @@ void RobotDriver::loadParams()
   maxBotAcc = loadParam ("maxBotAcc",5.0)/1000.0;
   liftStabDelay = loadParam ("liftStabDelay",15);
   maxLiftAcc = loadParam ("maxLiftAcc",2)/1000.0;
+  lift_gear_lash = loadParam ("lift_gear_lash",2);
   paramchanged=true;
 }
 void RobotDriver::sendControlPacket(uint8_t id, float speed, uint8_t mode) {
@@ -1096,14 +1163,20 @@ void RobotDriver::processMotorReport(uint8_t bytein) {
           if (cs == reportPacket[7]) {
             isLiftMinPos = (reportPacket[5] == 0);
             isLiftMaxPos = (reportPacket[6] == 0);
-            if (isLiftMinPos&&(liftLevelMinDefined==false)) 
+            if (isLiftMinPos) 
             {
               liftLevelMinDefined = true;
               minLiftStep = curLiftStep;
-              liftComm=0;
+              desLiftStep = minLiftStep+STEP_PPR/2;
+              // liftComm=0;
               DPRINT("!$Command:"); DPRINT(curTime); DPRINT("liftLevelMinDefined:"); DPRINT(minLiftStep);DPRINT("#");DPRINT("@");
               // desLiftLevel=liftLevelDown;
               // gotoMode(MODE_LIFT);
+            }
+            if(isLiftMaxPos)
+            {
+              minLiftStep=curLiftStep-LIFT_PPR*8;
+              desLiftStep = minLiftStep+STEP_PPR*7;
             }
             
             // reportCount++;
@@ -1146,42 +1219,51 @@ void RobotDriver::motorUpdate()
 }
 void RobotDriver::loopLift()
 {
-  if(!liftLevelMinDefined)
-  {
-  desLiftStep = -STEP_PPR*8;
-  }
-  else
- { switch (liftComm)
+  
+  
+  switch (liftComm)
   {
   case 0:
     desLiftStep = minLiftStep+STEP_PPR/2;
     break;
   case 1:
-    desLiftStep = minLiftStep+STEP_PPR*6;
+    desLiftStep = minLiftStep+STEP_PPR*7;
     break;
   case 2:
     desLiftStep = minLiftStep+STEP_PPR/2;
     break;
   case 3:
-    desLiftStep = minLiftStep+STEP_PPR*6;
+    desLiftStep = minLiftStep+STEP_PPR*7;
     break;
   default:
     break;
   }
-  }
-  float desLiftStepError = desLiftStep-curLiftStep;
-  if(abs(desLiftStepError)<(STEP_PPR/4))stillCount++;
-  else stillCount=0;
-  if(abs(desLiftStepError)<(STEP_PPR/4)&&stillCount>100)gotoMode(MODE_ROTATE);
-  // // desLiftSpeed = desLiftLevelError/1100.0;
-  // // desLiftSpeed = constrainVal(desLiftSpeed, -0.1, 0.1);
-  // // sendControlPacket(3, desLiftSpeed, 0);
   
-  // // curSpeed
-  desRotSpd = desLiftStepError/1000.0;//botRotationSpeed*9.2;
+  float desLiftStepError = desLiftStep-curLiftStep;
+  if(liftLevelMinDefined)
+  {
+    if(abs(desLiftStepError)<(STEP_PPR/4))stillCount++;
+    else stillCount=0;
+    if(abs(desLiftStepError)<(STEP_PPR/4)&&stillCount>200)gotoMode(MODE_ROTATE);
+    float newdesRotSpd = desLiftStepError/1000.0;  
+  float desRotAcc = newdesRotSpd-desRotSpd;
+  desRotAcc = constrainVal(desRotAcc, -0.02, 0.02);
+  desRotSpd+=desRotAcc;
   desRotSpd = constrainVal(desRotSpd, -maxBotRotSpd, maxBotRotSpd);
   setSpeedRight(- desRotSpd * BASE_LEN / 2.0);
   setSpeedLeft(desRotSpd * BASE_LEN / 2.0);  
+  }
+  else
+  {
+    float newdesRotSpd = -1;  
+  float desRotAcc = newdesRotSpd-desRotSpd;
+  desRotAcc = constrainVal(desRotAcc, -0.02, 0.02);
+  desRotSpd+=desRotAcc;
+  desRotSpd = constrainVal(desRotSpd, -maxBotRotSpd, maxBotRotSpd);
+  setSpeedRight(- desRotSpd * BASE_LEN / 2.0);
+  setSpeedLeft(desRotSpd * BASE_LEN / 2.0);  
+  }
+  
   // liftStabilize();
   return;
   // if (liftLevelMinDefined && liftLevelMaxDefined)
