@@ -106,7 +106,7 @@ while(True):
     clock.tick()
 #    print(sensor.get_exposure_us())
     img = sensor.snapshot()
-
+    img.lens_corr(strength =1.85, zoom = 1)
     #img.save ("example.jpg")
 
     if(workMode>=1):#high speed mode
@@ -126,6 +126,10 @@ while(True):
             packet += (str(int(tag.cy()/frameHeight*100)))
             packet += (",")
             packet += (str(int(tag.rotation()*1800.0/3.141592653589793)))
+            packet += (",")
+            packet += (str(int(tag.w()/frameHeight*100)))
+            packet += (",")
+            packet += (str(int(tag.h()/frameHeight*100)))
             packet += (",")
         datalen = len(packet);
         packetBytes = bytearray(packet,'ascii')

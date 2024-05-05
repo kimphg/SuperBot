@@ -232,6 +232,7 @@ void RobotDriver::reportPPU()
   ppu_report[11]=crc>>8;
   ppu_report[12]=crc&0xff;
   S_COMMAND.write(ppu_report,13);
+  S_COMMAND
 }
 float RobotDriver::loadParam(String id, float defaultValue=0)
 {
@@ -465,7 +466,7 @@ void RobotDriver::processCommandBytes()
             if(bot_mode==MODE_STANDBY)
             {
               
-              DPRINT("!$Command:"); DPRINTLN("PPU ");DPRINTLN(newliftComm); DPRINTLN(angle);DPRINTLN(action); DPRINT("#");DPRINT("@");S_DEBUG.flush();
+              DPRINT("!$Command:"); DPRINTLN("PPU ");DPRINTLN(newliftComm); DPRINTLN(angle);DPRINTLN(desX);DPRINTLN(desY); DPRINT("#");DPRINT("@");S_DEBUG.flush();
               gotoMode(MODE_MOVE);
               
             }
@@ -823,7 +824,8 @@ void RobotDriver::update() {
       FloorTag mapPoint = getFloorTag(sbus.tagID);
       if(mapPoint.id>=0)
       {
-        lastFloorTagid = mapPoint.id;
+        
+        
         float tagDistance = 0;//sqrt(sbus.tagX*sbus.tagX+sbus.tagY*sbus.tagY);
         float tagBearing = 0;
         ConvXYToPolar(sbus.tagX,sbus.tagY,&tagBearing,&tagDistance);
@@ -832,15 +834,21 @@ void RobotDriver::update() {
         float dy = tagDistance*cos(bearingFromTag/DEG_RAD);
         botx = mapPoint.x+dx;
         boty = mapPoint.y+dy;
-        if(tagDistance<50)
+        float yawDiff =0;
+        if((tagDistance<80)&&(abs(botRotationSpeed)<5))
         {
           
-          float yawDiff = (sbus.tagAngle-imu_data.gyroyaw);
+          yawDiff = (sbus.tagAngle-imu_data.gyroyaw);
           while(yawDiff>180)yawDiff-=360;
           while(yawDiff<-180)yawDiff+=360;
           yawDiff/=5.0;//smooth the change
           imu.resetYaw(imu_data.gyroyaw+yawDiff);
         }
+        if(lastFloorTagid!=mapPoint.id)
+        {
+          DPRINT("!$Command:"); DPRINTLN("tagDetect");DPRINTLN(lastFloorTagid);DPRINTLN(mapPoint.id);DPRINTLN(dx); DPRINTLN(dy); DPRINTLN(yawDiff);DPRINT("#");DPRINT("@");S_DEBUG.flush();
+        }
+        lastFloorTagid = mapPoint.id;
       }
       // Serial.println(bearingFromTag);
       // botx = sbus.tagX;

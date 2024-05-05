@@ -1,4 +1,4 @@
-QT       += core gui network
+QT       += core gui network printsupport
 QT       += 3dcore widgets
 
 TARGET = nicla
@@ -20,12 +20,16 @@ SOURCES += \
     geometryengine.cpp \
     main.cpp \
     mainwidget.cpp \
-    mainwindow.cpp
+    mainwindow.cpp \
+    pdfreport.cpp \
+    qcustomplotter.cpp
 
 HEADERS += \
     geometryengine.h \
     mainwidget.h \
-    mainwindow.h
+    mainwindow.h \
+    pdfreport.h \
+    qcustomplotter.h
 
 FORMS += \
     mainwindow.ui

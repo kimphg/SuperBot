@@ -13,8 +13,8 @@ def setMode(mode):
         sensor.skip_frames(time = 500)
         sensor.set_auto_gain(False)  # must turn this off to prevent image washout...
         sensor.set_auto_whitebal(False)  # must turn this off to prevent image washout...
-        sensor.set_auto_exposure(     False, exposure_us=1600 )
-        sensor.set_auto_gain(False, gain_db=28)
+        sensor.set_auto_exposure(     False, exposure_us=2500 )
+        sensor.set_auto_gain(False, gain_db=20)
         sensor.skip_frames(time = 500)
     if(mode==2):
         sensor.set_framesize(sensor.QVGA) # we run out of memory if the resolution is much bigger...
@@ -72,7 +72,7 @@ tag_families |= image.TAG36H11 # comment out to disable this family (default fam
 # is a 6x6 square tag. However, the lower H value (H5 versus H11) means that the false positve
 # rate for the 4x4 tag is much, much, much, higher than the 6x6 tag. So, unless you have a
 # reason to use the other tags families just use TAG36H11 which is the default family.
-sensor.set_vflip(True)
+#sensor.set_vflip(True)
 def family_name(tag):
     if(tag.family() == image.TAG16H5):
         return "TAG16H5"
@@ -106,9 +106,9 @@ while(True):
     clock.tick()
 #    print(sensor.get_exposure_us())
     img = sensor.snapshot()
-
+    img.lens_corr(strength =1.7, zoom = 1.1)
     #img.save ("example.jpg")
-
+    continue
     if(workMode>=1):#high speed mode
         tagCount=0
         packet="$CAM1,"
@@ -127,6 +127,10 @@ while(True):
             packet += (",")
             packet += (str(int(tag.rotation()*1800.0/3.141592653589793)))
             packet += (",")
+            packet += (str(int(tag.w()/frameHeight*100)))
+            packet += (",")
+            packet += (str(int(tag.h()/frameHeight*100)))
+            packet += (",")
         datalen = len(packet);
         packetBytes = bytearray(packet,'ascii')
         cs_byte = crc8(packetBytes,0,datalen)
@@ -143,13 +147,13 @@ while(True):
 #        print("%s,%s,%d,%f#" % print_args)
 #        count=count+1
 #    Serial
-    datalen = uart.any()
-    if(datalen):
-        if(len(uartBuff)+datalen>1000):
-            uartBuff= uart.read(datalen)
-            continue
-        uartBuff+=(uart.read(datalen).decode("ascii"))
-        print(uartBuff)
-    if(len(uartBuff)>1000):
-        uartBuff=""
+#    datalen = uart.any()
+#    if(datalen):
+#        if(len(uartBuff)+datalen>1000):
+#            uartBuff= uart.read(datalen)
+#            continue
+#        uartBuff+=(uart.read(datalen).decode("ascii"))
+#        print(uartBuff)
+#    if(len(uartBuff)>1000):
+#        uartBuff=""
     fps_cam = int(clock.fps())

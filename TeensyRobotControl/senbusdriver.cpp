@@ -1,8 +1,7 @@
 // #include "usb_serial.h"
 #include "senbusdriver.h"
 bool SenBusDriver::Input(unsigned char inputByte) {
-    // if (h7ConnectCount > 0) h7ConnectCount--;
-    // camh7data.connectCount = h7ConnectCount;
+
     bool result =false;
     sensBusBuff[sensBusBuffi] = inputByte;
     if(isPrintable (inputByte))
@@ -23,7 +22,7 @@ bool SenBusDriver::Input(unsigned char inputByte) {
     sensBusBuffi++;
     if (sensBusBuffi >= 200) sensBusBuffi = 0;
     return result;
-  }
+}
 bool SenBusDriver::processCamera(String inputStr)
 {
     bool result =false;
@@ -36,6 +35,7 @@ bool SenBusDriver::processCamera(String inputStr)
         
         if(lastTagID == newtagID){
           tagAngle = tokens[7].toFloat()/10.0;
+          if(newtagID==6)tagAngle+=1;
           if(tagAngle>180)tagAngle-=360;
           tagX = -(50-tokens[5].toFloat())*1.44;
           tagY = (50-tokens[6].toFloat())*1.44;
@@ -43,6 +43,7 @@ bool SenBusDriver::processCamera(String inputStr)
           
           result=true;
         }
+        
         lastTagID = newtagID;
       }
       DPRINT("!$Camera data:");DPRINTLN(tagAngle);DPRINTLN(tagX);DPRINTLN(tagY); DPRINT("#");DPRINT("@");

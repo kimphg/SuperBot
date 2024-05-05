@@ -194,7 +194,7 @@ void MainWidget::initializeGL()
     glEnable(GL_CULL_FACE);
 //! [2]
 
-    geometries = new GeometryEngine;
+//    geometries = new GeometryEngine;
 
     // Use QBasicTimer because its faster than QTimer
     timer.start(12, this);
@@ -261,25 +261,25 @@ void MainWidget::setEulerAngle(float roll,float pitch,float yaw)
 }
 void MainWidget::paintGL()
 {
-    // Clear color and depth buffer
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+//    // Clear color and depth buffer
+//    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    texture->bind();
+//    texture->bind();
 
-//! [6]
-    // Calculate model view transformation
-    QMatrix4x4 matrix;
-    matrix.translate(0.0, 0.0, -5.5);
+////! [6]
+//    // Calculate model view transformation
+//    QMatrix4x4 matrix;
+//    matrix.translate(0.0, 0.0, -5.5);
 
-    matrix.rotate(rotation);
+//    matrix.rotate(rotation);
 
-    // Set modelview-projection matrix
-    program.setUniformValue("mvp_matrix", projection * matrix);
-//! [6]
+//    // Set modelview-projection matrix
+//    program.setUniformValue("mvp_matrix", projection * matrix);
+////! [6]
 
-    // Use texture unit 0 which contains cube.png
-    program.setUniformValue("texture", 0);
+//    // Use texture unit 0 which contains cube.png
+//    program.setUniformValue("texture", 0);
 
     // Draw cube geometry
-    geometries->drawCubeGeometry(&program);
+//    geometries->drawCubeGeometry(&program);
 }
