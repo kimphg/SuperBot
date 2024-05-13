@@ -15,7 +15,7 @@ from machine import SPI
 import math
 SSID = "AndroidAPs8"  # Network SSID
 KEY = "12344321"  # Network key
-CONTROLLER_IP = "192.168.248.184"
+CONTROLLER_IP = "192.168.56.184"
 HOST = ""  # Use first available interface
 PORT = 8080  # Arbitrary non-privileged port
 lsmimu = LSM6DSOX(SPI(5), cs=Pin("PF6", Pin.OUT_PP, Pin.PULL_UP))

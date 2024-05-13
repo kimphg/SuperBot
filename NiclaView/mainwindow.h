@@ -6,6 +6,7 @@
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 #include <QUdpSocket>
+#include "pdfreport.h"
 #include <QDesktopWidget>
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -30,7 +31,16 @@ private slots:
     void udpDataReceive();
     void on_pushButton_2_clicked();
 
+    void on_pushButton_3_clicked();
+
+    void on_pushButton_4_clicked();
+
+    void on_pushButton_5_clicked();
+
 private:
+    PdfReport report;
+    QPixmap pixmap;
+    bool isMeasuring = false;
     float rrol=0;
     float rpit=0;
     float roll=0;float pitch = 0;

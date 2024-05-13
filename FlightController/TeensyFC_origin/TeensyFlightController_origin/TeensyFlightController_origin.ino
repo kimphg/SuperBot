@@ -1,38 +1,8 @@
-//Arduino/Teensy Flight Controller - dRehmFlight
-//Author: Nicholas Rehm
-//Project Start: 1/6/2020
-//Last Updated: 7/29/2022
-//Version: Beta 1.3
- 
-//========================================================================================================================//
-
-//CREDITS + SPECIAL THANKS
-/*
-Some elements inspired by:
-http://www.brokking.net/ymfc-32_main.html
-
-Madgwick filter function adapted from:
-https://github.com/arduino-libraries/MadgwickAHRS
-
-MPU9250 implementation based on MPU9250 library by:
-brian.taylor@bolderflight.com
-http://www.bolderflight.com
-
-Thank you to:
-RcGroups 'jihlein' - IMU implementation overhaul + SBUS implementation.
-Everyone that sends me pictures and videos of your flying creations! -Nick
-
-*/
 
 
-
-//========================================================================================================================//
-//                                                 USER-SPECIFIED DEFINES                                                 //                                                                 
-//========================================================================================================================//
-
-//Uncomment only one receiver type
 // #define USE_PWM_RX
 #define USE_PPM_RX
+
 //#define USE_SBUS_RX
 //#define USE_DSM_RX
 static const uint8_t num_DSM_channels = 6; //If using DSM RX, change this to match the number of transmitter channels you have
@@ -239,8 +209,9 @@ PWMServo servo4;
 PWMServo servo5;
 PWMServo servo6;
 PWMServo servo7;
-
-
+#include "common.h"
+#include "senbusdriver.h"
+SenBusDriver sbus;
 
 //========================================================================================================================//
 
@@ -374,7 +345,7 @@ void setup() {
   // digitalWrite(13, LOW);
   //Indicate entering main loop with 3 quick blinks
   setupBlink(3,160,70); //numBlinks, upTime (ms), downTime (ms)
-
+  Serial1.begin(921600);
   //If using MPU9250 IMU, uncomment for one-time magnetometer calibration (may need to repeat for new locations)
   //calibrateMagnetometer(); //Generates magentometer error and scale factors to be pasted in user-specified variables section
 
@@ -391,7 +362,7 @@ void loop() {
   prev_time = current_time;      
   current_time = micros();      
   dt = (current_time - prev_time)/1000000.0;
-
+  while(Serial1.available() )sbus.Input(Serial1.read());
   loopBlink(); //Indicate we are in main loop with short blink every 1.5 seconds
 
   //Print data at 100hz (uncomment one at a time for troubleshooting) - SELECT ONE:
@@ -400,7 +371,7 @@ void loop() {
   //printGyroData();      //Prints filtered gyro data direct from IMU (expected: ~ -250 to 250, 0 at rest)
   //printAccelData();     //Prints filtered accelerometer data direct from IMU (expected: ~ -2 to 2; x,y 0 when level, z 1 when level)
   //printMagData();       //Prints filtered magnetometer data direct from IMU (expected: ~ -300 to 300)
-  printRollPitchYaw();  //Prints roll, pitch, and yaw angles in degrees from Madgwick filter (expected: degrees, 0 when level)
+// printRollPitchYaw();  //Prints roll, pitch, and yaw angles in degrees from Madgwick filter (expected: degrees, 0 when level)
   // printPIDoutput();     //Prints computed stabilized PID variables from controller and desired setpoint (expected: ~ -1 to 1)
   //printMotorCommands(); //Prints the values being written to the motors (expected: 120 to 250)
   //printServoCommands(); //Prints the values being written to the servos (expected: 0 to 180)
@@ -1664,24 +1635,24 @@ void printLoopRate() {
 
 //HELPER FUNCTIONS
 
-float invSqrt(float x) {
-  //Fast inverse sqrt for madgwick filter
-  /*
-  float halfx = 0.5f * x;
-  float y = x;
-  long i = *(long*)&y;
-  i = 0x5f3759df - (i>>1);
-  y = *(float*)&i;
-  y = y * (1.5f - (halfx * y * y));
-  y = y * (1.5f - (halfx * y * y));
-  return y;
-  */
-  /*
-  //alternate form:
-  unsigned int i = 0x5F1F1412 - (*(unsigned int*)&x >> 1);
-  float tmp = *(float*)&i;
-  float y = tmp * (1.69000231f - 0.714158168f * x * tmp * tmp);
-  return y;
-  */
-  return 1.0/sqrtf(x); //Teensy is fast enough to just take the compute penalty lol suck it arduino nano
-}
+// float invSqrt(float x) {
+//   //Fast inverse sqrt for madgwick filter
+//   /*
+//   float halfx = 0.5f * x;
+//   float y = x;
+//   long i = *(long*)&y;
+//   i = 0x5f3759df - (i>>1);
+//   y = *(float*)&i;
+//   y = y * (1.5f - (halfx * y * y));
+//   y = y * (1.5f - (halfx * y * y));
+//   return y;
+//   */
+//   /*
+//   //alternate form:
+//   unsigned int i = 0x5F1F1412 - (*(unsigned int*)&x >> 1);
+//   float tmp = *(float*)&i;
+//   float y = tmp * (1.69000231f - 0.714158168f * x * tmp * tmp);
+//   return y;
+//   */
+//   return 1.0/sqrtf(x); //Teensy is fast enough to just take the compute penalty lol suck it arduino nano
+// }
