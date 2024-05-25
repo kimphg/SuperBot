@@ -193,9 +193,15 @@ void MainWindow::on_pushButton_3_clicked()
     QString date = currentDateTime.toString("dd_MM_yyyy_hh_mm")+"_"+bnName;
     QString fileName = "D:/record/"+date;//QFileDialog::getSaveFileName();
     QPixmap pixmap = QPixmap::grabWidget(ui->plotter);
+    pixmap = pixmap.scaled(700,350);
     QFile file(date+".png");
     file.open(QIODevice::WriteOnly);
     pixmap.save(&file, "PNG");
+    pixmap = QPixmap::grabWidget(ui->frame);
+    pixmap = pixmap.scaled(700,350);
+    QFile file2(date+"video.png");
+    file2.open(QIODevice::WriteOnly);
+    pixmap.save(&file2, "PNG");
     report.insertRecord(bnName,bnCode,bnNS,tiltdata,pandata);
     ui->label_mes_count->setText(QString::number(report.getCount_rec()));
      ui->plotter->saveCsv(date);

@@ -106,9 +106,9 @@ while(True):
     clock.tick()
 #    print(sensor.get_exposure_us())
     img = sensor.snapshot()
-    img.lens_corr(strength =1.7, zoom = 1.1)
+    img.lens_corr(strength =1.85, zoom = 1)
     #img.save ("example.jpg")
-    continue
+
     if(workMode>=1):#high speed mode
         tagCount=0
         packet="$CAM1,"

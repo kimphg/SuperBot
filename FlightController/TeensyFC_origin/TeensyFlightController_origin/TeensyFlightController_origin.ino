@@ -188,10 +188,10 @@ const int ch5Pin = 23; //gear (throttle cut)
 const int ch6Pin = 22; //aux1 (free aux channel)
 const int PPM_Pin = 21;
 //OneShot125 ESC pin outputs:
-const int m1Pin = 4;
-const int m2Pin = 5;
-const int m3Pin = 6;
-const int m4Pin = 7;
+const int m1Pin = 2;
+const int m2Pin = 3;
+const int m3Pin = 4;
+const int m4Pin = 5;
 // const int m5Pin = 4;
 // const int m6Pin = 5;
 //PWM servo or ESC outputs:
@@ -362,12 +362,12 @@ void loop() {
   prev_time = current_time;      
   current_time = micros();      
   dt = (current_time - prev_time)/1000000.0;
-  while(Serial1.available() )sbus.Input(Serial1.read());
+  while(Serial1.available() )sbus.Input(Serial1.read(),roll_IMU,pitch_IMU);
   loopBlink(); //Indicate we are in main loop with short blink every 1.5 seconds
 
   //Print data at 100hz (uncomment one at a time for troubleshooting) - SELECT ONE:
   // printRadioData();     //Prints radio pwm values (expected: 1000 to 2000)
-  // printDesiredState();  //Prints desired vehicle state commanded in either degrees or deg/sec (expected: +/- maxAXIS for roll, pitch, yaw; 0 to 1 for throttle)
+  printDesiredState();  //Prints desired vehicle state commanded in either degrees or deg/sec (expected: +/- maxAXIS for roll, pitch, yaw; 0 to 1 for throttle)
   //printGyroData();      //Prints filtered gyro data direct from IMU (expected: ~ -250 to 250, 0 at rest)
   //printAccelData();     //Prints filtered accelerometer data direct from IMU (expected: ~ -2 to 2; x,y 0 when level, z 1 when level)
   //printMagData();       //Prints filtered magnetometer data direct from IMU (expected: ~ -300 to 300)
@@ -439,10 +439,10 @@ if (channel_3_pwm < 1020)
 
   }
   else {
-  m1_command_scaled = thro_des+0.02 - pitch_PID - roll_PID - yaw_PID; //Front Left Back Right
-  m2_command_scaled = thro_des-0.035 + pitch_PID - roll_PID + yaw_PID; //Front Right
-  m3_command_scaled = thro_des-0.035 + pitch_PID + roll_PID - yaw_PID; //Back Right
-  m4_command_scaled = thro_des - pitch_PID + roll_PID + yaw_PID; //Back Left
+  m1_command_scaled = thro_des - pitch_PID - roll_PID - yaw_PID; //Front Left 
+  m4_command_scaled = thro_des + pitch_PID + roll_PID + yaw_PID; //back Right
+  m3_command_scaled = thro_des - pitch_PID + roll_PID - yaw_PID; //front Right
+  m2_command_scaled = thro_des + pitch_PID - roll_PID + yaw_PID; //Back Left
   m5_command_scaled = 0;
   m6_command_scaled = 0;
   }
@@ -871,9 +871,11 @@ void getDesState() {
   pitch_passthru = pitch_des/2.0; //Between -0.5 and 0.5
   yaw_passthru = yaw_des/2.0; //Between -0.5 and 0.5
   
+  roll_des  -= sbus.dRoll*5;
+  pitch_des += sbus.dPitch*5;
   //Constrain within normalized bounds
-  thro_des = constrain(thro_des, 0.0, 1.0); //Between 0 and 1
-  roll_des = constrain(roll_des, -1.0, 1.0)*maxRoll; //Between -maxRoll and +maxRoll
+  thro_des  = constrain(thro_des, 0.0, 1.0); //Between 0 and 1
+  roll_des  = constrain(roll_des, -1.0, 1.0)*maxRoll; //Between -maxRoll and +maxRoll
   pitch_des = constrain(pitch_des, -1.0, 1.0)*maxPitch; //Between -maxPitch and +maxPitch
   yaw_des = constrain(yaw_des, -1.0, 1.0)*maxYaw; //Between -maxYaw and +maxYaw
   roll_passthru = constrain(roll_passthru, -0.5, 0.5);

@@ -20,18 +20,86 @@
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout">
-    <item row="0" column="3" rowspan="2" colspan="6">
-     <widget class="QCustomPlotter" name="plotter">
-      <property name="frameShape">
-       <enum>QFrame::StyledPanel</enum>
+    <item row="5" column="0" rowspan="4" colspan="2">
+     <widget class="QGroupBox" name="groupBox">
+      <property name="styleSheet">
+       <string notr="true">background-color: rgb(222, 255, 222);color:rgb(0, 0, 0);font: 10pt \&quot;MS Shell Dlg 2\&quot;;border : 2px solid gray;</string>
       </property>
-      <property name="frameShadow">
-       <enum>QFrame::Raised</enum>
+      <property name="title">
+       <string>Thông tin bệnh nhân</string>
       </property>
+      <layout class="QGridLayout" name="gridLayout_2">
+       <item row="1" column="2">
+        <widget class="QLineEdit" name="lineEdit_2">
+         <property name="minimumSize">
+          <size>
+           <width>30</width>
+           <height>40</height>
+          </size>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">background-color: rgb(255, 255, 255);color:rgb(0, 0, 0);</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="0">
+        <widget class="QLabel" name="label_10">
+         <property name="text">
+          <string>Năm sinh:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="2">
+        <widget class="QLineEdit" name="lineEdit_3">
+         <property name="minimumSize">
+          <size>
+           <width>30</width>
+           <height>40</height>
+          </size>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">background-color: rgb(255, 255, 255);color:rgb(0, 0, 0);</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="0">
+        <widget class="QLabel" name="label_9">
+         <property name="text">
+          <string>Mã BN:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="0">
+        <widget class="QLabel" name="label_8">
+         <property name="text">
+          <string>Tên BN:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="2">
+        <widget class="QLineEdit" name="lineEdit">
+         <property name="minimumSize">
+          <size>
+           <width>30</width>
+           <height>40</height>
+          </size>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">background-color: rgb(255, 255, 255);color:rgb(0, 0, 0);</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
      </widget>
     </item>
-    <item row="0" column="0" rowspan="4" colspan="2">
+    <item row="0" column="0" rowspan="5" colspan="2">
      <widget class="QFrame" name="frame">
+      <property name="minimumSize">
+       <size>
+        <width>850</width>
+        <height>750</height>
+       </size>
+      </property>
       <property name="styleSheet">
        <string notr="true">background-color: rgb(222, 255, 222);color:rgb(0, 0, 0);font: 10pt \&quot;MS Shell Dlg 2\&quot;;border : 4px solid blue;</string>
       </property>
@@ -42,6 +110,21 @@
        <enum>QFrame::Raised</enum>
       </property>
       <layout class="QGridLayout" name="gridLayout_4">
+       <property name="leftMargin">
+        <number>2</number>
+       </property>
+       <property name="topMargin">
+        <number>2</number>
+       </property>
+       <property name="rightMargin">
+        <number>2</number>
+       </property>
+       <property name="bottomMargin">
+        <number>2</number>
+       </property>
+       <property name="spacing">
+        <number>2</number>
+       </property>
        <item row="1" column="2">
         <widget class="QLabel" name="label_img_right">
          <property name="sizePolicy">
@@ -140,79 +223,180 @@
       </layout>
      </widget>
     </item>
-    <item row="4" column="0" rowspan="4" colspan="2">
-     <widget class="QGroupBox" name="groupBox">
+    <item row="4" column="5" colspan="2">
+     <widget class="QLabel" name="label_12">
+      <property name="font">
+       <font>
+        <pointsize>12</pointsize>
+       </font>
+      </property>
+      <property name="text">
+       <string>Chú thích: giá trị đo được có đơn vị là độ, 
+giá trị tăng dần về hướng tương ứng với chiều từ trái qua phải, tăng dần về tầm tương tứng chiều từ dưới lên trên</string>
+      </property>
+     </widget>
+    </item>
+    <item row="3" column="5" colspan="4">
+     <widget class="QLabel" name="label">
+      <property name="font">
+       <font>
+        <pointsize>12</pointsize>
+       </font>
+      </property>
+      <property name="text">
+       <string>Hướng dẫn: Thiết bị đo được đeo lên mắt bệnh nhân sao cho hình ảnh camera trùng khớp với hướng nhìn
+của bệnh nhân.
+Người kiểm tra đứng phía sau bệnh nhân để hướng dẫn và giám sát.
+Bệnh nhân lần lượt thực hiện các động tác cúi, ngẩng, xoay trái và xoay phải đến tới hạn cho phép.
+Bệnh nhân thực hiện đi bộ theo đường thẳng trong 30 giây.
+Người kiểm tra nhấn nút hoàn thành để lưu kết quả đo.</string>
+      </property>
+     </widget>
+    </item>
+    <item row="5" column="5" rowspan="4" colspan="4">
+     <widget class="QGroupBox" name="groupBox_2">
+      <property name="font">
+       <font>
+        <family>MS Shell Dlg 2</family>
+        <pointsize>8</pointsize>
+        <weight>50</weight>
+        <italic>false</italic>
+        <bold>false</bold>
+       </font>
+      </property>
       <property name="styleSheet">
-       <string notr="true">background-color: rgb(222, 255, 222);color:rgb(0, 0, 0);font: 10pt \&quot;MS Shell Dlg 2\&quot;;border : 2px solid gray;</string>
+       <string notr="true">background-color: rgb(222, 255, 222);color:rgb(0, 0, 0);</string>
       </property>
       <property name="title">
-       <string>Thông tin bệnh nhân</string>
+       <string>Kết quả:</string>
       </property>
-      <layout class="QGridLayout" name="gridLayout_2">
-       <item row="1" column="2">
-        <widget class="QLineEdit" name="lineEdit_2">
-         <property name="minimumSize">
-          <size>
-           <width>30</width>
-           <height>40</height>
-          </size>
-         </property>
-         <property name="styleSheet">
-          <string notr="true">background-color: rgb(255, 255, 255);color:rgb(0, 0, 0);</string>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="0">
-        <widget class="QLabel" name="label_10">
+      <layout class="QGridLayout" name="gridLayout_3">
+       <property name="topMargin">
+        <number>15</number>
+       </property>
+       <item row="0" column="4">
+        <widget class="QLabel" name="label_7">
          <property name="text">
-          <string>Năm sinh:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="2">
-        <widget class="QLineEdit" name="lineEdit_3">
-         <property name="minimumSize">
-          <size>
-           <width>30</width>
-           <height>40</height>
-          </size>
-         </property>
-         <property name="styleSheet">
-          <string notr="true">background-color: rgb(255, 255, 255);color:rgb(0, 0, 0);</string>
+          <string>Góc ngẩng cao nhất:</string>
          </property>
         </widget>
        </item>
        <item row="1" column="0">
-        <widget class="QLabel" name="label_9">
+        <widget class="QLabel" name="label_3">
          <property name="text">
-          <string>Mã BN:</string>
+          <string>Góc xoay trái phải:</string>
          </property>
         </widget>
        </item>
-       <item row="0" column="0">
-        <widget class="QLabel" name="label_8">
+       <item row="1" column="4">
+        <widget class="QLabel" name="label_5">
          <property name="text">
-          <string>Tên BN:</string>
+          <string>Tới hạn phải:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="3">
+        <widget class="QLabel" name="label_roll_min">
+         <property name="text">
+          <string>--</string>
          </property>
         </widget>
        </item>
        <item row="0" column="2">
-        <widget class="QLineEdit" name="lineEdit">
+        <widget class="QLabel" name="label_6">
+         <property name="text">
+          <string>Góc cúi thấp nhất:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="2">
+        <widget class="QLabel" name="label_4">
+         <property name="text">
+          <string>Tới hạn trái:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="0">
+        <widget class="QLabel" name="label_2">
+         <property name="styleSheet">
+          <string notr="true"/>
+         </property>
+         <property name="text">
+          <string>Góc ngẩng hiện tại:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="3">
+        <widget class="QLabel" name="label_pitch_min">
+         <property name="text">
+          <string>--</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="1">
+        <widget class="QLabel" name="label_roll">
+         <property name="text">
+          <string>--</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="1">
+        <widget class="QLabel" name="label_pitch">
+         <property name="text">
+          <string>--</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="5">
+        <widget class="QLabel" name="label_pitch_max">
+         <property name="text">
+          <string>--</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="5">
+        <widget class="QLabel" name="label_roll_max">
+         <property name="text">
+          <string>--</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="5">
+        <widget class="QPushButton" name="pushButton_5">
          <property name="minimumSize">
           <size>
-           <width>30</width>
+           <width>0</width>
            <height>40</height>
           </size>
          </property>
          <property name="styleSheet">
-          <string notr="true">background-color: rgb(255, 255, 255);color:rgb(0, 0, 0);</string>
+          <string notr="true">background-color: rgb(32, 64, 128);color:rgb(255, 255, 255);font: 10pt \&quot;MS Shell Dlg 2\&quot;;border : 3px solid gray;</string>
+         </property>
+         <property name="text">
+          <string>Mở file báo cáo</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="0" colspan="5">
+        <widget class="QPushButton" name="pushButton_3">
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>40</height>
+          </size>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">background-color: rgb(32, 64, 128);color:rgb(255, 255, 255);font: 10pt \&quot;MS Shell Dlg 2\&quot;;border : 3px solid gray;</string>
+         </property>
+         <property name="text">
+          <string>Lưu kết quả</string>
          </property>
         </widget>
        </item>
       </layout>
      </widget>
     </item>
-    <item row="2" column="3" colspan="6">
+    <item row="2" column="5" colspan="4">
      <widget class="QFrame" name="frame_2">
       <property name="styleSheet">
        <string notr="true">background-color: rgb(222, 255, 222);color:rgb(0, 0, 0);font: 10pt \&quot;MS Shell Dlg 2\&quot;;border : 2px solid gray;</string>
@@ -895,149 +1079,19 @@
       </layout>
      </widget>
     </item>
-    <item row="4" column="3" rowspan="4" colspan="6">
-     <widget class="QGroupBox" name="groupBox_2">
-      <property name="styleSheet">
-       <string notr="true">background-color: rgb(222, 255, 222);color:rgb(0, 0, 0);font: 10pt \&quot;MS Shell Dlg 2\&quot;;border : 2px solid gray;</string>
+    <item row="0" column="5" rowspan="2" colspan="4">
+     <widget class="QCustomPlotter" name="plotter">
+      <property name="minimumSize">
+       <size>
+        <width>0</width>
+        <height>350</height>
+       </size>
       </property>
-      <property name="title">
-       <string>Kết quả:</string>
+      <property name="frameShape">
+       <enum>QFrame::StyledPanel</enum>
       </property>
-      <layout class="QGridLayout" name="gridLayout_3">
-       <property name="topMargin">
-        <number>15</number>
-       </property>
-       <item row="0" column="4">
-        <widget class="QLabel" name="label_7">
-         <property name="text">
-          <string>Góc ngẩng cao nhất:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="0">
-        <widget class="QLabel" name="label_3">
-         <property name="text">
-          <string>Góc xoay trái phải:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="4">
-        <widget class="QLabel" name="label_5">
-         <property name="text">
-          <string>Tới hạn phải:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="3">
-        <widget class="QLabel" name="label_roll_min">
-         <property name="text">
-          <string>--</string>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="2">
-        <widget class="QLabel" name="label_6">
-         <property name="text">
-          <string>Góc cúi thấp nhất:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="2">
-        <widget class="QLabel" name="label_4">
-         <property name="text">
-          <string>Tới hạn trái:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="0">
-        <widget class="QLabel" name="label_2">
-         <property name="styleSheet">
-          <string notr="true"/>
-         </property>
-         <property name="text">
-          <string>Góc ngẩng hiện tại:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="3">
-        <widget class="QLabel" name="label_pitch_min">
-         <property name="text">
-          <string>--</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="1">
-        <widget class="QLabel" name="label_roll">
-         <property name="text">
-          <string>--</string>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="1">
-        <widget class="QLabel" name="label_pitch">
-         <property name="text">
-          <string>--</string>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="5">
-        <widget class="QLabel" name="label_pitch_max">
-         <property name="text">
-          <string>--</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="5">
-        <widget class="QLabel" name="label_roll_max">
-         <property name="text">
-          <string>--</string>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="5">
-        <widget class="QPushButton" name="pushButton_5">
-         <property name="minimumSize">
-          <size>
-           <width>0</width>
-           <height>40</height>
-          </size>
-         </property>
-         <property name="styleSheet">
-          <string notr="true">background-color: rgb(32, 64, 128);color:rgb(255, 255, 255);font: 10pt \&quot;MS Shell Dlg 2\&quot;;border : 3px solid gray;</string>
-         </property>
-         <property name="text">
-          <string>Mở file báo cáo</string>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="0" colspan="5">
-        <widget class="QPushButton" name="pushButton_3">
-         <property name="minimumSize">
-          <size>
-           <width>0</width>
-           <height>40</height>
-          </size>
-         </property>
-         <property name="styleSheet">
-          <string notr="true">background-color: rgb(32, 64, 128);color:rgb(255, 255, 255);font: 10pt \&quot;MS Shell Dlg 2\&quot;;border : 3px solid gray;</string>
-         </property>
-         <property name="text">
-          <string>Lưu kết quả</string>
-         </property>
-        </widget>
-       </item>
-      </layout>
-     </widget>
-    </item>
-    <item row="3" column="3" colspan="6">
-     <widget class="QLabel" name="label">
-      <property name="text">
-       <string>Thiết bị đo được đeo lên mắt bệnh nhân sao cho hình ảnh camera trùng khớp với hướng nhìn
-của bệnh nhân.
-Người kiểm tra đứng phía sau bệnh nhân để hướng dẫn và giám sát.
-Bệnh nhân lần lượt thực hiện các động tác cúi, ngẩng, xoay trái và xoay phải đến tới hạn cho phép.
-Bệnh nhân thực hiện đi bộ theo đường thẳng trong 30 giây.
-Người kiểm tra nhấn nút hoàn thành để lưu kết quả đo.</string>
+      <property name="frameShadow">
+       <enum>QFrame::Raised</enum>
       </property>
      </widget>
     </item>
