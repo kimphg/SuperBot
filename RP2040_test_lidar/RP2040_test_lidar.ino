@@ -4,6 +4,7 @@ void setup() {
   Serial3.begin(460800);
   delay(200);
   Serial3.print("startlds$");
+  Serial3.print("startlds$");
 }
 
 

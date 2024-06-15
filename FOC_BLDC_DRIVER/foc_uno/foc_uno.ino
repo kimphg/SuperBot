@@ -42,7 +42,7 @@ void setup() {
   motor.voltage_limit = 9;   // [V]
   // limit/set the velocity of the transition in between 
   // target angles
-  motor.velocity_limit = 35; // [rad/s] cca 50rpm
+  motor.velocity_limit = 50; // [rad/s] cca 50rpm
   // open loop control config
   motor.controller = MotionControlType::angle_openloop;
 
@@ -55,17 +55,23 @@ void setup() {
   command.add('V', doLimit, "movement velocity");
 
   Serial.begin(115200);
+  pinMode(2,INPUT_PULLUP);
+  pinMode(7,INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(2), pulseInput, CHANGE);
   Serial.println("Motor ready!");
   Serial.println("Set target position [rad]");
   _delay(1000);
 }
-
+void pulseInput() {
+  target_position+=0.1;
+}
 void loop() {
   // open  loop angle movements
   // using motor.voltage_limit and motor.velocity_limit
     // float pos = (millis()%100000)/100000.0;
   // motor.move(pos*30);
   motor.move(target_position);
+  Serial.println(target_position);
   // target_position=(analogRead(A0)-500)/500.0;
   // user communication
   command.run();
