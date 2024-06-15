@@ -9,10 +9,10 @@
 #define ALM_RES 4
 #define SPEED 5
 #define MB_FREE 6
-#define MIN_LIM 7
+#define MIN_LIM 7 //speed out
 #define WNG_IN 8
 #define ALARM_IN 9
-#define MAX_LIM 10
+#define MAX_LIM 10//emergency stop
 #define DEBUG_TELEMETRY Serial
 #define COMMAND_LEN_MAX 100
 #define MOTOR_ID 1
@@ -258,26 +258,7 @@ void setup() {
   reportPacket[1]=0x55;
   blink(MOTOR_ID);
   Serial.begin(230400);
-#ifdef LIFT_MOTOR
-  while(digitalRead(MIN_LIM))
-  {
-    maxOK = (digitalRead(MAX_LIM));
-    minOK = (digitalRead(MIN_LIM));
-     setSpeed(-50);
-    //  digitalWrite(LED_1, HIGH);
-     delay(10);
-     sendReport();
-  }
-  while(!digitalRead(MIN_LIM))
-  {
-    maxOK = (digitalRead(MAX_LIM));
-    minOK = (digitalRead(MIN_LIM));
-     setSpeed(10);
-    //  digitalWrite(LED_1, HIGH);
-     delay(10);
-     sendReport();
-  }
-#endif
+
   setSpeed(0);
   digitalWrite(LED_1, LOW);
 }

@@ -35,26 +35,32 @@ void PdfReport::resetData()
                         height: 100%;\
                     }\
                     .center-fit {\
-                        max-width: 100%;\
+                        max-width: 50vh;\
                         max-height: 100vh;\
                         margin: auto;\
                     }\
                 </style>\
             </head>"
-        "<div align=right>"
+
+        "<div></div>"
+        "<table border=0 width=\"100%\" cellpadding=5 cellspacing=0>"
+        "    <tr>"
+        "        <th>BỆNH VIỆN TRUNG ƯƠNG QUÂN ĐỘI 108 <br>"
+        "   KHOA CHẤN THƯƠNG CHỈNH HÌNH CỘT SỐNG <br>"
+        " Số 1 Trần Hưng Đạo, Hai Bà Trưng, Hà Nội</th>"
+        "        <th>"
+            "<img src=\"logo.png\" alt=\"\">"
+            "</th>"
+//            "  <th> Hà Nội, " + currentDateStr +"</th>"
+        "    </tr>"
+        "</table>"
+        "<div align=left>"
         "   Hà Nội, " + currentDateStr +
         "</div>"
+        "</div>"
+        "<h1 align=center>KẾT QUẢ ĐO</h1>"
+        "<div><br></div>"
 
-        "<div align=left>"
-        "    BỆNH VIỆN TRUNG ƯƠNG QUÂN ĐỘI 108 <br>"
-        "   KHOA CHẤN THƯƠNG CHỈNH HÌNH CỘT SỐNG <br>"
-        " Số 1 Trần Hưng Đạo, Hai Bà Trưng, Hà Nội"
-        "</div>"
-        "<div align=left>"
-        "<img src=\"logo.png\" alt=\"\">"
-        "</div>"
-        "<h1 align=center>KẾT QUẢ ĐO GÓC CỘT SỐNG</h1>"
-        "<div></div>"
         "<table border=1 width=\"100%\" cellpadding=5 cellspacing=0>"
         "    <tr>"
         "        <th>STT</th>"
@@ -85,13 +91,22 @@ void PdfReport::insertRecord(const QString &name, const QString &code,const QStr
     report_data += "<td>" + pan + "</td>";
     report_data += "</tr>";
     report_data += "</table>";
-    report_data +="<h3 align=left>Kết quả chi tiết: </h1>";
+    report_data +="<br> <h3 align=left>Kết quả chi tiết: </h1>";
     report_data += "<div align=left>";
     report_data +="<img class=\"center-fit\" src=\"";
     report_data +=fielname;
+    report_data +=".png";
     report_data +="\" alt=\"\">";
-    report_data +="</div>";
-
+    report_data +="</div>""<div>   <br>      </div>";
+    report_data +="<h3 align=left>Ảnh chụp trường nhìn: </h1>";
+    report_data += "<div align=left>";
+    report_data +="<img class=\"center-fit\" src=\"";
+    report_data +=fielname;
+    report_data +="video.png";
+    report_data +="\" alt=\"\">";
+    report_data +="<div align=right>";
+    report_data +="Nhân viên đo";
+    report_data +=    "</div>";
     lastFileName = currentDateTime.toString("dd_MM_yyyy_hh_mm")+"_"+name+".pdf";
     saveReport(lastFileName); // auto save if there are new record
 }

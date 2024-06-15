@@ -18,11 +18,11 @@ public:
     sensBusBuffi = 0;
   }
   CamData camh7data;
-  bool Input(unsigned char inputByte);
-  bool processCamera(String inputStr);
-  
+  bool Input(unsigned char inputByte, float roll,float pitch);
+  bool processCamera(String inputStr, float roll,float pitch);
   float tagAngle=0;
   float tagX=0,tagY=0;
+  float dRoll=0,dPitch=0;
   int tagID;
   private:
   int lastTagID=-1;
