@@ -26,7 +26,7 @@ void setup() {
 
   // driver config
   // power supply voltage [V]
-  driver.voltage_power_supply = 12;
+  driver.voltage_power_supply = 24;
   // limit the maximal dc voltage the driver can set
   // as a protection measure for the low-resistance motors
   // this value is fixed on startup
@@ -63,7 +63,7 @@ void setup() {
   _delay(1000);
 }
 void pulseInput() {
-  target_position+=0.1;
+  target_position+=0.0174532925;
 }
 void loop() {
   // open  loop angle movements
