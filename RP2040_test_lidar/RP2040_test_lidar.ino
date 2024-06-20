@@ -20,6 +20,7 @@ void processFrameHex(unsigned char* data)
     float angle = data[0]-160;
     if(angle<0||angle>90)return;
     int ministep=16;
+    int frameCount =0;
     for(int miniangle = 0;miniangle<16;miniangle++)
     {
         int realAngle = angle*ministep+miniangle;

@@ -55,7 +55,7 @@ int stackLevel = 0;
 unsigned long int lastUpdate = 0;
 unsigned int csFailCount=0;
 unsigned int hdFailCount=0;
-bool minOK=false, maxOK=false;
+int minOK=0, maxOK=0;
 void setSpeed(int speed);
 uint8_t commandBuff[COMMAND_LEN_MAX];
 uint8_t reportPacket[8];
@@ -158,7 +158,7 @@ bool updateBinaryCommand() {
     }
     
   }
-  digitalWrite(LED_1, packetExecuted);
+  
   if(csFailCount>5){blink(5);
               csFailCount=0;}
   if(hdFailCount>10){blink(6);
@@ -215,10 +215,11 @@ void setSpeed(int speed) {
     case 3:  //LIFT_MOTOR
       output_speed = speed;
       
-      
-      if (!minOK)
+      if(minOK<150)minOK++;
+      if (minOK<100)
         if (output_speed < 0) output_speed = 0;
-      if (!maxOK)
+      if(maxOK<150)maxOK++;
+      if (maxOK<100)
         if (output_speed > 0) output_speed = 0;
       if(output_speed==0)digitalWrite(MEN, LOW);
       else digitalWrite(MEN, HIGH);
@@ -233,6 +234,7 @@ void setSpeed(int speed) {
     default:
       break;
   }
+  analogWrite(LED_1, abs(output_speed));
 }
 void setup() {
   pinMode(MIN_LIM, INPUT);
@@ -264,11 +266,11 @@ void setup() {
 }
 
 void loop() {
-  maxOK = (digitalRead(MAX_LIM));
-  minOK = (digitalRead(MIN_LIM));
-  if((minOK&&maxOK)==false)digitalWrite(LED_BUILTIN,HIGH);
+  if(!digitalRead(MAX_LIM))maxOK = 0;
+  if(!digitalRead(MIN_LIM))minOK = 0;
+  if((minOK*maxOK)==0)digitalWrite(LED_BUILTIN,HIGH);
   else digitalWrite(LED_BUILTIN,LOW);
-  if(!(minOK|maxOK))blink(4);
+  if((minOK+maxOK)==0)blink(4);
   if (updateBinaryCommand()) {
     lastUpdate = millis();
     sendReport();
@@ -276,7 +278,7 @@ void loop() {
   
   if (millis() - lastUpdate > 1000)
   { setSpeed(0);//failsafe if no connection
-    digitalWrite(LED_1, LOW);
+    // digitalWrite(LED_1, LOW);
     delay(200);sendReport();
   }
 }

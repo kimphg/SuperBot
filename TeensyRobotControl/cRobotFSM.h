@@ -14,8 +14,8 @@
 #define OUTPUT_2 3
 #define OUTPUT_3 4
 #define OUTPUT_4 5
-#define STEP_PULSE OUTPUT_4
-#define STEP_DIR OUTPUT_3
+#define STEP_PULSE OUTPUT_1
+#define STEP_DIR OUTPUT_2
 #define DT_CONTROL 0.02 //50hz control loop
 #define DT_POS_UPDATE 0.02 //20hz  loop
 #define BASE_LEN 0.45
@@ -90,6 +90,7 @@ class RobotDriver
   void stepOutput(int dir);
   void loopStandby();
   IMUData imu_data;
+  void liftStabilizeBLV();
   int bot_mode = MODE_STANDBY;
   int stillCount=0;
   

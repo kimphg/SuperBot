@@ -9,7 +9,7 @@ static const uint8_t num_DSM_channels = 6; //If using DSM RX, change this to mat
 
 //Uncomment only one IMU
 #define USE_MPU6050_I2C //Default
-//#define USE_MPU9250_SPI
+// #define USE_MPU9250_SPI
 
 //Uncomment only one full scale gyro range (deg/sec)
 #define GYRO_250DPS //Default
@@ -138,12 +138,12 @@ float MagScaleY = 1.0;
 float MagScaleZ = 1.0;
 
 //IMU calibration parameters - calibrate IMU using calculate_IMU_error() in the 
-float AccErrorX = 0.10;
-float AccErrorY = -0.04;
+float AccErrorX = 0.09;
+float AccErrorY = -0.06;
 float AccErrorZ = -1.95;
-float GyroErrorX = 0.30;
-float GyroErrorY = -4.80;
-float GyroErrorZ = -0.66;
+float GyroErrorX = 50.46;
+float GyroErrorY = -55.49;
+float GyroErrorZ = 73.97;
 
 //Controller parameters (take note of defaults before modifying!): 
 float i_limit = 5.0;     //Integrator saturation level, mostly for safety (default 25.0)
@@ -347,7 +347,7 @@ void setup() {
   setupBlink(3,160,70); //numBlinks, upTime (ms), downTime (ms)
   Serial1.begin(921600);
   //If using MPU9250 IMU, uncomment for one-time magnetometer calibration (may need to repeat for new locations)
-  //calibrateMagnetometer(); //Generates magentometer error and scale factors to be pasted in user-specified variables section
+  calibrateMagnetometer(); //Generates magentometer error and scale factors to be pasted in user-specified variables section
 
 }
 
@@ -362,18 +362,18 @@ void loop() {
   prev_time = current_time;      
   current_time = micros();      
   dt = (current_time - prev_time)/1000000.0;
-  while(Serial1.available() )sbus.Input(Serial1.read(),roll_IMU,pitch_IMU);
+  // while(Serial1.available() )sbus.Input(Serial1.read(),roll_IMU,pitch_IMU);
   loopBlink(); //Indicate we are in main loop with short blink every 1.5 seconds
 
   //Print data at 100hz (uncomment one at a time for troubleshooting) - SELECT ONE:
   // printRadioData();     //Prints radio pwm values (expected: 1000 to 2000)
-  printDesiredState();  //Prints desired vehicle state commanded in either degrees or deg/sec (expected: +/- maxAXIS for roll, pitch, yaw; 0 to 1 for throttle)
+  // printDesiredState();  //Prints desired vehicle state commanded in either degrees or deg/sec (expected: +/- maxAXIS for roll, pitch, yaw; 0 to 1 for throttle)
   //printGyroData();      //Prints filtered gyro data direct from IMU (expected: ~ -250 to 250, 0 at rest)
   //printAccelData();     //Prints filtered accelerometer data direct from IMU (expected: ~ -2 to 2; x,y 0 when level, z 1 when level)
   //printMagData();       //Prints filtered magnetometer data direct from IMU (expected: ~ -300 to 300)
-// printRollPitchYaw();  //Prints roll, pitch, and yaw angles in degrees from Madgwick filter (expected: degrees, 0 when level)
+printRollPitchYaw();  //Prints roll, pitch, and yaw angles in degrees from Madgwick filter (expected: degrees, 0 when level)
   // printPIDoutput();     //Prints computed stabilized PID variables from controller and desired setpoint (expected: ~ -1 to 1)
-  //printMotorCommands(); //Prints the values being written to the motors (expected: 120 to 250)
+  // printMotorCommands(); //Prints the values being written to the motors (expected: 120 to 250)
   //printServoCommands(); //Prints the values being written to the servos (expected: 0 to 180)
   //printLoopRate();      //Prints the time between loops in microseconds (expected: microseconds between loop iterations)
   
@@ -864,15 +864,15 @@ void Madgwick6DOF(float gx, float gy, float gz, float ax, float ay, float az, fl
 void getDesState() {
 
   thro_des = (channel_3_pwm - 1000.0)/1000.0; //Between 0 and 1
-  roll_des = (channel_1_pwm - 1500.0)/500.0; //Between -1 and 1
-  pitch_des = (channel_2_pwm - 1500.0)/500.0; //Between -1 and 1
-  yaw_des = (channel_4_pwm - 1500.0)/500.0; //Between -1 and 1
+  roll_des = (channel_1_pwm - 1500.0)/500.0/3.0; //Between -1 and 1
+  pitch_des = (channel_2_pwm - 1500.0)/500.0/3.0; //Between -1 and 1
+  yaw_des = (channel_4_pwm - 1500.0)/500.0/2.0; //Between -1 and 1
   roll_passthru = roll_des/2.0; //Between -0.5 and 0.5
   pitch_passthru = pitch_des/2.0; //Between -0.5 and 0.5
   yaw_passthru = yaw_des/2.0; //Between -0.5 and 0.5
   
-  roll_des  -= sbus.dRoll*5;
-  pitch_des += sbus.dPitch*5;
+  // roll_des  -= sbus.dRoll*5;
+  // pitch_des += sbus.dPitch*5;
   //Constrain within normalized bounds
   thro_des  = constrain(thro_des, 0.0, 1.0); //Between 0 and 1
   roll_des  = constrain(roll_des, -1.0, 1.0)*maxRoll; //Between -maxRoll and +maxRoll
@@ -884,8 +884,6 @@ void getDesState() {
 }
 
 void controlANGLE() {
-
-  
   //Roll
   error_roll = roll_des - roll_IMU;
   integral_roll = integral_roll_prev + error_roll*dt;
