@@ -1017,7 +1017,7 @@ void RobotDriver::liftStabilize()//stabilize lift angle with microstep motor dri
   float liftAngleErrord = 1000*(liftAngleError-liftAngleErroro);
   liftAngleErrori+=liftAngleError;
   liftAngleErrori = constrainVal(liftAngleErrori,-1,1);
-  float liftPID = 10*(Kp_lift*liftAngleError+Ki_lift*liftAngleErrori+Kd_lift*liftAngleErrord);
+  float liftPID = 20*(Kp_lift*liftAngleError+Ki_lift*liftAngleErrori+Kd_lift*liftAngleErrord);
 
   // Serial.print(Kp_lift*liftAngleError);
   // Serial.print(" ");
@@ -1139,7 +1139,7 @@ void RobotDriver::loadParams()//load robot parameters from memory
   Kp_pos = loadParam("Kp_pos",1.5);  //Yaw P-gain
   Ki_pos = loadParam("Ki_pos",9.0);  //Yaw I-gain
   Kd_pos = loadParam("Kd_pos",0.1);  //Yaw D-gain (be careful when increasing too high, motors will begin to overheat!)
-  Kp_lift = loadParam("Kp_lift",0.5);  
+  Kp_lift = loadParam("Kp_lift",1.0);  
   Ki_lift = loadParam("Ki_lift",0.0);  
   Kd_lift = loadParam("Kd_lift",0.05);  
   Ks_lift = loadParam("Ks_lift",0.6);  
