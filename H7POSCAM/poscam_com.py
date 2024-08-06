@@ -14,7 +14,7 @@ def setMode(mode):
         sensor.set_auto_gain(False)  # must turn this off to prevent image washout...
         sensor.set_auto_whitebal(False)  # must turn this off to prevent image washout...
         sensor.set_auto_exposure(     False, exposure_us=2000 )
-        sensor.set_auto_gain(False, gain_db=30)
+        sensor.set_auto_gain(False, gain_db=26)
         sensor.skip_frames(time = 500)
     if(mode==2):
         sensor.set_framesize(sensor.QVGA) # we run out of memory if the resolution is much bigger...
@@ -32,7 +32,7 @@ def setMode(mode):
         sensor.set_auto_exposure(False, exposure_us=10000 )
         sensor.set_auto_gain(False, gain_db=20)
         sensor.skip_frames(time = 500)
-setMode(2)
+setMode(1)
 clock = time.clock()
 from pyb import UART
 
@@ -102,6 +102,8 @@ frameWidth = sensor.width()
 frameHeight = sensor.height()
 fps_cam=0
 uart.init(921600)
+last_tag_id = -1
+stable_count = 0
 while(True):
     clock.tick()
 #    print(sensor.get_exposure_us())
@@ -119,6 +121,7 @@ while(True):
         for tag in img.find_apriltags(families=tag_families):
             packet += ("TD")
             packet += (",")
+
             packet += (str(tag.id()))
             packet += (",")
             packet += (str(int(tag.cx()/frameWidth*100)))
@@ -127,6 +130,13 @@ while(True):
             packet += (",")
             packet += (str(int(tag.rotation()*1800.0/3.141592653589793)))
             packet += (",")
+#            if(last_tag_id == tag.id()):
+#                stable_count=stable_count+1
+#            else:
+#                last_tag_id = tag.id()
+#                stable_count=0
+#            packet += (str(stable_count))
+#            packet += (",")
         datalen = len(packet);
         packetBytes = bytearray(packet,'ascii')
         cs_byte = crc8(packetBytes,0,datalen)
@@ -143,13 +153,16 @@ while(True):
 #        print("%s,%s,%d,%f#" % print_args)
 #        count=count+1
 #    Serial
-    datalen = uart.any()
-    if(datalen):
-        if(len(uartBuff)+datalen>1000):
-            uartBuff= uart.read(datalen)
-            continue
-        uartBuff+=(uart.read(datalen).decode("ascii"))
-        print(uartBuff)
-    if(len(uartBuff)>1000):
-        uartBuff=""
+#    datalen = uart.any()
+#    if(datalen):
+#        if(len(uartBuff)+datalen>1000):
+#            uartBuff= uart.read(datalen)
+#            continue
+#        inputbyte = uart.read(datalen)
+##        print(inputbyte)
+##        if(inputbyte>=33):
+##        uartBuff+=(inputbyte.decode(encoding="utf-8", errors="ignore"))
+##        print(uartBuff)
+#    if(len(uartBuff)>1000):
+#        uartBuff=""
     fps_cam = int(clock.fps())
