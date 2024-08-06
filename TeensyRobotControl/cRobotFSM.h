@@ -72,11 +72,12 @@ class RobotDriver
   float desBearing = 0;
   int curLiftStep = 0;
   int lastFloorTagid = -1;
+  int lastFloorYawTagid = -1;
   int minLiftStep = -10000;
   int stepFreq = 1;
   int desLiftStep = 0;
   bool initOK = false;
-  uint8_t liftComm=0;
+  uint8_t cur_lift_stat=0;
   int newliftComm = 0;
   void loopRotate();
   void liftStabilize();
@@ -85,6 +86,7 @@ class RobotDriver
   void sendPPUack(uint8_t commandCode);
   void sendControlPacket(uint8_t id, float speed, uint8_t mode);
   void processMotorReport(uint8_t bytein);
+  void checkMinMax();
   void loopMove();
   void loopLift();
   void stepOutput(int dir);

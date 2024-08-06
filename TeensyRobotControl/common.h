@@ -10,7 +10,7 @@
 #define S_SENSORS Serial2
 #define S_MOTORS  Serial3
 #define S_COMMAND Serial1
-#define S_DEBUG   Serial5
+#define S_DEBUG   Serial
 
 #define DT_CONTROL 0.02 //50hz control loop
 #define PI2 6.2831853

@@ -1,31 +1,41 @@
 // #include "usb_serial.h"
 #include "senbusdriver.h"
-bool SenBusDriver::Input(unsigned char inputByte) {
+int SenBusDriver::Input(unsigned char inputByte) {
 
-    bool result =false;
-    sensBusBuff[sensBusBuffi] = inputByte;
+    int result =0;
+    // sensBusBuff[sensBusBuffi] = inputByte;
     if(isPrintable (inputByte))
     { 
-      
+      // Serial.print((char)inputByte);
       if (inputString.length() < 100) inputString += (char)inputByte;
       else inputString = "";
       if (inputByte == '\n')  //end of command
       {
-        if (inputString.indexOf("$CAM")>=0) {
+        if (inputString.indexOf("$CAM1,")>=0) {
           result = processCamera(inputString);
-          
+        }
+        else if (inputString.indexOf("$COM,")>=0) {
+          result = processCommand(inputString);
         }
         inputString = "";
       }
     }
-    sensBusBuffo = inputByte;
-    sensBusBuffi++;
-    if (sensBusBuffi >= 200) sensBusBuffi = 0;
+    // sensBusBuffo = inputByte;
+    // sensBusBuffi++;
+    // if (sensBusBuffi >= 200) sensBusBuffi = 0;
     return result;
 }
-bool SenBusDriver::processCamera(String inputStr)
+int SenBusDriver::processCommand(String command)
 {
-    bool result =false;
+  commandBuff ="";
+  commandBuff.append(command);
+  // Serial.print(command);
+  return 2;
+  
+}
+int SenBusDriver::processCamera(String inputStr)
+{
+    int result =0;
     
     std::vector<String> tokens = splitString(inputStr,',');
     if (tokens.size() >= 7) {
@@ -40,13 +50,15 @@ bool SenBusDriver::processCamera(String inputStr)
           tagX = -(50-tokens[5].toFloat())*1.44;
           tagY = (50-tokens[6].toFloat())*1.44;
           tagID = newtagID;
+          result=1;
           
-          result=true;
         }
-        
+        else result=0;
         lastTagID = newtagID;
+        
       }
-      DPRINT("!$Camera data:");DPRINTLN(tagAngle);DPRINTLN(tagX);DPRINTLN(tagY); DPRINT("#");DPRINT("@");
+      
+      // DPRINT("!$Camera data:");DPRINTLN(tagAngle);DPRINTLN(tagX);DPRINTLN(tagY); DPRINT("#");DPRINT("@");
     }
     
     return result;
