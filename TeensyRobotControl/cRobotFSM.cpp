@@ -40,14 +40,14 @@ long int liftLevel = 0;
 long int liftLevelo = 0;
 // long int reportCount = 0;
 float liftAngleErroro = 0;
-float lift_gear_lash = 3.0;
+float lift_gear_lash = 2.0;
 bool liftLevelInitOK = false;
 int desLiftLevel = 0;
 long int M1ComTime = 0, M2ComTime = 0, M3ComTime = 0;
 long int M1DelayTime,M2DelayTime,M3DelayTime;
 std::vector<RobotParam> paramTable;
 std::vector<FloorTag> floorMap;
-#define INTEGRAL_LEN 100
+#define INTEGRAL_LEN 300
 float array_yaw[INTEGRAL_LEN];
 float array_pos[INTEGRAL_LEN];
 float array_lift[INTEGRAL_LEN];
@@ -1098,7 +1098,7 @@ void RobotDriver::liftStabilize()//stabilize lift angle with microstep motor dri
   liftAngle = -curLiftStep*360.0/STEP_PPR;
   if(1)
   {
-    float bu_do_do = lift_gear_lash*desRotSpd*3;
+    float bu_do_do = lift_gear_lash*desRotSpd/2.0;
     liftAngle+=bu_do_do;
 
   }

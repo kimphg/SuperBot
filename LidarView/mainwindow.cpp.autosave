@@ -9,7 +9,7 @@ QSerialPort *serial;
 unsigned char serialDataBuff[BUFF_SIZE];
 int buffIndex = 0;
 float mapData[90*16];
-
+float safeLevel[90*16];
 float angleScale=1;
 QPixmap *renderMap;
 QTimer *timer1s;

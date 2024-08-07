@@ -19,31 +19,49 @@ void processFrameHex(unsigned char* data)
 {
     float angle = data[0]-160;
     if(angle<0||angle>90)return;
-    int ministep=16;
-    int frameCount =0;
     for(int miniangle = 0;miniangle<16;miniangle++)
     {
-        int realAngle = angle*ministep+miniangle;
-        float range  = data[3+miniangle*2] +data[4+miniangle*2]*256 ;
-        float oldRange = mapData[realAngle];
-        float oldTime = mapTime[realAngle];
-        mapData[realAngle] = range;
-        mapTime[realAngle] = millis();
+        int realAngle = angle*16+miniangle;
         
-        frameCount++;
-        if(frameCount>1500)
+        if((realAngle>= 1380)||(realAngle<=540))
         {
-            int prevAngle = realAngle-1;
-            if(prevAngle<0)prevAngle += MAX_AZ;
-            if(abs(mapData[prevAngle]-mapData[realAngle])<5)
+          // Serial.println(realAngle);
+          float newrange  = data[3+miniangle*2] +data[4+miniangle*2]*256 ;
+          float oldrange = mapData[realAngle];
+          mapData[realAngle] = newrange;
+
+          float realAzDeg = -60+realAngle*180*2.0/(1440);
+          if(realAzDeg<-180)realAzDeg+=(360);
+          if(realAzDeg>180)realAzDeg-=(360);
+          
+          
+          if (range<1){ continue;}
+          float xmm = range*sin(realAzDeg/57.2957795);
+          float ymm = range*cos(realAzDeg/57.2957795);
+          int safe_level = 0;
+          if(abs(xmm)<400)
             {
-              float dRange =  oldRange-range;
-              float dTime = mapTime[realAngle]-oldTime;
-              float approSpd = dRange/dTime;
+                if(ymm<300)safe_level=0;
+                else if(ymm<1500)safe_level=1;
+                else safe_level=2;
             }
+            else if(abs(xmm)<800)
+            {
+                if(ymm<200)safe_level=0;
+                else if(ymm<600)safe_level=1;
+                else safe_level=2;
+
+            }
+            else safe_level=2;
+            Serial.print(realAzDeg);
+          Serial.print(',');
+          Serial.print(newrange);
+          Serial.print(',');
+          Serial.print(safe_level);
+          Serial.println(',');
         }
     }
-    
+
 }
 void loop() {
   while (Serial3.available()) {
@@ -52,9 +70,10 @@ void loop() {
     if (bytein)zeroCount = 0; else zeroCount++;
     if (zeroCount >= 4)
     {
-      Serial.write(0xff);
-      Serial.write(0xaa);
-      Serial.write(dataBuff+3, 35);
+      // Serial.write(0xff);
+      // Serial.write(0xaa);
+      // Serial.write(dataBuff+3, 35);
+      processFrameHex(dataBuff+3);
       curBuffIndex = 0;
       zeroCount=0;
     }
