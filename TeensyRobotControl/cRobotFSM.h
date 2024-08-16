@@ -86,6 +86,7 @@ class RobotDriver
   void sendPPUack(uint8_t commandCode);
   void sendControlPacket(uint8_t id, float speed, uint8_t mode);
   void processMotorReport(uint8_t bytein);
+  int  processFrontBoard(String inputStr);
   void checkMinMax();
   void loopMove();
   void loopLift();

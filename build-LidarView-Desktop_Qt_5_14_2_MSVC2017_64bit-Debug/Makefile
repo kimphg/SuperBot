@@ -125,14 +125,10 @@ Makefile: ..\LidarView\LidarView.pro C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\mkspecs\w
 		C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\mkspecs\modules\qt_lib_bluetooth.pri \
 		C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\mkspecs\modules\qt_lib_bluetooth_private.pri \
 		C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\mkspecs\modules\qt_lib_bootstrap_private.pri \
-		C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\mkspecs\modules\qt_lib_charts.pri \
-		C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\mkspecs\modules\qt_lib_charts_private.pri \
 		C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\mkspecs\modules\qt_lib_concurrent.pri \
 		C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\mkspecs\modules\qt_lib_concurrent_private.pri \
 		C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\mkspecs\modules\qt_lib_core.pri \
 		C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\mkspecs\modules\qt_lib_core_private.pri \
-		C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\mkspecs\modules\qt_lib_datavisualization.pri \
-		C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\mkspecs\modules\qt_lib_datavisualization_private.pri \
 		C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\mkspecs\modules\qt_lib_dbus.pri \
 		C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\mkspecs\modules\qt_lib_dbus_private.pri \
 		C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\mkspecs\modules\qt_lib_designer.pri \
@@ -220,13 +216,6 @@ Makefile: ..\LidarView\LidarView.pro C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\mkspecs\w
 		C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\mkspecs\modules\qt_lib_vulkan_support_private.pri \
 		C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\mkspecs\modules\qt_lib_webchannel.pri \
 		C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\mkspecs\modules\qt_lib_webchannel_private.pri \
-		C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\mkspecs\modules\qt_lib_webengine.pri \
-		C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\mkspecs\modules\qt_lib_webengine_private.pri \
-		C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\mkspecs\modules\qt_lib_webenginecore.pri \
-		C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\mkspecs\modules\qt_lib_webenginecore_private.pri \
-		C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\mkspecs\modules\qt_lib_webenginecoreheaders_private.pri \
-		C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\mkspecs\modules\qt_lib_webenginewidgets.pri \
-		C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\mkspecs\modules\qt_lib_webenginewidgets_private.pri \
 		C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\mkspecs\modules\qt_lib_websockets.pri \
 		C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\mkspecs\modules\qt_lib_websockets_private.pri \
 		C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\mkspecs\modules\qt_lib_webview.pri \
@@ -324,14 +313,10 @@ C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\mkspecs\modules\qt_lib_axserver_private.pri:
 C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\mkspecs\modules\qt_lib_bluetooth.pri:
 C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\mkspecs\modules\qt_lib_bluetooth_private.pri:
 C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\mkspecs\modules\qt_lib_bootstrap_private.pri:
-C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\mkspecs\modules\qt_lib_charts.pri:
-C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\mkspecs\modules\qt_lib_charts_private.pri:
 C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\mkspecs\modules\qt_lib_concurrent.pri:
 C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\mkspecs\modules\qt_lib_concurrent_private.pri:
 C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\mkspecs\modules\qt_lib_core.pri:
 C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\mkspecs\modules\qt_lib_core_private.pri:
-C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\mkspecs\modules\qt_lib_datavisualization.pri:
-C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\mkspecs\modules\qt_lib_datavisualization_private.pri:
 C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\mkspecs\modules\qt_lib_dbus.pri:
 C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\mkspecs\modules\qt_lib_dbus_private.pri:
 C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\mkspecs\modules\qt_lib_designer.pri:
@@ -419,13 +404,6 @@ C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\mkspecs\modules\qt_lib_uitools_private.pri:
 C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\mkspecs\modules\qt_lib_vulkan_support_private.pri:
 C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\mkspecs\modules\qt_lib_webchannel.pri:
 C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\mkspecs\modules\qt_lib_webchannel_private.pri:
-C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\mkspecs\modules\qt_lib_webengine.pri:
-C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\mkspecs\modules\qt_lib_webengine_private.pri:
-C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\mkspecs\modules\qt_lib_webenginecore.pri:
-C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\mkspecs\modules\qt_lib_webenginecore_private.pri:
-C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\mkspecs\modules\qt_lib_webenginecoreheaders_private.pri:
-C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\mkspecs\modules\qt_lib_webenginewidgets.pri:
-C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\mkspecs\modules\qt_lib_webenginewidgets_private.pri:
 C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\mkspecs\modules\qt_lib_websockets.pri:
 C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\mkspecs\modules\qt_lib_websockets_private.pri:
 C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\mkspecs\modules\qt_lib_webview.pri:

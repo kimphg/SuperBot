@@ -17,10 +17,13 @@ public:
     // sensBusBuffi = 0;
   }
   CamData camh7data;
+  int fb_warning_level = 0;
   int syncLossCount = 0;
   int Input(unsigned char inputByte);
   int processCamera(String inputStr);
+  int processFrontBoard(String command);
   int processCommand(String command);
+  
   float tagAngle=0;
   float tagX=0,tagY=0;
   float        desX = 0;

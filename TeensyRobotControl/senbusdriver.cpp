@@ -17,6 +17,9 @@ int SenBusDriver::Input(unsigned char inputByte) {
         else if (inputString.indexOf("$COM,")>=0) {
           result = processCommand(inputString);
         }
+        else if (inputString.indexOf("$FRB,")>=0) {
+          result = processFrontBoard(inputString);
+        }
         inputString = "";
       }
     }
@@ -33,6 +36,22 @@ int SenBusDriver::processCommand(String command)
   return 2;
   
 }
+int SenBusDriver::processFrontBoard(String inputStr)
+{
+    int result =0;
+    
+    std::vector<String> tokens = splitString(inputStr,',');
+    if (tokens.size() >= 2) {
+      int warning_level = tokens[1].toInt();
+      if(warning_level>0)
+      if(warning_level<4){
+        fb_warning_level = warning_level;
+        result = 3;
+      }
+    }
+    
+    return result;
+} 
 int SenBusDriver::processCamera(String inputStr)
 {
     int result =0;
