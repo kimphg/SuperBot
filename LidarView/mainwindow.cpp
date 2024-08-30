@@ -9,7 +9,7 @@ QSerialPort *serial;
 unsigned char serialDataBuff[BUFF_SIZE];
 int buffIndex = 0;
 float mapData[90*16];
-
+float warning[90*16];
 float angleScale=1;
 QPixmap *renderMap;
 QTimer *timer1s;
@@ -19,7 +19,7 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
     serial = new QSerialPort();
-    serial->setPortName("COM8");
+    serial->setPortName("COM42");
     serial->setBaudRate(115200);
     serial->open(QIODevice::ReadWrite);
 
@@ -104,15 +104,17 @@ int ministep=16;
 void MainWindow::processFrame(QByteArray data)
 {
     QByteArrayList datalist = data.split(',');
-    if(datalist.size()<2)
+    if(datalist.size()<3)
         return;
     float angle = (QString(datalist[0]).toFloat());
+    int warnLevel = (QString(datalist[2]).toInt());
     printf("%f,\n",angle);
     if(angle<-180||angle>180)return;
     int miniangle = angle*4;
     if(miniangle<0)miniangle+=1440;
     float range  = QString(datalist[1]).toFloat();
     mapData[miniangle] = range;
+    warning[miniangle] = warnLevel;
 //    printf("%s,\n",datalist[0].data());
 //    for(int miniangle = 0;miniangle<16;miniangle++)
 //    {
@@ -156,7 +158,7 @@ void MainWindow::paintEvent(QPaintEvent *event)
 
     if(1){
         int ctx=width()/2;
-        int cty=height()/2;
+        int cty=2*height()/3;
         QPainter p(this);
         p.fillRect(this->rect(),Qt::black);
         p.setPen(QPen(QColor(255,0,0,150),2));
@@ -172,26 +174,31 @@ void MainWindow::paintEvent(QPaintEvent *event)
 
 //            if((realAz<-70)||(realAz>70))continue;
             float range = mapData[az];
+            int warnLevel = warning[az];
 //            printf("%d,%f\n",az,range);
             if (range<1){ continue;}
             float xmm = range*sin(realAz/57.2957795);
             float ymm = range*cos(realAz/57.2957795);
-            if(abs(xmm)<400)
-            {
-                if(ymm<300)
-                    p.setPen(QPen(QColor(255,0,0,255),1));
-                else
-                    p.setPen(QPen(QColor(255,150,0,255),1));
-            }
-            else if(abs(xmm)<1000)
-            {
-                if(ymm<600)
-                    p.setPen(QPen(QColor(255,150,0,255),1));
-                else
-                    p.setPen(QPen(QColor(0,255,0,255),1));
+//            if(abs(xmm)<400)
+//            {
+//                if(ymm<300)
+//                    p.setPen(QPen(QColor(255,0,0,255),1));
+//                else
+//                    p.setPen(QPen(QColor(255,150,0,255),1));
+//            }
+//            else if(abs(xmm)<1000)
+//            {
+//                if(ymm<600)
+//                    p.setPen(QPen(QColor(255,150,0,255),1));
+//                else
+//                    p.setPen(QPen(QColor(0,255,0,255),1));
 
-            }
-            else p.setPen(QPen(QColor(0,255,0,255),1));
+//            }
+//            else p.setPen(QPen(QColor(0,255,0,255),1));
+            if(warnLevel == 3)p.setPen(QPen(QColor(255,0,0,255),1));
+            else if(warnLevel == 2)p.setPen(QPen(QColor(255,150,0,255),1));
+            else if(warnLevel == 1)p.setPen(QPen(QColor(0,150,0,255),1));
+            else p.setPen(QPen(QColor(0,150,255,255),1));
             int x1 = x;
             int y1 = y;
             x = ctx + xmm/mScale;

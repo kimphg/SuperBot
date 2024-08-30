@@ -734,7 +734,7 @@ void RobotDriver::DebugReport()
      S_SENSORS.print(',');
      S_SENSORS.print(bot_mode);//12
      S_SENSORS.print(',');
-     S_SENSORS.print(liftAngleError);//13
+     S_SENSORS.print(sbus.fb_warning_level);//13
      S_SENSORS.print(',');
      S_SENSORS.print(isLiftMaxPos);//14
      S_SENSORS.print(',');
@@ -894,6 +894,8 @@ void RobotDriver::loopMove() {// loop when robot is executing a motion command
   // 
   desRotSpd =  constrainVal(yaw_PID, -maxBotRotSpd, maxBotRotSpd);
   desRotSpd*= rotationReductionRatio;  
+  if(sbus.fb_warning_level==2)desSpeed = constrainVal(pos_PID, -0.2, 0.2);
+  else if(sbus.fb_warning_level==3)desSpeed=0;
   setSpeedRight(desSpeed- desRotSpd * BASE_LEN / 2.0);
   setSpeedLeft(desSpeed+desRotSpd * BASE_LEN / 2.0 );  
   // liftStabilize();
@@ -953,6 +955,10 @@ void RobotDriver::update() {//high speed update to read sensor bus
     else if(result==2)//command
     {
       processCommand(sbus.commandBuff);
+    }
+    else if(result==3)//frontboard
+    {
+      
     }
   }
   imu.updateData();
