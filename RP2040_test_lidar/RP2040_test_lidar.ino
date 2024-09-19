@@ -14,7 +14,7 @@ int fragmentCount = 0;
 int zeroCount = 0;
 IntervalTimer myTimer;
 bool newFrameAvailable = false;
-int warning_level = 0;
+int warning_level = 1;
 void Process200ms()
 {
   if(newFrameAvailable)
@@ -118,7 +118,7 @@ void processFrameHex(unsigned char* data)
     {
         int realAngle = angle*16+miniangle;
         if(realAngle==600)newFrameAvailable = true;
-        if((realAngle>= 1380)||(realAngle<=540))
+        if((realAngle>= 1390)||(realAngle<=530))
         {
           // Serial.println(realAngle);
           float range  = data[3+miniangle*2] +data[4+miniangle*2]*256 ;
@@ -136,7 +136,7 @@ void processFrameHex(unsigned char* data)
           float ymm = range*cos(realAzDeg/57.2957795);
           if(ymm<50)continue;
           int new_warning_level=1;
-          if((abs(xmm))<300)
+          if((abs(xmm))<290)
             {
                 if(ymm<250)new_warning_level=3;
                 else if(ymm<500)new_warning_level=2;

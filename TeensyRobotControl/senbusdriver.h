@@ -23,7 +23,7 @@ public:
   int processCamera(String inputStr);
   int processFrontBoard(String command);
   int processCommand(String command);
-  
+  int processCameraTop(String inputStr);
   float tagAngle=0;
   float tagX=0,tagY=0;
   float        desX = 0;

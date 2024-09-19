@@ -5,23 +5,31 @@
 
 import sensor, image, time, math
 from pyb import Pin, Timer
+import pyb
+
+red_led = pyb.LED(1)
+green_led = pyb.LED(2)
+blue_led = pyb.LED(3)
+#red_led.on()
+#green_led.on()
+#blue_led.on()
 sensor.reset()
 sensor.set_pixformat(sensor.GRAYSCALE)
 def setMode(mode):
     if(mode==1):
-        sensor.set_framesize(sensor.QVGA) # we run out of memory if the resolution is much bigger...
+        sensor.set_framesize(sensor.VGA) # we run out of memory if the resolution is much bigger...
         sensor.skip_frames(time = 500)
         sensor.set_auto_gain(False)  # must turn this off to prevent image washout...
         sensor.set_auto_whitebal(False)  # must turn this off to prevent image washout...
-        sensor.set_auto_exposure(     False, exposure_us=2000 )
-        sensor.set_auto_gain(False, gain_db=26)
+        sensor.set_auto_exposure(     False, exposure_us=15000 )
+        sensor.set_auto_gain(False, gain_db=25)
         sensor.skip_frames(time = 500)
     if(mode==2):
         sensor.set_framesize(sensor.QVGA) # we run out of memory if the resolution is much bigger...
         sensor.skip_frames(time = 500)
         sensor.set_auto_gain(False)  # must turn this off to prevent image washout...
         sensor.set_auto_whitebal(False)  # must turn this off to prevent image washout...
-        sensor.set_auto_exposure(False, exposure_us=4000 )
+        sensor.set_auto_exposure(False, exposure_us=2000 )
         sensor.set_auto_gain(False, gain_db=28)
         sensor.skip_frames(time = 500)
     if(mode==3):
@@ -36,7 +44,7 @@ setMode(1)
 clock = time.clock()
 from pyb import UART
 
-uart = UART(1, 921600, timeout_char=1000)                         # init with given baudrate
+uart = UART(3, 921600, timeout_char=1000)                         # init with given baudrate
 uart.init(921600, bits=8, parity=None, stop=1, timeout_char=1000) # init with given parameters
 # Note! Unlike find_qrcodes the find_apriltags method does not need lens correction on the image to work.
 
@@ -72,7 +80,7 @@ tag_families |= image.TAG36H11 # comment out to disable this family (default fam
 # is a 6x6 square tag. However, the lower H value (H5 versus H11) means that the false positve
 # rate for the 4x4 tag is much, much, much, higher than the 6x6 tag. So, unless you have a
 # reason to use the other tags families just use TAG36H11 which is the default family.
-sensor.set_vflip(True)
+sensor.set_vflip(False)
 def family_name(tag):
     if(tag.family() == image.TAG16H5):
         return "TAG16H5"
@@ -89,7 +97,7 @@ def family_name(tag):
 p = Pin('P8') # P4 has TIM2, CH3
 tim = Timer(4, freq=1000)
 ch = tim.channel(2, Timer.PWM, pin=p)
-ch.pulse_width_percent(50)
+ch.pulse_width_percent(90)
 p1 = Pin('P9') # P4 has TIM2, CH3
 p1.init(Pin.IN,pull = Pin.PULL_UP)
 count=0
@@ -113,7 +121,7 @@ while(True):
 
     if(workMode>=1):#high speed mode
         tagCount=0
-        packet="$CAM1,"
+        packet="$CAM2,"
         packet+=(str(workMode))
         packet+=(",")
         packet+=(str(fps_cam))

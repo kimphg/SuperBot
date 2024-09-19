@@ -60,7 +60,7 @@ class RobotDriver
   float maxBotSpeed = 0.6;
   float maxBotAcc = 0.005;
   float maxBotRotSpd = 1.5;//radian/s
-  
+  float diffAngle = 0;
   int debugCounter=0;
   unsigned long int curTime =0;;
   float botRotationSpeed = 0;
@@ -79,6 +79,7 @@ class RobotDriver
   bool initOK = false;
   uint8_t cur_lift_stat=0;
   int newliftComm = 0;
+  void report_pos_to_PPU();
   void loopRotate();
   void liftStabilize();
   void updateCommandBus();

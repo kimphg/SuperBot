@@ -14,6 +14,9 @@ int SenBusDriver::Input(unsigned char inputByte) {
         if (inputString.indexOf("$CAM1,")>=0) {
           result = processCamera(inputString);
         }
+        else if (inputString.indexOf("$CAM2,")>=0) {
+          result = processCameraTop(inputString);
+        }
         else if (inputString.indexOf("$COM,")>=0) {
           result = processCommand(inputString);
         }
@@ -52,6 +55,33 @@ int SenBusDriver::processFrontBoard(String inputStr)
     
     return result;
 } 
+int SenBusDriver::processCameraTop(String inputStr)
+{
+  int result =0;
+  std::vector<String> tokens = splitString(inputStr,',');
+    if (tokens.size() >= 7) {
+      if(tokens[3].equals("TD"))
+      {
+        int newtagID = tokens[4].toInt();
+        
+        if(lastTagID == newtagID){
+          tagAngle = tokens[7].toFloat()/10.0;
+          if(newtagID==6)tagAngle+=1;
+          if(tagAngle>180)tagAngle-=360;
+          tagX = -(50-tokens[5].toFloat())*1.44;
+          tagY = (50-tokens[6].toFloat())*1.44;
+          tagID = newtagID;
+          result=2;
+          
+        }
+        else result=0;
+        lastTagID = newtagID;
+        
+      }
+    }
+  return result ;
+    
+}
 int SenBusDriver::processCamera(String inputStr)
 {
     int result =0;
