@@ -33,7 +33,7 @@ void setup() {
   // limit the maximal dc voltage the driver can set
   // as a protection measure for the low-resistance motors
   // this value is fixed on startup
-  driver.voltage_limit = 19;
+  driver.voltage_limit = 16;
   driver.init();
   // link the motor and the driver
   motor.linkDriver(&driver);
@@ -42,10 +42,10 @@ void setup() {
   // limit the voltage to be set to the motor
   // start very low for high resistance motors
   // currnet = resistance*voltage, so try to be well under 1Amp
-  motor.voltage_limit = 19;   // [V]
+  motor.voltage_limit = 12;   // [V]
   // limit/set the velocity of the transition in between 
   // target angles
-  motor.velocity_limit = 60; // [rad/s] cca 50rpm
+  motor.velocity_limit = 40; // [rad/s] cca 50rpm
   // open loop control config
   motor.controller = MotionControlType::angle_openloop;
 
