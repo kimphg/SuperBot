@@ -1,7 +1,7 @@
 //micro controller type: LGT8F328P
-#define LIFT_MOTOR
+// #define LIFT_MOTOR
 // #define WHEEL_MOTOR_LEFT
-// #define WHEEL_MOTOR_RIGHT
+#define WHEEL_MOTOR_RIGHT
 #ifdef WHEEL_MOTOR_RIGHT
 #define MEN 2
 #define REV 2

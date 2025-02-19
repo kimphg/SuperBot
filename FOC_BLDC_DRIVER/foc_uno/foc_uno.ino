@@ -70,11 +70,11 @@ void setup() {
 void pulseInput() {
   if(digitalRead(DIR))
   {
-    if(digitalRead(MINL))
+    // if(digitalRead(MINL))
     target_position-=0.0174532925;
   }
   else {
-    if(digitalRead(MAXL))
+    // if(digitalRead(MAXL))
     target_position+=0.0174532925;
   }
   Serial.println(target_position);

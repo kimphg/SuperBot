@@ -36,7 +36,7 @@ setMode(1)
 clock = time.clock()
 from pyb import UART
 
-uart = UART(1, 921600, timeout_char=1000)                         # init with given baudrate
+uart = UART(3, 921600, timeout_char=1000)                         # init with given baudrate
 uart.init(921600, bits=8, parity=None, stop=1, timeout_char=1000) # init with given parameters
 # Note! Unlike find_qrcodes the find_apriltags method does not need lens correction on the image to work.
 
