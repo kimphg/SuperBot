@@ -1,7 +1,8 @@
 //micro controller type: LGT8F328P
 // #define LIFT_MOTOR
-// #define WHEEL_MOTOR_LEFT
-#define WHEEL_MOTOR_RIGHT
+#define WHEEL_MOTOR_LEFT
+// #define DEBUG
+// #define WHEEL_MOTOR_RIGHT
 #ifdef WHEEL_MOTOR_RIGHT
 #define MEN 2
 #define REV 2
@@ -114,14 +115,15 @@ bool updateBinaryCommand() {
             uint8_t cs = calcCS8(commandBuff,6);
             
             if (cs == commandBuff[6]) {
-#ifdef DEBUG
-              Serial.print("Speed: ");
-              Serial.println(speed);
-#endif
+
             int motorDir = 0;
             if (commandBuff[4] == 0xAB) motorDir = 1;
             else if (commandBuff[4] == 0xBA) motorDir = -1;
             int speed = motorDir * commandBuff[3];
+// #ifdef DEBUG
+              // Serial.print("Speed: ");
+              // Serial.println(speed);
+// #endif
             int motorMode = commandBuff[5];
               setSpeed(speed);
               packetExecuted = true;
@@ -266,11 +268,11 @@ void setup() {
 }
 
 void loop() {
-  if(!digitalRead(MAX_LIM))maxOK = 0;
-  if(!digitalRead(MIN_LIM))minOK = 0;
-  if((minOK*maxOK)==0)digitalWrite(LED_BUILTIN,HIGH);
-  else digitalWrite(LED_BUILTIN,LOW);
-  if((minOK+maxOK)==0)blink(4);
+  // if(!digitalRead(MAX_LIM))maxOK = 0;
+  // if(!digitalRead(MIN_LIM))minOK = 0;
+  // if((minOK*maxOK)==0)digitalWrite(LED_BUILTIN,HIGH);
+  // else digitalWrite(LED_BUILTIN,LOW);
+  // if((minOK+maxOK)==0)blink(4);
   if (updateBinaryCommand()) {
     lastUpdate = millis();
     sendReport();
