@@ -4,8 +4,9 @@
 HardwareSerial SerialPort(1) ;
 #define RXD 1
 #define TXD 3
-const char *ssid = "IMBot";
-const char *password = "20212024";
+const char *ssid = "IMEBOTS2";
+const char *password = "20212025";
+//note : nối tx2 rx2 trước khi nạp
 bool connected=false;
 AsyncUDP udp;
 const char * udpAddress = "192.168.0.103";
@@ -20,8 +21,12 @@ void setup()
   // You can remove the password parameter if you want the AP to be open.
   // a valid password must have more than 7 characters
   if (!WiFi.begin(ssid, password)) {
-    log_e("Soft AP creation failed.");
+    log_e("WIFI begin failed.");
     while(1);
+  }
+  while (WiFi.status() != WL_CONNECTED) {
+    Serial.print(".");
+    delay(1000); // Wait for 1 second
   }
   IPAddress myIP = WiFi.softAPIP();
   Serial.print("My IP address: ");
@@ -46,7 +51,7 @@ void sendPacket(uint8_t* data,int len)
     // udp.write(data,len);
     data[len]=0;
     udp.broadcastTo((char*)data, 3333);
-    // SerialPort.println((char*)data);
+    SerialPort.println((char*)data);
     // udp.endPacket();
 }
 uint8_t inputBuff[500];
@@ -70,6 +75,10 @@ void loop()
     }
     lastByte = bytein; 
   } 
+  if(WiFi.status() != WL_CONNECTED)
+  {
+    setup();
+  }
     //Send broadcast
     // udp.broadcast("ROBOT_PING");
 }

@@ -65,10 +65,12 @@ void Process200ms()
     Serial3.print("startlds$");
   }
 }
+// Modbus MBclient1(1,Serial2,0);
 void setup() {
   Serial.begin(115200);
   Serial1.begin(921600);
   Serial3.begin(460800);
+  // MBclient1.begin(Serial2,9600);
   delay(200);
   Serial3.print("startlds$");
   Serial3.print("startlds$");
@@ -155,7 +157,9 @@ void processFrameHex(unsigned char* data)
     }
 
 }
+int u8state = 0;
 void loop() {
+  
   while (Serial3.available()) {
     unsigned char bytein = Serial3.read();
     dataBuff[curBuffIndex] = bytein;

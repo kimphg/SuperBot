@@ -616,22 +616,22 @@ RobotDriver::RobotDriver() {
   imu.IMU_init(portIMU);
   Serial.println("start");
   //initialize floor map
-  // addFloorTag(0, 0,   0);
+  addFloorTag(0, 0,   0);
   addFloorTag(1, 0,   0);
   addFloorTag(2, 0, 1000);
   addFloorTag(3, 0, 2000);
   addFloorTag(4, 1000, 0);
   addFloorTag(5, 1000, 1000);
   addFloorTag(6, 1000, 2000);
-  addFloorTag(7, 2000, 0);
-  addFloorTag(8, 2000, 1000);
+  addFloorTag(207, 2000, 0);
+  addFloorTag(308, 2000, 1000);
   addFloorTag(9, 2000, 2000);
-  addFloorTag(10,3000, 0);
-  addFloorTag(11,3000, 1000);
+  addFloorTag(44,3000, 0);
+  addFloorTag(497,3000, 1000);
   addFloorTag(12,3000, 2000);
   addFloorTag(13,4000, 0);
   addFloorTag(14,4000, 1000);
-  addFloorTag(15,4000, 2000);
+  addFloorTag(214,4000, 2000);
   addFloorTag(16,4000, 3000);
   addFloorTag(17,3000, 3000);
   addFloorTag(18,2000, 3000);
@@ -641,18 +641,52 @@ RobotDriver::RobotDriver() {
   addFloorTag(28,6000, -2000);
   addFloorTag(29,6000, -4000);
   addFloorTag(30,6000, -6000);
-  addFloorTag(31,7000, -6000);
-  addFloorTag(26,6000, 2000);
-  addFloorTag(25,6000, 4000);
-  addFloorTag(24,6000, 6000);
-  addFloorTag(23,6000, 8000);
-  addFloorTag(23,6000, 10000);
+  addFloorTag(21,0, 3000);
+  // addFloorTag(31,7000, -6000);
+  // addFloorTag(26,6000, 2000);
+  // addFloorTag(25,6000, 4000);
+  // addFloorTag(24,6000, 6000);
+  // addFloorTag(23,6000, 8000);
+  // addFloorTag(23,6000, 10000);
   desLiftLevel = liftLevelDown;
   // addFloorTag(100, 0 , 0);
   // addFloorTag(101, 1000, 0);
   // addFloorTag(102, 1000, 0);
   // addFloorTag(103, 1000, 0);
   // addFloorTag(104, 1000, 0);
+  // addFloorTag(477, 0 , 2);
+  // addFloorTag(212, 0 , 3);
+  // addFloorTag(399, 1 , 2);
+  // addFloorTag(327, 1 , 3);
+  // addFloorTag(287, 1 , 4);
+  // addFloorTag(326, 2 , 2);
+  // addFloorTag(403, 2 , 3);
+  // addFloorTag(29,  2 , 4);
+  // addFloorTag(215, 3 , 2);
+  // addFloorTag(426, 3 , 1);
+  // addFloorTag(203, 3 , 0);
+  // addFloorTag(252, 4 , 0);
+  // addFloorTag(479, 5 , 0);
+  // addFloorTag(468, 6 , 0);
+  // addFloorTag(463, 7 , 0);
+  // addFloorTag(406, 8 , 0);
+  // addFloorTag(464, 9 , 0);
+  // addFloorTag(37, 10 , 0);
+  // addFloorTag(368, 11 , 0);
+  // addFloorTag(455, 12 , 0);
+  // addFloorTag(299, 12 , 1);
+  // addFloorTag(417, 11 , 1);
+  // addFloorTag(236, 11 , 2);
+  // addFloorTag(218, 11 , 3);
+  // addFloorTag(449, 11 , 4);
+  // addFloorTag(301, 11 , 4.667);
+  // addFloorTag(41, 10 , 4.667);
+  // addFloorTag(494, 9 , 4.667);
+  // addFloorTag(196, 8 , 4.667);
+  // addFloorTag(354, 7 , 4.667);
+  // addFloorTag(255, 6 , 4.667);
+  // addFloorTag(280, 5.333 , 4.667);
+
   pinMode(PIN_OUT_1, OUTPUT);
   pinMode(PIN_OUT_2, OUTPUT);
   pinMode(PIN_OUT_3, OUTPUT);
@@ -749,8 +783,8 @@ void RobotDriver::posUpdate() {//update robot position, lifter status and angles
   boty += cos((botangle)/DEG_RAD) * distance;
   float diff = (distanceRight- distanceLeft);
   diffAngle -=diff/9.0;
-  Serial.print("diffAngle: ");
-  Serial.println(diffAngle);
+  // Serial.print("diffAngle: ");
+  // Serial.println(diffAngle);
   botRotationSpeed = DEG_RAD*((diff / ( 1000.0 * BASE_LEN)))/DT_POS_UPDATE;
 #ifdef SIMULATION
   
@@ -761,6 +795,7 @@ void RobotDriver::posUpdate() {//update robot position, lifter status and angles
   if (angleIMU > 180) angleIMU -= 360;
   if (angleIMU < -180) angleIMU += 360;
   botangle = angleIMU;
+  // Serial.println(botangle);
 #endif
 // Serial.println(botangle);
   // liftLevel += liftLevel;
@@ -859,10 +894,10 @@ void RobotDriver::controlLoop()// high frequency(>1khz) controll loop
   lastLoopMillis = curTime;
   int times500ms = curTime/2000;
   sbus.syncLossCount++;
-  if((sbus.syncLossCount>100)&&(bot_mode!=MODE_STANDBY))
-  {
-    gotoMode(MODE_STANDBY);
-  }
+  // if((sbus.syncLossCount>100)&&(bot_mode!=MODE_STANDBY))
+  // {
+  //   gotoMode(MODE_STANDBY);
+  // }
   if(times500ms!=lastSyncSec)
   {
     sendSyncPacket();
@@ -931,7 +966,7 @@ void RobotDriver::loopMove() {// loop when robot is executing a motion command
   //   error_pos/=(abs(error_yaw)/10.0);
   // }
   
-  if((abs(desDistance) < 30))
+  if((abs(desDistance) < 25))
   {
     stillCount++;
     if(stillCount>100)  {
@@ -967,8 +1002,8 @@ void RobotDriver::loopMove() {// loop when robot is executing a motion command
   // 
   desRotSpd =  constrainVal(yaw_PID, -maxBotRotSpd, maxBotRotSpd);
   desRotSpd*= rotationReductionRatio;  
-  if(sbus.fb_warning_level==2)desSpeed = constrainVal(pos_PID, -0.2, 0.2);
-  else if(sbus.fb_warning_level==3)desSpeed=constrainVal(pos_PID, -0.18, 0.18);
+  if(sbus.fb_warning_level==2)        desSpeed = constrainVal(pos_PID, -0.2, 0.2);
+  else if(sbus.fb_warning_level==3)   desSpeed = constrainVal(pos_PID, -0.11, 0.11);
   setSpeedRight(desSpeed- desRotSpd * BASE_LEN / 2.0);
   setSpeedLeft(desSpeed+desRotSpd * BASE_LEN / 2.0 );  
   // liftStabilize();
@@ -1332,14 +1367,14 @@ void RobotDriver::loadParams()//load robot parameters from memory
   Kp_yaw = loadParam("Kp_yaw",7.5) ;   //Yaw P-gain
   Ki_yaw = loadParam("Ki_yaw",1.0);   //Yaw I-gain
   Kd_yaw = loadParam("Kd_yaw",1.5);  //Yaw D-gain (be careful when increasing too high, motors will begin to overheat!)
-  Kp_pos = loadParam("Kp_pos",2.2);  //Yaw P-gain
-  Ki_pos = loadParam("Ki_pos",20.0);  //Yaw I-gain
+  Kp_pos = loadParam("Kp_pos",2.1);  //Yaw P-gain
+  Ki_pos = loadParam("Ki_pos",10.0);  //Yaw I-gain
   Kd_pos = loadParam("Kd_pos",0.4);  //Yaw D-gain (be careful when increasing too high, motors will begin to overheat!)
   Kp_lift = loadParam("Kp_lift",1.0);  
   Ki_lift = loadParam("Ki_lift",0.0);  
   Kd_lift = loadParam("Kd_lift",1.2);  
   Ks_lift = loadParam("Ks_lift",0.6);  
-  maxBotSpeed = loadParam("maxBotSpeed",0.4);
+  maxBotSpeed = loadParam("maxBotSpeed",0.3);
   maxBotRotSpd = loadParam("maxBotRotSpd",0.65);
   maxBotAcc = loadParam ("maxBotAcc",4.0)/1000.0;
   liftStabDelay = loadParam ("liftStabDelay",15);
@@ -1473,13 +1508,13 @@ void RobotDriver::loopLift()// control loop when robot is on lifting mode
     desLiftStep = minLiftStep+STEP_PPR/2;
     break;
   case 1:
-    desLiftStep = minLiftStep+STEP_PPR*7;
+    desLiftStep = minLiftStep+STEP_PPR*8;
     break;
   case 2:
     desLiftStep = minLiftStep+STEP_PPR/2;
     break;
   case 3:
-    desLiftStep = minLiftStep+STEP_PPR*7;
+    desLiftStep = minLiftStep+STEP_PPR*8;
     break;
   default:
     break;

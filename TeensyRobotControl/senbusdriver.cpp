@@ -1,7 +1,7 @@
 // #include "usb_serial.h"
 #include "senbusdriver.h"
 int SenBusDriver::Input(unsigned char inputByte) {
-
+Serial.write(inputByte);
     int result =0;
     // sensBusBuff[sensBusBuffi] = inputByte;
     if(isPrintable (inputByte))
@@ -58,6 +58,7 @@ int SenBusDriver::processFrontBoard(String inputStr)
 int SenBusDriver::processCameraTop(String inputStr)
 {
   int result =0;
+  
   std::vector<String> tokens = splitString(inputStr,',');
     if (tokens.size() >= 7) {
       if(tokens[3].equals("TD"))
@@ -85,7 +86,7 @@ int SenBusDriver::processCameraTop(String inputStr)
 int SenBusDriver::processCamera(String inputStr)
 {
     int result =0;
-    
+    Serial.println("Camera bot");
     std::vector<String> tokens = splitString(inputStr,',');
     if (tokens.size() >= 7) {
       if(tokens[3].equals("TD"))

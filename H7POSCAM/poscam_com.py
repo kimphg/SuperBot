@@ -13,8 +13,8 @@ def setMode(mode):
         sensor.skip_frames(time = 500)
         sensor.set_auto_gain(False)  # must turn this off to prevent image washout...
         sensor.set_auto_whitebal(False)  # must turn this off to prevent image washout...
-        sensor.set_auto_exposure(     False, exposure_us=2000 )
-        sensor.set_auto_gain(False, gain_db=26)
+        sensor.set_auto_exposure(     False, exposure_us=4000 )
+        sensor.set_auto_gain(False, gain_db=24)
         sensor.skip_frames(time = 500)
     if(mode==2):
         sensor.set_framesize(sensor.QVGA) # we run out of memory if the resolution is much bigger...

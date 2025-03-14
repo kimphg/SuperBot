@@ -162,6 +162,7 @@ void IMU_driver::updateData() {
                   failCount = 0;
                 }
                 if (xdi == 32832) {  //MTDATA2 data ID of rate of turn HR
+                Serial.println(measurement.gyroyaw);
                   measurement.gyroX = bytesToFloat(databuf[iti + 3], databuf[iti + 4], databuf[iti + 5], databuf[iti + 6]);
                   measurement.gyroY = bytesToFloat(databuf[iti + 7], databuf[iti + 8], databuf[iti + 9], databuf[iti + 10]);
                   float newGyroZ = -bytesToFloat(databuf[iti + 11], databuf[iti + 12], databuf[iti + 13], databuf[iti + 17]);
@@ -182,20 +183,20 @@ void IMU_driver::updateData() {
                         gyroZBiasCount = 0;
                         gyroZBias = 0;
                         gyroZBiasCompensation += 0.4 * (newBias - gyroZBiasCompensation);
-                        // Serial.println(1000*gyroZBiasCompensation);
+                        Serial.println(1000*gyroZBiasCompensation);
                       }
                     }
+                  }
 
                     measurement.gyroZ = newGyroZ - gyroZBiasCompensation;
 
                     measurement.gyroyaw += (measurement.gyroZ + measurement.gyroZold) / 1000.0 * 57.2958;  // todo: add dt later
-
+                    
                     while (measurement.gyroyaw > 180.0) measurement.gyroyaw -= 360.0;
                     while (measurement.gyroyaw < -180) measurement.gyroyaw += 360.0;
-                  }
+                  
                   measurement.gyroZold = measurement.gyroZ;
-                  // Serial.print(measurement.gyroZ);
-                  // Serial.print(" ");
+                  
                   failCount = 0;
                   // Serial.println("new gyro data");
                 }
@@ -223,6 +224,7 @@ void IMU_driver::updateData() {
         buffIndex = 0;
       }
     
+                  // Serial.println(" ");
     databuf[buffIndex] = bytein;
     buffIndex++;
     lastbyte = bytein;

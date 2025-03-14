@@ -272,7 +272,7 @@ void loop() {
   loopCount++;
   if(curTimeSec!=curSec)
   {
-    DPRINT("!$loopCount:");  DPRINTLN(loopCount);  DPRINT("#");DPRINT("@");
+    // DPRINT("!$loopCount:");  DPRINTLN(loopCount);  DPRINT("#");DPRINT("@");
     loopCount=0;
     curTimeSec=curSec;
   }
