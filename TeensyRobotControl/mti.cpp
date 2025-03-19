@@ -171,9 +171,12 @@ void IMU_driver::updateData() {
                       yawCalcMode--;
                   } else yawCalcMode = 200;
                   if (yawCalcMode == 0) {
-                    if (abs(newGyroZ) > 0.01) {
+                    if (abs(newGyroZ) > 0.05) {
                       // Serial.println(newGyroZ-measurement.gyroZ);
                       noMotionCount = 0;
+                    }
+                    else {
+                      noMotionCount++;
                     }
                     if (noMotionCount > 100) {
                       gyroZBias += newGyroZ;
