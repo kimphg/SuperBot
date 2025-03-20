@@ -48,7 +48,12 @@ int SenBusDriver::processFrontBoard(String inputStr)
       int warning_level = tokens[1].toInt();
       if(warning_level>0)
       if(warning_level<4){
-        fb_warning_level = warning_level;
+        if(fb_warning_level == warning_level) warning_repeated++;
+        else 
+        {
+          fb_warning_level = warning_level;
+          warning_repeated=0;
+        }
         result = 3;
       }
     }
@@ -86,7 +91,7 @@ int SenBusDriver::processCameraTop(String inputStr)
 int SenBusDriver::processCamera(String inputStr)
 {
     int result =0;
-    Serial.println("Camera bot");
+    // Serial.println("Camera bot");
     std::vector<String> tokens = splitString(inputStr,',');
     if (tokens.size() >= 7) {
       if(tokens[3].equals("TD"))

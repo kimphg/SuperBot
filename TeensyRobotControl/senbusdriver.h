@@ -18,6 +18,7 @@ public:
   }
   CamData camh7data;
   int fb_warning_level = 0;
+  int warning_repeated=0;
   int syncLossCount = 0;
   int Input(unsigned char inputByte);
   int processCamera(String inputStr);
