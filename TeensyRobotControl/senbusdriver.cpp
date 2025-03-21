@@ -1,16 +1,27 @@
 // #include "usb_serial.h"
 #include "senbusdriver.h"
 int SenBusDriver::Input(unsigned char inputByte) {
-Serial.write(inputByte);
+// Serial.write(inputByte);
     int result =0;
     // sensBusBuff[sensBusBuffi] = inputByte;
     if(isPrintable (inputByte))
     { 
       // Serial.print((char)inputByte);
-      if (inputString.length() < 100) inputString += (char)inputByte;
+      if (inputString.length() < 200) inputString += (char)inputByte;
       else inputString = "";
       if (inputByte == '\n')  //end of command
       {
+        // if(inputString)
+        int strlen =inputString.length();
+        if(strlen<4)return 0;
+        if((strlen>2)&&(inputString.charAt(strlen-2)!='#'))
+        {
+          return 0;
+          // Serial.println("wrong packet:");
+          // Serial.println( inputString);
+          // Serial.println(inputString.charAt(strlen-2));
+
+        }
         if (inputString.indexOf("$CAM1,")>=0) {
           result = processCamera(inputString);
         }
@@ -69,19 +80,18 @@ int SenBusDriver::processCameraTop(String inputStr)
       if(tokens[3].equals("TD"))
       {
         int newtagID = tokens[4].toInt();
-        
-        if(lastTagID == newtagID){
-          tagAngle = tokens[7].toFloat()/10.0;
-          if(newtagID==6)tagAngle+=1;
-          if(tagAngle>180)tagAngle-=360;
-          tagX = -(50-tokens[5].toFloat())*1.44;
-          tagY = (50-tokens[6].toFloat())*1.44;
-          tagID = newtagID;
-          result=2;
-          
-        }
-        else result=0;
-        lastTagID = newtagID;
+        float angle = tokens[7].toFloat()/10.0;
+        if(angle>360)return 0;
+        if(angle<0)return 0;
+        float tagx = -(50-tokens[5].toFloat())*1.44;
+        float tagy = (50-tokens[6].toFloat())*1.44;
+        camtop.setValue(newtagID,tagx,tagy,angle);
+        result=4;
+        // Serial.print("Camera top:");
+        // Serial.print(camtop.stable);Serial.print(",");
+        // Serial.print(tagx);Serial.print(",");
+        // Serial.print(tagy);Serial.print(",");
+        // Serial.println(angle);
         
       }
     }
@@ -97,19 +107,17 @@ int SenBusDriver::processCamera(String inputStr)
       if(tokens[3].equals("TD"))
       {
         int newtagID = tokens[4].toInt();
-        
-        if(lastTagID == newtagID){
-          tagAngle = tokens[7].toFloat()/10.0;
-          if(newtagID==6)tagAngle+=1;
-          if(tagAngle>180)tagAngle-=360;
-          tagX = -(50-tokens[5].toFloat())*1.44;
-          tagY = (50-tokens[6].toFloat())*1.44;
-          tagID = newtagID;
-          result=1;
-          
-        }
-        else result=0;
-        lastTagID = newtagID;
+        float angle = tokens[7].toFloat()/10.0;
+        if(angle>360)return 0;
+        if(angle<0)return 0;
+        float tagx = -(50-tokens[5].toFloat())*1.44;
+        float tagy = (50-tokens[6].toFloat())*1.44;
+        cambot.setValue(newtagID,tagx,tagy,angle);
+        result=1;
+        // Serial.print("Camera bot:");
+        // Serial.print(tagx);Serial.print(",");
+        // Serial.print(tagy);Serial.print(",");
+        // Serial.println(angle);
         
       }
       

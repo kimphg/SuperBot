@@ -45,6 +45,10 @@ class RobotDriver
   public:
       
       RobotDriver();
+      void getclosestTag(int x, int y);
+      int closestID=-1;
+      int closestIDDist=0;
+      int palletAligned=0;
       void reportPPU();
       float loadParam(String id, float defaultValue);
       void setParam(String id, float value);
@@ -89,7 +93,7 @@ class RobotDriver
   void processMotorReport(uint8_t bytein);
   int  processFrontBoard(String inputStr);
   void checkMinMax();
-  void loopMove();
+  void loopMove(float maxDistance=25);
   void loopLift();
   void stepOutput(int dir);
   void loopStandby();

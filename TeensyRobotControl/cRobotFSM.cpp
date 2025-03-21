@@ -336,7 +336,7 @@ void RobotDriver::processCommand(String command) {
         // Serial.print("sync");
       }
     else{
-      DPRINT("!$Command:"); DPRINT(curTime); DPRINT(command); DPRINT("#");DPRINT("@");
+      // DPRINT("!$Command:"); DPRINT(curTime); DPRINT(command); DPRINT("#");DPRINT("@");
       if (tokens[1].equals("m")&&(tokens.size() >= 4)) {
         float comX = (tokens[2].toFloat());
         float comY = tokens[3].toFloat();
@@ -739,6 +739,27 @@ RobotDriver::RobotDriver() {
   initOK = true;
 
 }
+void  RobotDriver::getclosestTag(int x, int y)
+{
+  float minDst=999999;
+  int minID=-1;
+  for (unsigned int i=0;i<floorMap.size();i++)
+  {
+    
+      float dx = abs(floorMap[i].x - x);
+      float dy = abs(floorMap[i].y - y);
+    float dst = dx*dx+dy*dy;
+    if(minDst>dst)
+    {
+      minDst=dst;
+      minID = floorMap[i].id;
+    }
+  }
+  closestID=minID;
+  closestIDDist=minDst;
+  return ;
+
+}
 void RobotDriver::gotoStandby() {
 }
 void RobotDriver::posUpdate() {//update robot position, lifter status and angles
@@ -781,10 +802,12 @@ void RobotDriver::posUpdate() {//update robot position, lifter status and angles
   // while (botangle < -180) botangle += 360;
   botx += sin((botangle)/DEG_RAD) * distance;
   boty += cos((botangle)/DEG_RAD) * distance;
+
+  getclosestTag(botx,boty);
   float diff = (distanceRight- distanceLeft);
   diffAngle -=diff/9.0;
-  // Serial.print("diffAngle: ");
-  // Serial.println(diffAngle);
+  // Serial.print("closestID: ");
+  // Serial.println(closestID);
   botRotationSpeed = DEG_RAD*((diff / ( 1000.0 * BASE_LEN)))/DT_POS_UPDATE;
 #ifdef SIMULATION
   
@@ -827,7 +850,7 @@ void RobotDriver::DebugReport()
      S_SENSORS.print(',');
      S_SENSORS.print(botRotationSpeed);//7
      S_SENSORS.print(',');
-     S_SENSORS.print(sbus.tagAngle);//8
+     S_SENSORS.print(sbus.camtop.tagID);//8
      S_SENSORS.print(',');
      S_SENSORS.print(desX);//9
      S_SENSORS.print(',');
@@ -906,7 +929,7 @@ void RobotDriver::controlLoop()// high frequency(>1khz) controll loop
     lastSyncSec = times500ms;
   }
   posUpdate();
-  // DebugReport();
+  DebugReport();
   checkMinMax();
 
   switch (bot_mode)// call loop function based on robot mode
@@ -945,7 +968,7 @@ void RobotDriver::controlLoop()// high frequency(>1khz) controll loop
     else {analogWrite(PIN_OUT_3,LOW);}//analogWrite(PIN_OUT_2,LOW);}
   }
 }
-void RobotDriver::loopMove() {// loop when robot is executing a motion command
+void RobotDriver::loopMove(float maxDistance) {// loop when robot is executing a motion command
 
   //error calculation
   float dx = desX - botx;
@@ -966,7 +989,7 @@ void RobotDriver::loopMove() {// loop when robot is executing a motion command
   //   error_pos/=(abs(error_yaw)/10.0);
   // }
   
-  if((abs(desDistance) < 25))
+  if((abs(desDistance) < maxDistance))
   {
     stillCount++;
     if(stillCount>100)  {
@@ -1024,14 +1047,14 @@ void RobotDriver::update() {//high speed update to read sensor bus
     if(result==1)//camera 1
     {
       
-      FloorTag mapPoint = getFloorTag(sbus.tagID);
+      FloorTag mapPoint = getFloorTag(sbus.cambot.tagID);
       if(mapPoint.id>0)
       {
         
         float tagDistance = 0;//sqrt(sbus.tagX*sbus.tagX+sbus.tagY*sbus.tagY);
         float tagBearing = 0;
-        ConvXYToPolar(sbus.tagX,sbus.tagY,&tagBearing,&tagDistance);
-        float bearingFromTag = tagBearing+sbus.tagAngle-180;
+        ConvXYToPolar(sbus.cambot.tagX,sbus.cambot.tagY,&tagBearing,&tagDistance);
+        float bearingFromTag = tagBearing+sbus.cambot.tagAngle-180;
         float dx = tagDistance*sin(bearingFromTag/DEG_RAD);
         float dy = tagDistance*cos(bearingFromTag/DEG_RAD);
         botx = mapPoint.x+dx;
@@ -1040,7 +1063,7 @@ void RobotDriver::update() {//high speed update to read sensor bus
         if((tagDistance<80)&&(abs(botRotationSpeed)<10))
         {
           
-          yawDiff = (sbus.tagAngle-imu_data.gyroyaw);
+          yawDiff = (sbus.cambot.tagAngle-imu_data.gyroyaw);
           while(yawDiff>180)yawDiff-=360;
           while(yawDiff<-180)yawDiff+=360;
           // yawDiff/=5.0;//smooth the change
@@ -1077,6 +1100,24 @@ void RobotDriver::update() {//high speed update to read sensor bus
     {
       
     }
+    else if(result==4)//topcamera
+    {
+        //  if((sbus.camtop.tagID<=3)&&(sbus.camtop.stable>2))
+        {
+          Serial.print("\nCamera top:");
+          Serial.print(sbus.camtop.stable);Serial.print(",");
+          Serial.print(sbus.camtop.tagID);Serial.print(",");
+          Serial.print(sbus.camtop.tagX);Serial.print(",");
+          Serial.print(sbus.camtop.tagY);Serial.print(",");
+          // float rotationAngle = (botangle)/DEG_RAD;
+          // float tagx_real = sbus.camtop.tagX*cos(rotationAngle)-sbus.camtop.tagY*sin(rotationAngle);
+          // float tagy_real = -sbus.camtop.tagX*sin(rotationAngle)-sbus.camtop.tagY*cos(rotationAngle);
+          
+          // Serial.print(tagx_real);Serial.print(",");
+          // Serial.print(tagy_real);Serial.print(",");
+          // Serial.println(botangle); 
+        }
+    }
   }
   imu.updateData();
   imu_data = imu.getMeasurement();
@@ -1101,6 +1142,7 @@ void RobotDriver::gotoMode(int mode)// change the action mode of robot
   integral_pos=0;
   error_pos_prev=0;
   liftAngleErroro = 0;
+  palletAligned = 0;
   resetDesRotSpd();
   error_pos=0;
   error_yaw_prev=0;
@@ -1413,7 +1455,7 @@ void RobotDriver::checkMinMax()
     minLiftStep = curLiftStep;
     desLiftStep = minLiftStep+STEP_PPR/2;
     // liftComm=0;
-    DPRINT("!$Command:"); DPRINT(curTime); DPRINT("liftLevelMinDefined:"); DPRINT(minLiftStep);DPRINT("#");DPRINT("@");
+    // DPRINT("!$Command:"); DPRINT(curTime); DPRINT("liftLevelMinDefined:"); DPRINT(minLiftStep);DPRINT("#");DPRINT("@");
     // desLiftLevel=liftLevelDown;
     // gotoMode(MODE_LIFT);
   }
@@ -1454,7 +1496,7 @@ void RobotDriver::processMotorReport(uint8_t bytein) {//read report packets from
               minLiftStep = curLiftStep;
               desLiftStep = minLiftStep+STEP_PPR/2;
               // liftComm=0;
-              DPRINT("!$Command:"); DPRINT(curTime); DPRINT("liftLevelMinDefined:"); DPRINT(minLiftStep);DPRINT("#");DPRINTLN("@");
+              // DPRINT("!$Command:"); DPRINT(curTime); DPRINT("liftLevelMinDefined:"); DPRINT(minLiftStep);DPRINT("#");DPRINTLN("@");
               // desLiftLevel=liftLevelDown;
               // gotoMode(MODE_LIFT);
             }
@@ -1505,25 +1547,37 @@ void RobotDriver::motorUpdate()
 }
 void RobotDriver::loopLift()// control loop when robot is on lifting mode 
 {
-
+  
   switch (cur_lift_stat)
   {
   case 0:
     desLiftStep = minLiftStep+STEP_PPR/2;
+
     break;
   case 1:
     desLiftStep = minLiftStep+STEP_PPR*8;
+
     break;
   case 2:
     desLiftStep = minLiftStep+STEP_PPR/2;
+
     break;
   case 3:
     desLiftStep = minLiftStep+STEP_PPR*8;
+
     break;
   default:
     break;
   }
-  
+  if(palletAligned==0)
+  {
+        
+      
+      float desSpeed =  calcPIDPos(sbus.camtop.tagY);
+      Serial.println(desSpeed);
+          
+  }
+  return;
   float desLiftStepError = desLiftStep-curLiftStep;
   if(liftLevelMinDefined)
   {

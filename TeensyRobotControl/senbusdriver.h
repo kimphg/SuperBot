@@ -1,14 +1,26 @@
 #include "common.h"
 class CamData {
 public:
-  CamData() {}
-  float getTagBearing() {
-    return angle;
+  CamData() {
+    updatetime=millis();
   }
-  float x, y;
-  float angle;
-  int tagid;
-  int connectCount;
+  void setValue(int id,float x,float y,float angle){
+    tagAngle=angle;
+    if(tagID == id){stable++;if(stable>10)stable=10;}
+    else
+    {
+      stable=0;
+      tagID = id;
+    }
+    tagX = x;
+    tagY = y;
+    updatetime=millis();
+  }
+  float tagAngle=0;
+  float tagX=0,tagY=0;
+  int tagID=-1;
+  int stable=0;
+  int updatetime;
 };
 
 class SenBusDriver {
@@ -16,23 +28,21 @@ public:
   SenBusDriver() {
     // sensBusBuffi = 0;
   }
-  CamData camh7data;
+  CamData cambot,camtop;
   int fb_warning_level = 0;
   int warning_repeated=0;
   int syncLossCount = 0;
+
   int Input(unsigned char inputByte);
   int processCamera(String inputStr);
   int processFrontBoard(String command);
   int processCommand(String command);
   int processCameraTop(String inputStr);
-  float tagAngle=0;
-  float tagX=0,tagY=0;
+
   float        desX = 0;
   float      desY = 0;
   String commandBuff;
-  int tagID;
   private:
-  int lastTagID=-1;
   String inputString;
   // unsigned char sensBusBuff[100];
   // unsigned char sensBusBuffo;
