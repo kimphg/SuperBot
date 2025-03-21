@@ -906,7 +906,7 @@ void RobotDriver::controlLoop()// high frequency(>1khz) controll loop
     lastSyncSec = times500ms;
   }
   posUpdate();
-  DebugReport();
+  // DebugReport();
   checkMinMax();
 
   switch (bot_mode)// call loop function based on robot mode
@@ -1002,8 +1002,12 @@ void RobotDriver::loopMove() {// loop when robot is executing a motion command
   // 
   desRotSpd =  constrainVal(yaw_PID, -maxBotRotSpd, maxBotRotSpd);
   desRotSpd*= rotationReductionRatio;  
-  if(sbus.fb_warning_level==2)        desSpeed = constrainVal(pos_PID, -0.2, 0.2);
-  else if(sbus.fb_warning_level==3)   desSpeed = constrainVal(pos_PID, -0.11, 0.11);
+  if(sbus.fb_warning_level>=2)        desSpeed = constrainVal(pos_PID, -0.25, 0.25);
+  else if(sbus.fb_warning_level==3)  
+  {
+    if(sbus.warning_repeated>5)  desSpeed = constrainVal(pos_PID, -0.0, 0.0);
+
+  } 
   setSpeedRight(desSpeed- desRotSpd * BASE_LEN / 2.0);
   setSpeedLeft(desSpeed+desRotSpd * BASE_LEN / 2.0 );  
   // liftStabilize();

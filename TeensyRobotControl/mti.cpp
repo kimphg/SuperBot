@@ -162,7 +162,7 @@ void IMU_driver::updateData() {
                   failCount = 0;
                 }
                 if (xdi == 32832) {  //MTDATA2 data ID of rate of turn HR
-                Serial.println(measurement.gyroyaw);
+                
                   measurement.gyroX = bytesToFloat(databuf[iti + 3], databuf[iti + 4], databuf[iti + 5], databuf[iti + 6]);
                   measurement.gyroY = bytesToFloat(databuf[iti + 7], databuf[iti + 8], databuf[iti + 9], databuf[iti + 10]);
                   float newGyroZ = -bytesToFloat(databuf[iti + 11], databuf[iti + 12], databuf[iti + 13], databuf[iti + 17]);
@@ -170,6 +170,7 @@ void IMU_driver::updateData() {
                     if (yawCalcMode > 0)
                       yawCalcMode--;
                   } else yawCalcMode = 200;
+                  
                   if (yawCalcMode == 0) {
                     if (abs(newGyroZ) > 0.05) {
                       // Serial.println(newGyroZ-measurement.gyroZ);
@@ -181,12 +182,15 @@ void IMU_driver::updateData() {
                     if (noMotionCount > 100) {
                       gyroZBias += newGyroZ;
                       gyroZBiasCount++;
-                      if (gyroZBiasCount > 200) {
+                      // Serial.println(gyroZBiasCount);
+                      if (gyroZBiasCount > 500) {
                         float newBias = gyroZBias / gyroZBiasCount;
                         gyroZBiasCount = 0;
                         gyroZBias = 0;
                         gyroZBiasCompensation += 0.4 * (newBias - gyroZBiasCompensation);
-                        Serial.println(1000*gyroZBiasCompensation);
+                        // Serial.print(1000*gyroZBiasCompensation);
+                        // Serial.print(" ");
+                        // Serial.println(measurement.gyroyaw);
                       }
                     }
                   }
