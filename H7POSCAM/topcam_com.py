@@ -21,8 +21,8 @@ def setMode(mode):
         sensor.skip_frames(time = 500)
         sensor.set_auto_gain(False)  # must turn this off to prevent image washout...
         sensor.set_auto_whitebal(False)  # must turn this off to prevent image washout...
-        sensor.set_auto_exposure(     False, exposure_us=15000 )
-#        sensor.set_auto_gain(False, gain_db=25)
+        sensor.set_auto_exposure(     False, exposure_us=9000 )
+        sensor.set_auto_gain(False, gain_db=4)
         sensor.skip_frames(time = 500)
     if(mode==2):
         sensor.set_framesize(sensor.QVGA) # we run out of memory if the resolution is much bigger...
@@ -130,13 +130,13 @@ while(True):
             packet += ("TD")
             packet += (",")
 
-            packet += (str(tag.id()))
+            packet += (str(tag.id))
             packet += (",")
-            packet += (str(int(tag.cx()/frameWidth*100)))
+            packet += (str(int(tag.cx/frameWidth*100)))
             packet += (",")
-            packet += (str(int(tag.cy()/frameHeight*100)))
+            packet += (str(int(tag.cy/frameHeight*100)))
             packet += (",")
-            packet += (str(int(tag.rotation()*1800.0/3.141592653589793)))
+            packet += (str(int(tag.rotation*1800.0/3.141592653589793)))
             packet += (",")
 #            if(last_tag_id == tag.id()):
 #                stable_count=stable_count+1
