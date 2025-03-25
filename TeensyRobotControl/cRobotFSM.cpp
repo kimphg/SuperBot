@@ -328,11 +328,12 @@ void RobotDriver::setParam(String id, float value)
   return ;
 }
 void RobotDriver::processCommand(String command) {
-  // Serial.print(command);
+  
   std::vector<String> tokens = splitString(command,',');
   if (tokens.size() >= 2) {
     if (tokens[1].equals("sync")) {
         sbus.syncLossCount=0;
+        DebugReport();
         // Serial.print("sync");
       }
     else{
@@ -351,7 +352,7 @@ void RobotDriver::processCommand(String command) {
         String id = (tokens[2]);
         float value = tokens[3].toFloat();
         setParam(id,value);
-        // Serial.print(command);
+        Serial.print(command);
         // DPRINTLN(comX);
         // DPRINTLN(comY);
       }
@@ -377,6 +378,7 @@ void RobotDriver::processCommand(String command) {
         Serial.println(desX);
         Serial.println(desY);
         Serial.print('#');
+
         // DPRINTLN(comX);
         // DPRINTLN(comY);
       }
@@ -403,6 +405,8 @@ void RobotDriver::processCommand(String command) {
         if(tokens[2].toInt()==-1)cur_lift_stat = 0;
         newliftComm=cur_lift_stat;
         gotoMode(MODE_LIFT);
+        Serial.print("Liff command:");
+        Serial.println(cur_lift_stat);
         // DPRINT("!$Command:");  DPRINTLN(command);  DPRINT("#");
         
       }
@@ -929,7 +933,7 @@ void RobotDriver::controlLoop()// high frequency(>1khz) controll loop
     lastSyncSec = times500ms;
   }
   posUpdate();
-  DebugReport();
+  //
   checkMinMax();
 
   switch (bot_mode)// call loop function based on robot mode
@@ -989,6 +993,16 @@ void RobotDriver::loopMove(float maxDistance) {// loop when robot is executing a
   //   error_pos/=(abs(error_yaw)/10.0);
   // }
   
+  if(cur_lift_stat==0&&(desDistance<200))
+  {
+    if(sbus.camtop.getage()<500)
+    {
+          Serial.print(sbus.camtop.getage());Serial.print(",");
+          Serial.print(sbus.camtop.tagID);Serial.print(",");
+          Serial.print(sbus.camtop.tagX);Serial.print(",");
+          Serial.print(sbus.camtop.tagY);Serial.print(",");
+    }
+  }
   if((abs(desDistance) < maxDistance))
   {
     stillCount++;
@@ -1044,6 +1058,7 @@ void RobotDriver::update() {//high speed update to read sensor bus
   while (portSenBus->available()) {
     unsigned char inputByte = portSenBus->read();
     int result = sbus.Input(inputByte);
+    Serial.write(inputByte);
     if(result==1)//camera 1
     {
       
@@ -1104,18 +1119,12 @@ void RobotDriver::update() {//high speed update to read sensor bus
     {
         //  if((sbus.camtop.tagID<=3)&&(sbus.camtop.stable>2))
         {
-          Serial.print("\nCamera top:");
-          Serial.print(sbus.camtop.stable);Serial.print(",");
-          Serial.print(sbus.camtop.tagID);Serial.print(",");
-          Serial.print(sbus.camtop.tagX);Serial.print(",");
-          Serial.print(sbus.camtop.tagY);Serial.print(",");
-          // float rotationAngle = (botangle)/DEG_RAD;
-          // float tagx_real = sbus.camtop.tagX*cos(rotationAngle)-sbus.camtop.tagY*sin(rotationAngle);
-          // float tagy_real = -sbus.camtop.tagX*sin(rotationAngle)-sbus.camtop.tagY*cos(rotationAngle);
+          // Serial.print("\nCamera top:");
+          // Serial.print(sbus.camtop.getage());Serial.print(",");
+          // Serial.print(sbus.camtop.tagID);Serial.print(",");
+          // Serial.print(sbus.camtop.tagX);Serial.print(",");
+          // Serial.print(sbus.camtop.tagY);Serial.print(",");
           
-          // Serial.print(tagx_real);Serial.print(",");
-          // Serial.print(tagy_real);Serial.print(",");
-          // Serial.println(botangle); 
         }
     }
   }
@@ -1569,15 +1578,15 @@ void RobotDriver::loopLift()// control loop when robot is on lifting mode
   default:
     break;
   }
-  if(palletAligned==0)
-  {
+  // if(palletAligned==0)
+  // {
         
       
-      float desSpeed =  calcPIDPos(sbus.camtop.tagY);
-      Serial.println(desSpeed);
+  //     float desSpeed =  calcPIDPos(sbus.camtop.tagY);
+  //     Serial.println(desSpeed);
           
-  }
-  return;
+  // }
+  // return;
   float desLiftStepError = desLiftStep-curLiftStep;
   if(liftLevelMinDefined)
   {

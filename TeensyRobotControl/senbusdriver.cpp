@@ -1,7 +1,7 @@
 // #include "usb_serial.h"
 #include "senbusdriver.h"
 int SenBusDriver::Input(unsigned char inputByte) {
-// Serial.write(inputByte);
+Serial.write(inputByte);
     int result =0;
     // sensBusBuff[sensBusBuffi] = inputByte;
     if(isPrintable (inputByte))

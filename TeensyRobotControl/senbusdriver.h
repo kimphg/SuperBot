@@ -16,11 +16,15 @@ public:
     tagY = y;
     updatetime=millis();
   }
+  int getage()
+  {
+    return (millis()-updatetime);
+  }
   float tagAngle=0;
   float tagX=0,tagY=0;
   int tagID=-1;
   int stable=0;
-  int updatetime;
+  int updatetime=0;
 };
 
 class SenBusDriver {
