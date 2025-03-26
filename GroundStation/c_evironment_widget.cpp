@@ -165,7 +165,7 @@ void c_evironment_widget::mousePressEvent(QMouseEvent *event)
         command.append(QString::number(cellPos.x()*1000));
         command.append(",");
         command.append(QString::number(cellPos.y()*1000));
-        command.append(",\n");
+        command.append(",#\n");
         sendCommand(command.toUtf8(),false);
 
     }

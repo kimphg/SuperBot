@@ -333,7 +333,7 @@ void RobotDriver::processCommand(String command) {
   if (tokens.size() >= 2) {
     if (tokens[1].equals("sync")) {
         sbus.syncLossCount=0;
-        DebugReport();
+        
         // Serial.print("sync");
       }
     else{
@@ -363,6 +363,7 @@ void RobotDriver::processCommand(String command) {
         // desX = comX;
         // desY = comY;
         gotoMode(MODE_ROTATE);
+        Serial.print(command);
         // DPRINTLN(comX);
         // DPRINTLN(comY);
       }
@@ -919,7 +920,7 @@ void RobotDriver::controlLoop()// high frequency(>1khz) controll loop
   if (dt < 10) return;  //dt minimum limit to 10 millis, limit loop rate to 100hz
   
   lastLoopMillis = curTime;
-  int times500ms = curTime/2000;
+  int times500ms = curTime/500;
   sbus.syncLossCount++;
   // if((sbus.syncLossCount>100)&&(bot_mode!=MODE_STANDBY))
   // {
@@ -929,6 +930,7 @@ void RobotDriver::controlLoop()// high frequency(>1khz) controll loop
   {
     sendSyncPacket();
     reportPPU();
+    DebugReport();
     report_pos_to_PPU();
     lastSyncSec = times500ms;
   }
@@ -1058,7 +1060,7 @@ void RobotDriver::update() {//high speed update to read sensor bus
   while (portSenBus->available()) {
     unsigned char inputByte = portSenBus->read();
     int result = sbus.Input(inputByte);
-    Serial.write(inputByte);
+    // Serial.write(inputByte);
     if(result==1)//camera 1
     {
       
@@ -1075,6 +1077,7 @@ void RobotDriver::update() {//high speed update to read sensor bus
         botx = mapPoint.x+dx;
         boty = mapPoint.y+dy;
         float yawDiff =0;
+        // Serial.println(tagDistance);
         if((tagDistance<80)&&(abs(botRotationSpeed)<10))
         {
           
@@ -1086,7 +1089,7 @@ void RobotDriver::update() {//high speed update to read sensor bus
           if((bot_mode==MODE_STANDBY)||(bot_mode==MODE_ROTATE))
           // if(millis()-yaw_reset_time>2000)
           if((tagDistance<40)||(abs(dx)<20)||(abs(dy)<20)){
-
+            
             imu.resetYaw(imu_data.gyroyaw+yawDiff);
             // yaw_reset_time = millis();
             liftAngle=-botangle;
