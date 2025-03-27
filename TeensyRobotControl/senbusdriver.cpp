@@ -1,38 +1,48 @@
 // #include "usb_serial.h"
 #include "senbusdriver.h"
 int SenBusDriver::Input(unsigned char inputByte) {
-// Serial.write(inputByte);
+
     int result =0;
     // sensBusBuff[sensBusBuffi] = inputByte;
     if(isPrintable (inputByte))
     { 
       // Serial.print((char)inputByte);
+        // Serial.print(inputByte,HEX);
+    // Serial.println((char)inputByte);
       if (inputString.length() < 200) inputString += (char)inputByte;
       else inputString = "";
-      if (inputByte == '\n')  //end of command
+      if (inputByte == '#')  //end of command
       {
         // if(inputString)
         int strlen =inputString.length();
         if(strlen<4)return 0;
-        if((strlen>2)&&(inputString.charAt(strlen-2)!='#'))
+        if(false)
         {
-          return 0;
-          // Serial.println("wrong packet:");
-          // Serial.println( inputString);
+          Serial.println(" packet:");
+          Serial.println( inputString);
+          inputString = "";
           // Serial.println(inputString.charAt(strlen-2));
+          return 0;
 
         }
-        if (inputString.indexOf("$CAM1,")>=0) {
-          result = processCamera(inputString);
-        }
-        else if (inputString.indexOf("$CAM2,")>=0) {
-          result = processCameraTop(inputString);
-        }
-        else if (inputString.indexOf("$COM,")>=0) {
-          result = processCommand(inputString);
-        }
-        else if (inputString.indexOf("$FRB,")>=0) {
-          result = processFrontBoard(inputString);
+        // while((inputString.length()>0)&&(inputString.charAt(0)!='$'))inputString.remove(0);
+   
+        int startPos = inputString.indexOf('$');
+        if(startPos>=0){
+          inputString.remove(0,startPos);
+          Serial.println( inputString);
+          if (inputString.indexOf("$CAM1,")==0) {
+            result = processCamera(inputString);
+          }
+          else if (inputString.indexOf("$CAM2,")==0) {
+            result = processCameraTop(inputString);
+          }
+          else if (inputString.indexOf("$COM,")==0) {
+            result = processCommand(inputString);
+          }
+          else if (inputString.indexOf("$FRB,")==0) {
+            result = processFrontBoard(inputString);
+          }
         }
         inputString = "";
       }
@@ -76,7 +86,10 @@ int SenBusDriver::processCameraTop(String inputStr)
   int result =0;
   
   std::vector<String> tokens = splitString(inputStr,',');
-    if (tokens.size() > 7) {
+    if (tokens.size() > 8) {
+      Serial.print(tokens.size());
+      Serial.print(" ");
+      Serial.println(inputString);
       if(tokens[3].equals("TD"))
       {
         int newtagID = tokens[4].toInt();

@@ -1054,8 +1054,9 @@ void RobotDriver::update() {//high speed update to read sensor bus
   // readSensBus
   while (portSenBus->available()) {
     unsigned char inputByte = portSenBus->read();
-    int result = sbus.Input(inputByte);
     // Serial.write(inputByte);
+    int result = sbus.Input(inputByte);
+    // 
     if(result==1)//camera 1
     {
       
@@ -1115,13 +1116,13 @@ void RobotDriver::update() {//high speed update to read sensor bus
     }
     else if(result==4)//topcamera
     {
-      if(sbus.camtop.getage()<500)
-    {
-          Serial.print(sbus.camtop.getage());Serial.print(",");
-          Serial.print(sbus.camtop.tagID);Serial.print(",");
-          Serial.print(sbus.camtop.tagX);Serial.print(",");
-          Serial.println(sbus.camtop.tagY);
-    }
+    //   if(sbus.camtop.getage()<500)
+    // {
+    //       Serial.print(sbus.camtop.getage());Serial.print(",");
+    //       Serial.print(sbus.camtop.tagID);Serial.print(",");
+    //       Serial.print(sbus.camtop.tagX);Serial.print(",");
+    //       Serial.println(sbus.camtop.tagY);
+    // }
         //  if((sbus.camtop.tagID<=3)&&(sbus.camtop.stable>2))
         {
           // Serial.print("\nCamera top:");
