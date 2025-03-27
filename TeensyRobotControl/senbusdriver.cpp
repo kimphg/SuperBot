@@ -1,5 +1,20 @@
 // #include "usb_serial.h"
 #include "senbusdriver.h"
+uint8_t gencrc(uint8_t *data, size_t len)
+{
+    uint8_t crc = 0xff;
+    size_t i, j;
+    for (i = 0; i < len; i++) {
+        crc ^= data[i];
+        for (j = 0; j < 8; j++) {
+            if ((crc & 0x80) != 0)
+                crc = (uint8_t)((crc << 1) ^ 0x31);
+            else
+                crc <<= 1;
+        }
+    }
+    return crc;
+}
 int SenBusDriver::Input(unsigned char inputByte) {
 
     int result =0;
@@ -63,7 +78,9 @@ int SenBusDriver::processCommand(String command)
 int SenBusDriver::processFrontBoard(String inputStr)
 {
     int result =0;
-    
+    const char* inBytes = inputStr.c_str();
+    int crc = gencrc(inBytes, inputStr.lastIndexOf(',')-1);
+    int real_crc
     std::vector<String> tokens = splitString(inputStr,',');
     if (tokens.size() >= 2) {
       int warning_level = tokens[1].toInt();

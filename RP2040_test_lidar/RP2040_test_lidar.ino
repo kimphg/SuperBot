@@ -1,4 +1,4 @@
-
+#include <Arduino.h>
 #define LED_1 23
 #define LED_2 22
 #define LED_3 4
@@ -15,13 +15,42 @@ int zeroCount = 0;
 IntervalTimer myTimer;
 bool newFrameAvailable = false;
 int warning_level = 1;
+uint8_t gencrc(uint8_t *data, size_t len)
+{
+    uint8_t crc = 0xff;
+    size_t i, j;
+    for (i = 0; i < len; i++) {
+        crc ^= data[i];
+        for (j = 0; j < 8; j++) {
+            if ((crc & 0x80) != 0)
+                crc = (uint8_t)((crc << 1) ^ 0x31);
+            else
+                crc <<= 1;
+        }
+    }
+    return crc;
+}
+
 void Process200ms()
 {
   if(newFrameAvailable)
   {
+    String output;
+    output +="$FRB,";
+    while (Serial1.available())
+    {
+      Serial1.read();
+    }
+    output+= String(warning_level);
+    output+= ",";
+    const char* outBytes = output.c_str();
+    int crc = gencrc(outBytes,output.length());
+    output +=String(crc);
+    output +=String("#");
     Serial1.print("$FRB,");
     Serial1.print(warning_level);
     Serial1.println(",#");
+
     if(warning_level==0){
       
       // analogWrite(LED_1,220);
@@ -146,7 +175,7 @@ void processFrameHex(unsigned char* data)
             }
             
             
-            Serial.print(realAzDeg);
+          Serial.print(realAzDeg);
           Serial.print(',');
           Serial.print(range);
           Serial.print(',');
