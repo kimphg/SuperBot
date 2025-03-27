@@ -771,6 +771,17 @@ void RobotDriver::posUpdate() {//update robot position, lifter status and angles
   // int dt = curTime - lastPosUpdateMillis;  //check dt, should be 20ms
   // if (dt < DT_POS_UPDATE*1000) return;  //dt minimum limit to 150 millis
   // lastPosUpdateMillis= curTime;
+  #ifdef SIMULATION
+  
+  botangle += botRotationSpeed*DT_CONTROL;
+#else
+  float angleIMU = imu_data.gyroyaw;
+  
+  if (angleIMU > 180) angleIMU -= 360;
+  if (angleIMU < -180) angleIMU += 360;
+  botangle = angleIMU;
+  // Serial.println(botangle);
+#endif
   float liftLevelDistance;
 #ifdef SIMULATION
 
@@ -786,7 +797,7 @@ void RobotDriver::posUpdate() {//update robot position, lifter status and angles
   float distanceLeft = -(encPosLeft - encLefto) * 0.65;
 #endif
   // Serial.println(curSpeedLift);
-  float distance = (distanceLeft + distanceRight) / 2.0;
+  float distance = (distanceLeft + distanceRight) / 2.0*0.95;
   curSpeed = distance / 1000.0 / DT_POS_UPDATE;
   curSpeedL = distanceLeft / 1000.0 / DT_POS_UPDATE;
   curSpeedR = distanceRight / 1000.0 / DT_POS_UPDATE;
@@ -814,17 +825,7 @@ void RobotDriver::posUpdate() {//update robot position, lifter status and angles
   // Serial.print("closestID: ");
   // Serial.println(closestID);
   botRotationSpeed = DEG_RAD*((diff / ( 1000.0 * BASE_LEN)))/DT_POS_UPDATE;
-#ifdef SIMULATION
-  
-  botangle += botRotationSpeed*DT_CONTROL;
-#else
-  float angleIMU = imu_data.gyroyaw;
-  
-  if (angleIMU > 180) angleIMU -= 360;
-  if (angleIMU < -180) angleIMU += 360;
-  botangle = angleIMU;
-  // Serial.println(botangle);
-#endif
+
 // Serial.println(botangle);
   // liftLevel += liftLevel;
 }
@@ -997,13 +998,7 @@ void RobotDriver::loopMove(float maxDistance) {// loop when robot is executing a
   
   if(cur_lift_stat==0&&(desDistance<200))
   {
-    if(sbus.camtop.getage()<500)
-    {
-          Serial.print(sbus.camtop.getage());Serial.print(",");
-          Serial.print(sbus.camtop.tagID);Serial.print(",");
-          Serial.print(sbus.camtop.tagX);Serial.print(",");
-          Serial.print(sbus.camtop.tagY);Serial.print(",");
-    }
+    
   }
   if((abs(desDistance) < maxDistance))
   {
@@ -1065,7 +1060,7 @@ void RobotDriver::update() {//high speed update to read sensor bus
     {
       
       FloorTag mapPoint = getFloorTag(sbus.cambot.tagID);
-      if(mapPoint.id>0)
+      if(mapPoint.id>0&&(sbus.cambot.stable>0))
       {
         
         float tagDistance = 0;//sqrt(sbus.tagX*sbus.tagX+sbus.tagY*sbus.tagY);
@@ -1088,7 +1083,7 @@ void RobotDriver::update() {//high speed update to read sensor bus
           if(abs(curSpeedL)+abs(curSpeedR)<0.02) 
           if((bot_mode==MODE_STANDBY)||(bot_mode==MODE_ROTATE))
           // if(millis()-yaw_reset_time>2000)
-          if((tagDistance<40)||(abs(dx)<20)||(abs(dy)<20)){
+          if((tagDistance<40)||(abs(dx)<20)||(abs(dy)<20)||(abs(yawDiff)>5)){
             
             imu.resetYaw(imu_data.gyroyaw+yawDiff);
             // yaw_reset_time = millis();
@@ -1120,6 +1115,13 @@ void RobotDriver::update() {//high speed update to read sensor bus
     }
     else if(result==4)//topcamera
     {
+      if(sbus.camtop.getage()<500)
+    {
+          Serial.print(sbus.camtop.getage());Serial.print(",");
+          Serial.print(sbus.camtop.tagID);Serial.print(",");
+          Serial.print(sbus.camtop.tagX);Serial.print(",");
+          Serial.println(sbus.camtop.tagY);
+    }
         //  if((sbus.camtop.tagID<=3)&&(sbus.camtop.stable>2))
         {
           // Serial.print("\nCamera top:");

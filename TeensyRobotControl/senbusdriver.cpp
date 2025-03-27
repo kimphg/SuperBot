@@ -76,7 +76,7 @@ int SenBusDriver::processCameraTop(String inputStr)
   int result =0;
   
   std::vector<String> tokens = splitString(inputStr,',');
-    if (tokens.size() >= 7) {
+    if (tokens.size() > 7) {
       if(tokens[3].equals("TD"))
       {
         int newtagID = tokens[4].toInt();
