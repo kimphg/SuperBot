@@ -101,7 +101,7 @@ class RobotDriver
   void liftStabilizeBLV();
   int bot_mode = MODE_STANDBY;
   int stillCount=0;
-  
+  float palletAngle =0;
   bool isActive=false;
   float i_limit_yaw = 10.0; 
   float i_limit_pos = 150.0; 

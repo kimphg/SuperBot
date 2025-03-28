@@ -15,20 +15,14 @@ int zeroCount = 0;
 IntervalTimer myTimer;
 bool newFrameAvailable = false;
 int warning_level = 1;
-uint8_t gencrc(uint8_t *data, size_t len)
-{
-    uint8_t crc = 0xff;
-    size_t i, j;
-    for (i = 0; i < len; i++) {
-        crc ^= data[i];
-        for (j = 0; j < 8; j++) {
-            if ((crc & 0x80) != 0)
-                crc = (uint8_t)((crc << 1) ^ 0x31);
-            else
-                crc <<= 1;
-        }
-    }
-    return crc;
+uint8_t gencrc(uint8_t *data, size_t len) {
+  uint8_t crc = 0x00;
+  size_t i;
+  for (i = 0; i < len; i++) {
+    crc ^= data[i];
+
+  }
+  return crc;
 }
 
 void Process200ms()
@@ -47,9 +41,9 @@ void Process200ms()
     int crc = gencrc(outBytes,output.length());
     output +=String(crc);
     output +=String("#");
-    Serial1.print("$FRB,");
-    Serial1.print(warning_level);
-    Serial1.println(",#");
+    Serial1.println(output);
+    // Serial1.print(warning_level);
+    // Serial1.println(",#");
 
     if(warning_level==0){
       

@@ -191,7 +191,32 @@ uint8_t calcMinus(uint8_t* startbyte, uint8_t len)
   }
   return cs;
 }
+uint8_t gencrc8(uint8_t *data, size_t len) {
+  uint8_t crc = 0x00;
+  size_t i;
+  for (i = 0; i < len; i++) {
+    crc ^= data[i];
 
+  }
+  return crc;
+}
+bool crc8check(String input)
+{
+      int csPos = input.lastIndexOf(',');
+    
+    if (csPos <= 0) return 0;
+    int crc = gencrc8((uint8_t*)input.c_str(), csPos + 1);
+    int realCRC = input.substring(csPos+1,input.length()).toInt();
+    if(crc!=realCRC)
+    {
+        Serial.print("crc fail:");
+        Serial.println(input);
+        Serial.println(crc);
+        Serial.println(input.substring(csPos,input.length()));
+        return 0;
+    }
+    return 1;
+}
 std::vector<String> splitString(String input,char sep)
 {
   std::vector<String> tokens;
@@ -202,6 +227,8 @@ std::vector<String> splitString(String input,char sep)
   {
     int sep_pos = input.indexOf(sep,last_sep_pos);
     if(sep_pos<0){
+      String token = input.substring(last_sep_pos,input.length());
+      tokens.push_back(token);
       break;
     }
     String token = input.substring(last_sep_pos,sep_pos);

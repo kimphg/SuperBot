@@ -59,4 +59,6 @@ uint8_t calcMinus(uint8_t* startbyte, uint8_t len);
 void blink(int n);
 bool isPrintable(uint8_t ch);
 std::vector<String> splitString(String input,char sep);
+uint8_t gencrc8(uint8_t *data, size_t len) ;
+bool crc8check(String input);
 #endif  // COMMON_H
