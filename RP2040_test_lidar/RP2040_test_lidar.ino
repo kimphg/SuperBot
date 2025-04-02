@@ -161,7 +161,7 @@ void processFrameHex(unsigned char* data)
           float ymm = range*cos(realAzDeg/57.2957795);
           if(ymm<50)continue;
           int new_warning_level=1;
-          if((abs(xmm))<290)
+          if((abs(xmm))<270)
             {
                 if(ymm<250)new_warning_level=3;
                 else if(ymm<500)new_warning_level=2;

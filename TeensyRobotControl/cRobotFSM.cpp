@@ -1031,9 +1031,11 @@ void RobotDriver::loopMove(float maxDistance) {  // loop when robot is executing
   //
   desRotSpd = constrainVal(yaw_PID, -maxBotRotSpd, maxBotRotSpd);
   desRotSpd *= rotationReductionRatio;
-  if (sbus.fb_warning_level >= 2) desSpeed = constrainVal(pos_PID, -0.25, 0.25);
+  
+  if (sbus.fb_warning_level == 2) desSpeed = constrainVal(pos_PID, -0.2, 0.2);
   else if (sbus.fb_warning_level == 3) {
     if (sbus.warning_repeated > 5) desSpeed = constrainVal(pos_PID, -0.0, 0.0);
+    else desSpeed = constrainVal(pos_PID, -0.1, 0.);
   }
   setSpeedRight(desSpeed - desRotSpd * BASE_LEN / 2.0);
   setSpeedLeft(desSpeed + desRotSpd * BASE_LEN / 2.0);
@@ -1071,8 +1073,8 @@ void RobotDriver::update() {  //high speed update to read sensor bus
           while (yawDiff > 180) yawDiff -= 360;
           while (yawDiff < -180) yawDiff += 360;
           // yawDiff/=5.0;//smooth the change
-          if (abs(curSpeedL) + abs(curSpeedR) < 0.02)
-            if ((bot_mode == MODE_STANDBY) || (bot_mode == MODE_ROTATE))
+          if (abs(curSpeedL) + abs(curSpeedR) < 0.08)
+            // if ((bot_mode == MODE_STANDBY) || (bot_mode == MODE_ROTATE))
               // if(millis()-yaw_reset_time>2000)
               if ((tagDistance < 40) || (abs(dx) < 20) || (abs(dy) < 20) || (abs(yawDiff) > 5)) {
 
@@ -1434,7 +1436,7 @@ void RobotDriver::loadParams()  //load robot parameters from memory
   Ki_yaw = loadParam("Ki_yaw", 1.0);   //Yaw I-gain
   Kd_yaw = loadParam("Kd_yaw", 1.5);   //Yaw D-gain (be careful when increasing too high, motors will begin to overheat!)
   Kp_pos = loadParam("Kp_pos", 2.1);   //Yaw P-gain
-  Ki_pos = loadParam("Ki_pos", 10.0);  //Yaw I-gain
+  Ki_pos = loadParam("Ki_pos", 7.0);  //Yaw I-gain
   Kd_pos = loadParam("Kd_pos", 0.4);   //Yaw D-gain (be careful when increasing too high, motors will begin to overheat!)
   Kp_lift = loadParam("Kp_lift", 1.0);
   Ki_lift = loadParam("Ki_lift", 0.0);
