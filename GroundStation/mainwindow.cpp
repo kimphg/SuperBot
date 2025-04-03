@@ -84,7 +84,7 @@ void MainWindow::timerEvent(QTimerEvent *event)
     ui->frame_view->newCommand=false;
     }
 
-    ui->frame_view->sendCommand("$COM,sync,\n",false);
+    ui->frame_view->sendCommand("$COM,sync",false);
 }
 void MainWindow::paintEvent(QPaintEvent *event)
 {
@@ -114,7 +114,7 @@ MainWindow::~MainWindow()
 
 void MainWindow::on_pushButton_2_clicked()
 {
-    ui->frame_view->sendCommand("$COM,d,1,\n");//tiến 1 ô
+    ui->frame_view->sendCommand("$COM,d,1");//tiến 1 ô
 }
 
 void MainWindow::on_actionConnect_triggered()
@@ -155,38 +155,38 @@ void MainWindow::on_pushButton_7_clicked(bool checked)
 
 void MainWindow::on_pushButton_5_clicked()
 {
-    ui->frame_view->sendCommand("$COM,d,2,\n");//tiến 2 ô
+    ui->frame_view->sendCommand("$COM,d,2");//tiến 2 ô
 }
 
 void MainWindow::on_pushButton_4_clicked()
 {
-    ui->frame_view->sendCommand("$COM,r,0,\n");//xoay phải
+    ui->frame_view->sendCommand("$COM,r,0");//xoay phải
 }
 
 void MainWindow::on_pushButton_3_clicked()
 {
-    ui->frame_view->sendCommand("$COM,r,2,\n");//xoay trái
+    ui->frame_view->sendCommand("$COM,r,2");//xoay trái
 }
 
 void MainWindow::on_pushButton_stop_clicked()
 {
-    ui->frame_view->sendCommand("$COM,s,\n",false);//stop and standby
+    ui->frame_view->sendCommand("$COM,s",false);//stop and standby
 }
 
 void MainWindow::on_pushButton_stop_2_clicked()
 {
-    ui->frame_view->sendCommand("$COM,s,\n");//stop and standby
-    ui->frame_view->sendCommand("$COM,rp,\n");//stop and standby
+    ui->frame_view->sendCommand("$COM,s");//stop and standby
+    ui->frame_view->sendCommand("$COM,rp");//stop and standby
 }
 
 void MainWindow::on_pushButton_up_clicked()
 {
-    ui->frame_view->sendCommand("$COM,lift,1,\n");//stop and standby
+    ui->frame_view->sendCommand("$COM,lift,1");//stop and standby
 }
 
 void MainWindow::on_pushButton_down_clicked()
 {
-    ui->frame_view->sendCommand("$COM,lift,-1,\n");
+    ui->frame_view->sendCommand("$COM,lift,-1");
 }
 
 void MainWindow::on_pushButton_8_clicked()
@@ -199,7 +199,7 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
 {
     if( event->key() == Qt::Key_Space )
         {
-            ui->frame_view->sendCommand("$COM,s,\n",false);
+            ui->frame_view->sendCommand("$COM,s",false);
         }
 }
 void MainWindow::on_pushButton_9_clicked()
@@ -264,22 +264,22 @@ void MainWindow::on_horizontalSlider_2_valueChanged(int value)
 
 void MainWindow::on_pushButton_stop_3_clicked()
 {
-    ui->frame_view->sendCommand("$COM,home,0,\n");
+    ui->frame_view->sendCommand("$COM,home,0");
 }
 
 void MainWindow::on_pushButton_stop_4_clicked()
 {
-    ui->frame_view->sendCommand("$COM,param,0,\n");
+    ui->frame_view->sendCommand("$COM,param,0");
 }
 
 void MainWindow::on_pushButton_7_clicked()
 {
-     ui->frame_view->sendCommand("$COM,r,1,\n");//xoay phải
+     ui->frame_view->sendCommand("$COM,r,1");//xoay phải
 }
 
 void MainWindow::on_pushButton_10_clicked()
 {
-     ui->frame_view->sendCommand("$COM,r,3,\n");//xoay phải
+     ui->frame_view->sendCommand("$COM,r,3");//xoay phải
 }
 
 void MainWindow::on_pushButton_2_clicked(bool checked)
@@ -289,7 +289,7 @@ void MainWindow::on_pushButton_2_clicked(bool checked)
 
 void MainWindow::on_pushButton_11_clicked()
 {
-    ui->frame_view->sendCommand("$COM,d,0.667,\n");//xoay phải
+    ui->frame_view->sendCommand("$COM,d,0.667");//xoay phải
 }
 
 void MainWindow::on_comboBox_robot_select_currentTextChanged(const QString &arg1)

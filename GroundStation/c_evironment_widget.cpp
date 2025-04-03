@@ -13,7 +13,15 @@ uint8_t last_byte = 0;
 int grid_size=50;
 
 float dt=0.02;
+uint8_t gencrc8(uint8_t *data, size_t len) {
+  uint8_t crc = 0x00;
+  size_t i;
+  for (i = 0; i < len; i++) {
+    crc ^= data[i];
 
+  }
+  return crc;
+}
 QList<QColor> *colorList = new QList<QColor>\
         ({
              QColor(0  ,0  ,0),//0
@@ -165,7 +173,7 @@ void c_evironment_widget::mousePressEvent(QMouseEvent *event)
         command.append(QString::number(cellPos.x()*1000));
         command.append(",");
         command.append(QString::number(cellPos.y()*1000));
-        command.append(",#\n");
+//        command.append(",#\n");
         sendCommand(command.toUtf8(),false);
 
     }
@@ -525,7 +533,11 @@ bool c_evironment_widget::getIsRecording() const
 }
 void c_evironment_widget::sendCommand(QByteArray command, bool isRec)
 {
-
+    command.append(',');
+    int crc = gencrc8((uint8_t*)command.data(),command.length());
+    command.append(QString::number(crc).toUtf8());
+    command.append('#');
+    command.append('\n');
     udpSocket->writeDatagram(command,QHostAddress(robotIP),1234);
 
     if(isRec)

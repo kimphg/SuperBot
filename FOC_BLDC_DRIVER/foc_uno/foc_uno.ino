@@ -62,6 +62,7 @@ void setup() {
   pinMode(DIR,INPUT_PULLUP);
   pinMode(MINL,INPUT_PULLUP);
   pinMode(MAXL,INPUT_PULLUP);
+  pinMode(13,OUTPUT);
   attachInterrupt(digitalPinToInterrupt(PULS), pulseInput, CHANGE);
   Serial.println("Motor ready!");
   Serial.println("Set target position [rad]");
@@ -72,10 +73,12 @@ void pulseInput() {
   {
     // if(digitalRead(MINL))
     target_position-=0.0174532925;
+    digitalWrite(13,HIGH);
   }
   else {
     // if(digitalRead(MAXL))
     target_position+=0.0174532925;
+    digitalWrite(13,LOW);
   }
   Serial.println(target_position);
 }
