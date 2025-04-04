@@ -98,6 +98,7 @@ class RobotDriver
   void stepOutput(int dir);
   void loopStandby();
   IMUData imu_data;
+  float botCameraCorrection=0;
   void liftStabilizeBLV();
   int bot_mode = MODE_STANDBY;
   int stillCount=0;

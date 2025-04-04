@@ -541,15 +541,15 @@ void RobotDriver::processCommandBytes() {
           int newtagY = (commandMessage[9] << 8) + commandMessage[10];
           if (newtagY > 32767) newtagY -= 65536;
           int id = (commandMessage[11] << 8) + commandMessage[12];
-          addFloorTag(id, newtagX * 100, newtagY * 100);
-          DPRINT("!$Command:");
-          DPRINTLN("new tag");
-          DPRINTLN(newtagX);
-          DPRINTLN(newtagY);
-          DPRINTLN(id);
-          DPRINT("#");
-          DPRINT("@");
-          S_DEBUG.flush();
+          addFloorTag(id, newtagX * 1000, newtagY * 1000);
+          Serial.print("!$Command:");
+          Serial.print("new tag");
+          Serial.print(newtagX);Serial.print(",");
+          Serial.print(newtagY);Serial.print(",");
+          Serial.print(id);Serial.print(",");
+          Serial.println("#");
+          // DPRINT("@");
+          // S_DEBUG.flush();
         }
 
       } else if ((commandMessage[5] == 0x04) && (commandMessage[6] == 0x00)) {
@@ -606,7 +606,7 @@ RobotDriver::RobotDriver() {
   addFloorTag(14, 4000, 1000);
   addFloorTag(214, 4000, 2000);
   addFloorTag(16, 4000, 3000);
-  addFloorTag(17, 3000, 3000);
+  addFloorTag(274, 3000, 3000);
   addFloorTag(18, 2000, 3000);
   addFloorTag(19, 1000, 3000);
   addFloorTag(20, 5000, 1000);
@@ -1066,10 +1066,12 @@ void RobotDriver::update() {  //high speed update to read sensor bus
         botx = mapPoint.x + dx;
         boty = mapPoint.y + dy;
         float yawDiff = 0;
-        // Serial.println(tagDistance);
+        // botCameraCorrection=2.1;//robot 4
+
+        // Serial.println(sbus.cambot.tagAngle+botCameraCorrection);
         if ((tagDistance < 80) && (abs(botRotationSpeed) < 10)) {
 
-          yawDiff = (sbus.cambot.tagAngle - imu_data.gyroyaw);
+          yawDiff = (sbus.cambot.tagAngle+botCameraCorrection - imu_data.gyroyaw);
           while (yawDiff > 180) yawDiff -= 360;
           while (yawDiff < -180) yawDiff += 360;
           // yawDiff/=5.0;//smooth the change
