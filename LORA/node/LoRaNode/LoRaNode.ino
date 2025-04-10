@@ -56,17 +56,32 @@ void setup() {
   LoRa.onTxDone(onTxDone);
   LoRa_rxMode();
 }
-
+uint8_t loraSendBuf[200];
+int buffCurPos=0;
+unsigned long long int lastTimeSend=0;
 void loop() {
-  if (runEvery(1000)) { // repeat every 1000 millis
+  while(Serial.available())
+  {
+    loraSendBuf[buffCurPos]=Serial.read();
+    buffCurPos++;
+    if(buffCurPos>=199)
+    {
+      LoRa_sendData(loraSendBuf,buffCurPos);
+      buffCurPos=0;
+    }
+  }
+  if((buffCurPos>0)&&(millis()-lastTimeSend>100))
+  {
+    LoRa_sendData(loraSendBuf,buffCurPos);
+      buffCurPos=0;
+  }
+  if (runEvery(5000)) { // repeat every 1000 millis
 
-    String message = "HeLoRa World! ";
-    message += "I'm a Node! ";
+    String message = "Node1:";
     message += millis();
 
     LoRa_sendMessage(message); // send a message
 
-    Serial.println("Send Message!");
   }
 }
 
@@ -91,20 +106,19 @@ void LoRa_sendData(uint8_t* data,int len) {
   LoRa.beginPacket();                   // start packet
   LoRa.write(data,len);                  // add payload
   LoRa.endPacket(true);                 // finish packet and send it
+  lastTimeSend=millis();
 }
 void onReceive(int packetSize) {
-  String message = "";
 
   while (LoRa.available()) {
-    message += (char)LoRa.read();
+    Serial.write(LoRa.read());
   }
 
-  Serial.print("Node Receive: ");
-  Serial.println(message);
+
 }
 
 void onTxDone() {
-  Serial.println("TxDone");
+  // Serial.println("TxDone");
   LoRa_rxMode();
 }
 
