@@ -47,7 +47,7 @@ void MainWindow::timerEvent(QTimerEvent *event)
     ui->label_tag_id->setText(QString::number(ui->frame_view->getTagID()));
     ui->label_tag_id_3->setText(QString::number(ui->frame_view->getRobotStat()));
     ui->label_tag_id_4->setText(QString::number(ui->frame_view->getWarningLevel()));
-    ui->label_tag_id_2->setText(QString::number(ui->frame_view->getYawTagID()));
+    ui->label_tag_id_2->setText(QString::number(ui->frame_view->getYawTagID()/1.0));
     ui->label_speed_L->setText(QString::number(ui->frame_view->getDesSpeedL()));
     ui->label_speed_R->setText(QString::number(ui->frame_view->getDesSpeedL()));
     int nreport = ui->frame_view->getFPS();

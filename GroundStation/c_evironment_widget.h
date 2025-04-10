@@ -51,7 +51,7 @@ QString dcam1,dcam2,dmcu,dfr,dmcuparam;
     void processDebugString(QString addr);
     int getTagID() const;
 
-    int getYawTagID() const;
+    float getYawTagID() const;
 
     int getRobotStat();
     int getWarningLevel();
@@ -63,12 +63,17 @@ QString dcam1,dcam2,dmcu,dfr,dmcuparam;
     float getCurSpeedL() const;
 
     QPoint getCellPos(QPoint scrPos);
+    void draw_pos_cam(QPainter *p);
 private:
+    float tagx =0;
+    float tagy=0;
+    float camAngle=0;
+    QImage *roboticon;
 //    float desx=0;
 //    float desy=0;
     float errx = 0,erry = 0;
     int tagID = -1;
-    int yawTagID = -1;
+    float yawTagID = -1;
     int robotStat = 0;
     float angleError=0;
     float posError = 0;

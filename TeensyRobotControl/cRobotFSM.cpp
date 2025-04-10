@@ -782,7 +782,7 @@ void RobotDriver::posUpdate() {  //update robot position, lifter status and angl
   botx += sin((botangle) / DEG_RAD) * distance;
   boty += cos((botangle) / DEG_RAD) * distance;
 
-  getclosestTag(botx, boty);
+  
   float diff = (distanceRight - distanceLeft);
   diffAngle -= diff / 9.0;
   // Serial.print("closestID: ");
@@ -1057,6 +1057,10 @@ void RobotDriver::update() {  //high speed update to read sensor bus
       FloorTag mapPoint = getFloorTag(sbus.cambot.tagID);
       if (mapPoint.id > 0 && (sbus.cambot.stable > 0)) {
 
+        if(mapPoint.id>500)
+        {
+          int closestID = getclosestTag(botx, boty);
+        }
         float tagDistance = 0;  //sqrt(sbus.tagX*sbus.tagX+sbus.tagY*sbus.tagY);
         float tagBearing = 0;
         ConvXYToPolar(sbus.cambot.tagX, sbus.cambot.tagY, &tagBearing, &tagDistance);
@@ -1078,7 +1082,7 @@ void RobotDriver::update() {  //high speed update to read sensor bus
           if (abs(curSpeedL) + abs(curSpeedR) < 0.08)
             // if ((bot_mode == MODE_STANDBY) || (bot_mode == MODE_ROTATE))
               // if(millis()-yaw_reset_time>2000)
-              if ((tagDistance < 40) || (abs(dx) < 20) || (abs(dy) < 20) || (abs(yawDiff) > 5)) {
+              if (((tagDistance < 40) && (abs(dx) < 20) && (abs(dy) < 20) )|| (abs(yawDiff) > 5)) {
 
                 imu.resetYaw(imu_data.gyroyaw + yawDiff);
                 // yaw_reset_time = millis();

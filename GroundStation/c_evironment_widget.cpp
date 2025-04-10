@@ -116,7 +116,8 @@ uint16_t gen_crc16(const uint8_t *data, uint16_t size)
 }
 c_evironment_widget::c_evironment_widget(QWidget *parent) : QFrame(parent)
 {
-
+    roboticon = new QImage(":/new/prefix1/roboticon.jpg");
+    *roboticon = roboticon->scaled(40,40);
 //    mDrone.setSpeed(0.3);
 //    QPushButton *pos_button = new QPushButton(this);
 //    pos_button->setText(tr("abc"));
@@ -237,7 +238,7 @@ void c_evironment_widget::paintEvent(QPaintEvent *event)
     QPainter p(this);
     //    draw_graphs(&p);
     draw_grid(&p);
-
+    draw_pos_cam(&p);
     foreach(c_drone drone, mDroneList)
     {
         draw_drones(&p,drone);
@@ -351,16 +352,33 @@ void c_evironment_widget::draw_drones(QPainter *p,c_drone drone)
     pen2.setWidth(4);
     p->setPen(pen2);
     p->drawEllipse(QPoint(width()-200+errx*1000,200-erry*1000),2,2);
+//    p->drawImage(pos.x()-20,pos.y()-20,*roboticon);
 }
+void c_evironment_widget::draw_pos_cam(QPainter *p)
+{
+    QPen pen(Qt::blue);
 
+    pen.setWidth(2);
+    p->setPen(pen);
+    p->drawLine(QPoint(width()-400,500),QPoint(width(),500));
+    p->drawLine(QPoint(width()-100,400),QPoint(width()-100,800));
+    p->drawLine(QPoint(width()-400,700),QPoint(width(),700));
+    p->drawLine(QPoint(width()-300,400),QPoint(width()-300,800));
+    pen.setColor(Qt::blue);
+    pen.setWidth(4);
+    p->setPen(pen);
+    QPoint tagpos(width()-200+tagx*2,600-tagy*2);
+    p->drawEllipse(tagpos,20,20);
+//    p->drawLine(tagpos)
+    QPointF dirPoint(tagpos.x()+200*sin(camAngle/57.3),tagpos.y()-200*cos(camAngle/57.3));
+    p->drawLine(tagpos,dirPoint);
+//    p->drawImage(pos.x()-20,pos.y()-20,*roboticon);
+}
 void c_evironment_widget::processDebugString(QString addr)
 {
     addr.remove(QChar(':'));
     addr.remove(QChar('f'));
-    if(addr==this->robotIP){
-        printf("\n%s:\t",addr.toStdString().data());
-        printf("%s",debugString.toStdString().data());
-    }
+
     if(!mDroneList.contains(addr))
     {
         c_drone newDrone;
@@ -379,7 +397,99 @@ void c_evironment_widget::processDebugString(QString addr)
     QByteArrayList dataFields= debugString.split(',');
     if(dataFields.size()<2){debugString="";return;}
     QByteArray msgID = dataFields[0];
-    if(msgID=="$MCU")
+    if(addr==this->robotIP){
+        printf("\n%s:\t",addr.toStdString().data());
+        printf("%s",debugString.toStdString().data());
+
+        if(msgID=="$MCU")
+        {
+            //        int len= dataFields.length();
+            if(dataFields.length()==20){
+                float angle = dataFields.at(3).toDouble();
+                mDroneList[addr].setAngle( angle);
+                float botx  = dataFields.at(1).toDouble()/1000.0;
+                float boty  = dataFields.at(2).toDouble()/1000.0;
+                mDroneList[addr].setPosition(QPointF(botx,boty));
+                mDroneList[addr].desX   = dataFields.at(9).toDouble()/1000.0;
+                mDroneList[addr].desY        = dataFields.at(10).toDouble()/1000.0;
+                errx = botx-mDroneList[addr].desX;
+                erry = boty-mDroneList[addr].desY;
+                liftAngle = dataFields.at(4).toDouble();
+                tagID = dataFields.at(11).toInt();
+                yawTagID = dataFields.at(12).toFloat();
+                robotStat = dataFields.at(13).toInt();
+                warningLevel = dataFields.at(14).toInt();
+                debugString.replace('\n',' ');
+                curSpeedL = dataFields.at(5).toDouble();
+                curSpeedR = dataFields.at(6).toDouble();
+                //        printf("\n%s",debugString.toStdString().data());
+            }
+    //        printf("%s:",addr.toStdString().data());
+    //        printf("\n%s",debugString.toStdString().data());
+
+        }
+        else if(msgID=="$CAM1")
+        {
+            debugString.replace('\n',' ');
+//            float camAngle = dataFields.at(4).toDouble();
+            if (dataFields.size() ==9) {
+//                if(crc8check(inputStr)==false)return 0;
+                if (dataFields[3].contains("TD")) {
+                  int newtagID = dataFields[4].toInt();
+                  float angle = dataFields[7].toFloat() / 10.0;
+
+                  tagx = -(50 - dataFields[5].toFloat()) * 1.44;
+                  tagy = (50 - dataFields[6].toFloat()) * 1.44;
+                   camAngle = angle;
+                  // Serial.print("Camera bot:");
+                  // Serial.print(tagx);Serial.print(",");
+                  // Serial.print(tagy);Serial.print(",");
+                  // Serial.println(angle);draw
+                }
+
+                // DPRINT("!$Camera data:");DPRINTLN(tagAngle);DPRINTLN(tagX);DPRINTLN(tagY); DPRINT("#");DPRINT("@");
+              }
+
+
+        }
+        else if(msgID=="$CAM2")
+        {
+            debugString.replace('\n',' ');
+
+    //        printf("%s:",addr.toStdString().data());
+    //        printf("\n%s",debugString.toStdString().data());
+        }
+        else if(msgID=="$FRB")
+        {
+            debugString.replace('\n',' ');
+
+        }
+        else if(msgID=="$MCUPARAM")
+        {
+
+            if(dataFields.length()>=3){
+                QByteArray paramName = dataFields.at(1);
+                //             paramName.replace('\r',' ');
+                //             paramName.replace('\n',' ');
+                //             paramName.replace(' ',QByteArray());
+                float paraValue = dataFields.at(2).toDouble();
+                setParam(paramName,paraValue);
+            }
+            debugString="";
+
+            return;
+        }
+        else if(msgID=="$BINCOMACK")
+        {
+
+
+            debugString="";
+            return;
+        }
+    }
+
+
+    else if(msgID=="$MCU")
     {
         //        int len= dataFields.length();
         if(dataFields.length()==20){
@@ -390,64 +500,22 @@ void c_evironment_widget::processDebugString(QString addr)
             mDroneList[addr].setPosition(QPointF(botx,boty));
             mDroneList[addr].desX   = dataFields.at(9).toDouble()/1000.0;
             mDroneList[addr].desY        = dataFields.at(10).toDouble()/1000.0;
-            errx = botx-mDroneList[addr].desX;
-            erry = boty-mDroneList[addr].desY;
-            liftAngle = dataFields.at(4).toDouble();
-            tagID = dataFields.at(11).toInt();
-            yawTagID = dataFields.at(12).toInt();
-            robotStat = dataFields.at(13).toInt();
-            warningLevel = dataFields.at(14).toInt();
-            debugString.replace('\n',' ');
-            curSpeedL = dataFields.at(5).toDouble();
-            curSpeedR = dataFields.at(6).toDouble();
+//            errx = botx-mDroneList[addr].desX;
+//            erry = boty-mDroneList[addr].desY;
+//            liftAngle = dataFields.at(4).toDouble();
+//            tagID = dataFields.at(11).toInt();
+//            yawTagID = dataFields.at(12).toInt();
+//            robotStat = dataFields.at(13).toInt();
+//            warningLevel = dataFields.at(14).toInt();
+//            debugString.replace('\n',' ');
+//            curSpeedL = dataFields.at(5).toDouble();
+//            curSpeedR = dataFields.at(6).toDouble();
             //        printf("\n%s",debugString.toStdString().data());
         }
 //        printf("%s:",addr.toStdString().data());
 //        printf("\n%s",debugString.toStdString().data());
 
     }
-    else if(msgID=="$CAM1")
-    {
-        debugString.replace('\n',' ');
-        dcam1 = debugString;
-//        printf("%s:",addr.toStdString().data());
-//        printf("\n%s",debugString.toStdString().data());
-    }
-    else if(msgID=="$CAM2")
-    {
-        debugString.replace('\n',' ');
-        dcam2=debugString;
-//        printf("%s:",addr.toStdString().data());
-//        printf("\n%s",debugString.toStdString().data());
-    }
-    else if(msgID=="$FRB")
-    {
-        debugString.replace('\n',' ');
-
-    }
-    else if(msgID=="$MCUPARAM")
-    {
-
-        if(dataFields.length()>=3){
-            QByteArray paramName = dataFields.at(1);
-            //             paramName.replace('\r',' ');
-            //             paramName.replace('\n',' ');
-            //             paramName.replace(' ',QByteArray());
-            float paraValue = dataFields.at(2).toDouble();
-            setParam(paramName,paraValue);
-        }
-        debugString="";
-
-        return;
-    }
-    else if(msgID=="$BINCOMACK")
-    {
-
-
-        debugString="";
-        return;
-    }
-
     debugString="";
 }
 
@@ -478,7 +546,7 @@ float c_evironment_widget::getCurSpeedL() const
 {
     return curSpeedL;
 }
-int c_evironment_widget::getYawTagID() const
+float c_evironment_widget::getYawTagID() const
 {
     return yawTagID;
 }

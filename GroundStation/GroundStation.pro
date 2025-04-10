@@ -41,3 +41,6 @@ win32 {
 DESTDIR = $$PWD/bin/
 QMAKE_POST_LINK =  "C:/Qt/Qt5.14.2/5.14.2/msvc2017_64/bin/windeployqt.exe" $$shell_path($$DESTDIR/$${TARGET}.exe)
 }
+
+RESOURCES += \
+    resource.qrc

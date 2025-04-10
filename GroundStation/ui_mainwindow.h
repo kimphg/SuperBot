@@ -466,7 +466,7 @@ public:
         MainWindow->setCentralWidget(centralwidget);
         menubar = new QMenuBar(MainWindow);
         menubar->setObjectName(QString::fromUtf8("menubar"));
-        menubar->setGeometry(QRect(0, 0, 1836, 20));
+        menubar->setGeometry(QRect(0, 0, 1836, 21));
         menuFile = new QMenu(menubar);
         menuFile->setObjectName(QString::fromUtf8("menuFile"));
         menuView = new QMenu(menubar);
@@ -553,7 +553,7 @@ public:
         pushButton_6->setText(QCoreApplication::translate("MainWindow", "Custom Message 2", nullptr));
         lineEdit_msg_1->setText(QCoreApplication::translate("MainWindow", "aa558300ab0101", nullptr));
         pushButton->setText(QCoreApplication::translate("MainWindow", "Custom Message1", nullptr));
-        label_2->setText(QCoreApplication::translate("MainWindow", "Yaw calib ID:", nullptr));
+        label_2->setText(QCoreApplication::translate("MainWindow", "Tag lost time:", nullptr));
         label->setText(QCoreApplication::translate("MainWindow", "Tag ID:", nullptr));
         pushButton_3->setText(QCoreApplication::translate("MainWindow", "6H", nullptr));
         menuFile->setTitle(QCoreApplication::translate("MainWindow", "File", nullptr));

@@ -163,7 +163,7 @@ void processFrameHex(unsigned char* data)
           int new_warning_level=1;
           if((abs(xmm))<270)
             {
-                if(ymm<250)new_warning_level=3;
+                if(ymm<220)new_warning_level=3;
                 else if(ymm<500)new_warning_level=2;
                 else new_warning_level=1;
             }
