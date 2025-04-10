@@ -104,6 +104,7 @@ class RobotDriver
   int stillCount=0;
   float palletAngle =0;
   bool isActive=false;
+  float botAngleAcc = 100;
   float i_limit_yaw = 10.0; 
   float i_limit_pos = 150.0; 
   float Kp_yaw ,Ki_yaw , Kd_yaw ;   

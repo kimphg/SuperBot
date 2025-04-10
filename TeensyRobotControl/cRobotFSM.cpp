@@ -247,8 +247,8 @@ void RobotDriver::report_pos_to_PPU() {
   ppu_report[16] = angle.bytes[1];
   //gửi tagID
   if (lastFloorTagid == -1) {
-    ppu_report[17] = 0;
-    ppu_report[18] = 0;
+    ppu_report[17] = 255;
+    ppu_report[18] = 255;
   } else {
     ppu_report[18] = 0xFF & (lastFloorTagid >> 8);
     ppu_report[17] = 0xFF & (lastFloorTagid);
@@ -826,7 +826,7 @@ void RobotDriver::DebugReport() {
   S_SENSORS.print(',');
   S_SENSORS.print(lastFloorTagid);  //10
   S_SENSORS.print(',');
-  S_SENSORS.print(lastFloorYawTagid);  //11
+  S_SENSORS.print(botAngleAcc);  //11
   S_SENSORS.print(',');
   S_SENSORS.print(bot_mode);  //12
   S_SENSORS.print(',');
@@ -938,7 +938,11 @@ void RobotDriver::controlLoop()  // high frequency(>1khz) controll loop
     reportPPU();
     DebugReport();
     report_pos_to_PPU();
+    if(botAngleAcc<100)botAngleAcc+=0.03;
+            Serial.print("botAngleAcc:");
+        Serial.println(botAngleAcc);
     lastSyncSec = times500ms;
+
   }
   posUpdate();
   //
@@ -1067,28 +1071,28 @@ void RobotDriver::update() {  //high speed update to read sensor bus
         float bearingFromTag = tagBearing + sbus.cambot.tagAngle - 180;
         float dx = tagDistance * sin(bearingFromTag / DEG_RAD);
         float dy = tagDistance * cos(bearingFromTag / DEG_RAD);
-        botx = mapPoint.x + dx;
+        if (abs(curSpeed) < 0.08)
+        {        botx = mapPoint.x + dx;
         boty = mapPoint.y + dy;
-        float yawDiff = 0;
+        }
+
+        
         // botCameraCorrection=2.1;//robot 4
 
-        // Serial.println(sbus.cambot.tagAngle+botCameraCorrection);
-        if ((tagDistance < 80) && (abs(botRotationSpeed) < 10)) {
+        float tagAngleAcc = abs(dx*dy)/1000.0;
+        tagAngleAcc+= abs(botRotationSpeed)/5;// 0.2 sec delay
 
-          yawDiff = (sbus.cambot.tagAngle+botCameraCorrection - imu_data.gyroyaw);
-          while (yawDiff > 180) yawDiff -= 360;
-          while (yawDiff < -180) yawDiff += 360;
-          // yawDiff/=5.0;//smooth the change
-          if (abs(curSpeedL) + abs(curSpeedR) < 0.08)
-            // if ((bot_mode == MODE_STANDBY) || (bot_mode == MODE_ROTATE))
-              // if(millis()-yaw_reset_time>2000)
-              if (((tagDistance < 40) && (abs(dx) < 20) && (abs(dy) < 20) )|| (abs(yawDiff) > 5)) {
 
-                imu.resetYaw(imu_data.gyroyaw + yawDiff);
-                // yaw_reset_time = millis();
-                liftAngle = -botangle;
-                lastFloorYawTagid = mapPoint.id;
-              }
+        // // Serial.println(sbus.cambot.tagAngle+botCameraCorrection);
+        if ((tagAngleAcc < botAngleAcc) ) {
+          botAngleAcc = tagAngleAcc;
+            float yawDiff = 0;
+            yawDiff = (sbus.cambot.tagAngle+botCameraCorrection - imu_data.gyroyaw);
+            while (yawDiff > 180) yawDiff -= 360;
+            while (yawDiff < -180) yawDiff += 360;
+            imu.resetYaw(imu_data.gyroyaw + yawDiff);
+            liftAngle = -botangle;
+            lastFloorYawTagid = mapPoint.id;
         }
         if (lastFloorTagid != mapPoint.id) {
           // DPRINT("!$Command:"); DPRINTLN("tagDetect");DPRINTLN(lastFloorTagid);DPRINTLN(mapPoint.id);DPRINTLN(dx); DPRINTLN(dy); DPRINTLN(yawDiff);DPRINT("#");DPRINT("@");S_DEBUG.flush();
