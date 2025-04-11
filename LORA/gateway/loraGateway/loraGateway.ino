@@ -56,18 +56,35 @@ void setup() {
   LoRa.onTxDone(onTxDone);
   LoRa_rxMode();
 }
-
+uint8_t loraSendBuf[200];
+int buffCurPos=0;
+unsigned long long int lastTimeSend=0;
 void loop() {
-  if (runEvery(5000)) { // repeat every 5000 millis
-
-    String message = "HeLoRa World! ";
-    message += "I'm a Gateway! ";
-    message += millis();
-
-    LoRa_sendMessage(message); // send a message
-
-    Serial.println("Send Message!");
+  while(Serial.available())
+  {
+    loraSendBuf[buffCurPos]=Serial.read();
+    buffCurPos++;
+    if(buffCurPos>=199)
+    {
+      LoRa_sendData(loraSendBuf,buffCurPos);
+      buffCurPos=0;
+    }
   }
+  if((buffCurPos>0)&&(millis()-lastTimeSend>100))
+  {
+    LoRa_sendData(loraSendBuf,buffCurPos);
+      buffCurPos=0;
+  }
+  // if (runEvery(5000)) { // repeat every 5000 millis
+
+  //   String message = "HeLoRa World! ";
+  //   message += "I'm a Gateway! ";
+  //   message += millis();
+
+  //   LoRa_sendMessage(message); // send a message
+
+  //   Serial.println("Send Message!");
+  // }
 }
 
 void LoRa_rxMode(){
@@ -86,7 +103,13 @@ void LoRa_sendMessage(String message) {
   LoRa.print(message);                  // add payload
   LoRa.endPacket(true);                 // finish packet and send it
 }
-
+void LoRa_sendData(uint8_t* data,int len) {
+  LoRa_txMode();                        // set tx mode
+  LoRa.beginPacket();                   // start packet
+  LoRa.write(data,len);                  // add payload
+  LoRa.endPacket(true);                 // finish packet and send it
+  lastTimeSend=millis();
+}
 void onReceive(int packetSize) {
   String message = "";
 
@@ -102,7 +125,7 @@ void onReceive(int packetSize) {
 }
 
 void onTxDone() {
-  Serial.println("TxDone");
+  // Serial.println("TxDone");
   LoRa_rxMode();
 }
 
