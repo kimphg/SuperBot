@@ -45,7 +45,7 @@ class RobotDriver
   public:
       
       RobotDriver();
-      void getclosestTag(int x, int y);
+      int getclosestTag(float x, float y);
       int closestID=-1;
       int closestIDDist=0;
       int palletAligned=0;

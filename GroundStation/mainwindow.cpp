@@ -84,7 +84,7 @@ void MainWindow::timerEvent(QTimerEvent *event)
     ui->frame_view->newCommand=false;
     }
 
-    ui->frame_view->sendCommand("$COM,sync",false);
+//    ui->frame_view->sendCommand("$COM,sync",false);
 }
 void MainWindow::paintEvent(QPaintEvent *event)
 {
@@ -295,4 +295,10 @@ void MainWindow::on_pushButton_11_clicked()
 void MainWindow::on_comboBox_robot_select_currentTextChanged(const QString &arg1)
 {
     ui->frame_view->robotIP = arg1;
+}
+
+void MainWindow::on_comboBox_robot_select_currentIndexChanged(int index)
+{
+    ui->frame_view->robotIP = ui->comboBox_robot_select->currentText();
+
 }

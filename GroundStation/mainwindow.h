@@ -69,6 +69,8 @@ private slots:
 
     void on_comboBox_robot_select_currentTextChanged(const QString &arg1);
 
+    void on_comboBox_robot_select_currentIndexChanged(int index);
+
 private:
     QRect mapRect;
     c_drone mDrone;

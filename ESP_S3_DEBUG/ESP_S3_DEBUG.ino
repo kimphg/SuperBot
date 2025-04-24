@@ -51,7 +51,7 @@ void sendPacket(uint8_t* data,int len)
     // udp.write(data,len);
     data[len]=0;
     udp.broadcastTo((char*)data, 3333);
-    SerialPort.println((char*)data);
+    // SerialPort.println((char*)data);
     // udp.endPacket();
 }
 uint8_t inputBuff[500];

@@ -378,7 +378,8 @@ void c_evironment_widget::processDebugString(QString addr)
 {
     addr.remove(QChar(':'));
     addr.remove(QChar('f'));
-
+    printf("\n%s:\t",addr.toStdString().data());
+    printf("%s",debugString.toStdString().data());
     if(!mDroneList.contains(addr))
     {
         c_drone newDrone;

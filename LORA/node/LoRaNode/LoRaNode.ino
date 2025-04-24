@@ -32,8 +32,22 @@ const long frequency = 411E6;  // LoRa Frequency
 const int csPin = 10;          // LoRa radio chip select
 const int resetPin = 9;        // LoRa radio reset
 const int irqPin = 2;          // change for your board; must be a hardware interrupt pin
-
+#define LED_DATA 8
+#define LED_MODE 3
+#define LED_FEQ1 5
+#define LED_FEQ2 6
+#define LED_FEQ3 7
 void setup() {
+  pinMode( LED_DATA ,OUTPUT);
+  pinMode( LED_MODE ,OUTPUT);
+  pinMode( LED_FEQ1 ,OUTPUT);
+  pinMode( LED_FEQ2 ,OUTPUT);
+  pinMode( LED_FEQ3 ,OUTPUT);
+  digitalWrite( LED_DATA ,HIGH);
+  digitalWrite( LED_MODE ,HIGH);
+  digitalWrite( LED_FEQ1 ,HIGH);
+  digitalWrite( LED_FEQ2 ,HIGH);
+  digitalWrite( LED_FEQ3 ,HIGH);
   Serial.begin(9600);                   // initialize serial
   while (!Serial);
 
@@ -55,6 +69,11 @@ void setup() {
   LoRa.onReceive(onReceive);
   LoRa.onTxDone(onTxDone);
   LoRa_rxMode();
+  digitalWrite( LED_DATA ,LOW);
+  digitalWrite( LED_MODE ,LOW);
+  digitalWrite( LED_FEQ1 ,HIGH);
+  digitalWrite( LED_FEQ2 ,HIGH);
+  digitalWrite( LED_FEQ3 ,LOW);
 }
 uint8_t loraSendBuf[200];
 int buffCurPos=0;
@@ -78,10 +97,10 @@ void loop() {
   if (runEvery(5000)) { // repeat every 1000 millis
 
     String message = "Node1:";
-    message += millis();
+    message += millis()/1000;
 
     LoRa_sendMessage(message); // send a message
-
+// Serial.print(message);
   }
 }
 
@@ -100,6 +119,7 @@ void LoRa_sendMessage(String message) {
   LoRa.beginPacket();                   // start packet
   LoRa.print(message);                  // add payload
   LoRa.endPacket(true);                 // finish packet and send it
+  digitalWrite( LED_MODE ,HIGH);
 }
 void LoRa_sendData(uint8_t* data,int len) {
   LoRa_txMode();                        // set tx mode
@@ -107,19 +127,24 @@ void LoRa_sendData(uint8_t* data,int len) {
   LoRa.write(data,len);                  // add payload
   LoRa.endPacket(true);                 // finish packet and send it
   lastTimeSend=millis();
+  digitalWrite( LED_MODE ,HIGH);
 }
 void onReceive(int packetSize) {
+  digitalWrite(LED_DATA,HIGH);
 
   while (LoRa.available()) {
     Serial.write(LoRa.read());
   }
+  digitalWrite(LED_DATA,LOW);
 
 
 }
 
 void onTxDone() {
   // Serial.println("TxDone");
+  
   LoRa_rxMode();
+  digitalWrite( LED_MODE ,LOW);
 }
 
 boolean runEvery(unsigned long interval)

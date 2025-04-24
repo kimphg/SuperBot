@@ -711,7 +711,7 @@ RobotDriver::RobotDriver() {
   controlPacket[2] = 0x00;
   initOK = true;
 }
-void RobotDriver::getclosestTag(int x, int y) {
+int RobotDriver::getclosestTag(float x, float y) {
   float minDst = 999999;
   int minID = -1;
   for (unsigned int i = 0; i < floorMap.size(); i++) {
@@ -939,8 +939,11 @@ void RobotDriver::controlLoop()  // high frequency(>1khz) controll loop
     DebugReport();
     report_pos_to_PPU();
     if(botAngleAcc<100)botAngleAcc+=0.03;
+    else
+    {
             Serial.print("botAngleAcc:");
         Serial.println(botAngleAcc);
+    }
     lastSyncSec = times500ms;
 
   }
@@ -1079,8 +1082,8 @@ void RobotDriver::update() {  //high speed update to read sensor bus
         
         // botCameraCorrection=2.1;//robot 4
 
-        float tagAngleAcc = abs(dx*dy)/1000.0;
-        tagAngleAcc+= abs(botRotationSpeed)/5;// 0.2 sec delay
+        float tagAngleAcc = abs(dx*dy)/200.0;
+        tagAngleAcc+= abs(botRotationSpeed);// 0.2 sec delay
 
 
         // // Serial.println(sbus.cambot.tagAngle+botCameraCorrection);
