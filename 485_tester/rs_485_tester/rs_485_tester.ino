@@ -7,8 +7,8 @@ const byte txPin = 7;
 // Set up a new SoftwareSerial object
 SoftwareSerial mySerial (rxPin, txPin);
 void setup() {
-  Serial.begin(57600);
-  mySerial.begin(57600);
+  Serial.begin(9600);
+  mySerial.begin(9600);
   delay(10);
   pinMode(13,OUTPUT);
 }

@@ -20,18 +20,19 @@
   See the Semtech datasheet, http://www.semtech.com/images/datasheet/sx1276.pdf
   for more on InvertIQ register 0x33.
 
-  created 05 August 2018
-  by Luiz H. Cassettari
+minicore
+328pb
+1mhz external 
 */
-
+#include <SoftwareSerial.h>
 #include <SPI.h>              // include libraries
 #include <LoRa.h>
-
-const long frequency = 411E6;  // LoRa Frequency
-
-const int csPin = 10;          // LoRa radio chip select
-const int resetPin = 9;        // LoRa radio reset
-const int irqPin = 2;          // change for your board; must be a hardware interrupt pin
+#define  RF_EN 3
+#define  LED3 A3
+#define  LED2 A2
+#define  LED1 4
+#define  BT1 A6
+#define  BT2 A7
 #define LED_DATA 8
 #define LED_MODE 3
 #define LED_FEQ1 5
@@ -48,23 +49,57 @@ void setup() {
   digitalWrite( LED_FEQ1 ,HIGH);
   digitalWrite( LED_FEQ2 ,HIGH);
   digitalWrite( LED_FEQ3 ,HIGH);
-  Serial.begin(9600);                   // initialize serial
-  while (!Serial);
+const long frequency = 411E6;  // LoRa Frequency
 
+const int csPin = 10;          // LoRa radio chip select
+const int resetPin = 9;        // LoRa radio reset
+const int irqPin = 2;          // change for your board; must be a hardware interrupt pin
+SoftwareSerial mySerial(6, 5);
+unsigned char pinStat[30];
+int pinDelay[30];
+boolean checkInput(int pinID)
+{
+  if(pinDelay[pinID]>100)
+  {
+    pinDelay[pinID]--;
+    return false;
+  }
+  int newstat =digitalRead(pinID);
+  if(newstat!=pinStat[pinID])
+  {
+    pinDelay[pinID]=1000;
+    pinStat[pinID]=newstat;
+    return true;
+  }
+  return false;
+
+}
+void setup() {
+  mySerial.begin(38400);    
+  pinMode(RF_EN,OUTPUT);
+  
+  pinMode(LED3,OUTPUT);
+  pinMode(LED2,OUTPUT);
+  pinMode(LED1,OUTPUT);
+  pinMode(BT1,INPUT);
+  pinMode(BT2,INPUT);
+  digitalWrite(RF_EN, HIGH);
+  delay(1000);
+  mySerial.println("Sytem init succeeded.");
   LoRa.setPins(csPin, resetPin, irqPin);
 
   if (!LoRa.begin(frequency)) {
-    Serial.println("LoRa init failed. Check your connections.");
-    while (true);                       // if failed, do nothing
+    mySerial.println("LoRa init failed. Check your connections.");
+    // while (true);                       // if failed, do nothing
   }
 
-  Serial.println("LoRa init succeeded.");
-  Serial.println();
-  Serial.println("LoRa Simple Node");
-  Serial.println("Only receive messages from gateways");
-  Serial.println("Tx: invertIQ disable");
-  Serial.println("Rx: invertIQ enable");
-  Serial.println();
+  mySerial.println("LoRa init succeeded.");
+  mySerial.println();
+  mySerial.println("LoRa Simple Node");
+  mySerial.println("Only receive messages from gateways");
+  mySerial.println("Tx: invertIQ disable");
+  mySerial.println("Rx: invertIQ enable");
+  mySerial.println();
 
   LoRa.onReceive(onReceive);
   LoRa.onTxDone(onTxDone);
@@ -79,9 +114,9 @@ uint8_t loraSendBuf[200];
 int buffCurPos=0;
 unsigned long long int lastTimeSend=0;
 void loop() {
-  while(Serial.available())
+  while(mySerial.available())
   {
-    loraSendBuf[buffCurPos]=Serial.read();
+    loraSendBuf[buffCurPos]=mySerial.read();
     buffCurPos++;
     if(buffCurPos>=199)
     {
@@ -94,8 +129,16 @@ void loop() {
     LoRa_sendData(loraSendBuf,buffCurPos);
       buffCurPos=0;
   }
+  if(checkInput(BT1))
+  {
+    if(pinStat[BT1]==HIGH)
+    {
+      pinStat[LED1] = !pinStat[LED1];
+      digitalWrite(LED1, pinStat[LED1]);
+      mySerial.println(pinStat[LED1]);
+    }
+  }
   if (runEvery(5000)) { // repeat every 1000 millis
-
     String message = "Node1:";
     message += millis()/1000;
 
@@ -137,7 +180,6 @@ void onReceive(int packetSize) {
   }
   digitalWrite(LED_DATA,LOW);
 
-
 }
 
 void onTxDone() {
@@ -158,4 +200,5 @@ boolean runEvery(unsigned long interval)
   }
   return false;
 }
+
 
