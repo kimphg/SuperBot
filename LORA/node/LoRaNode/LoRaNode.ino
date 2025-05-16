@@ -26,8 +26,7 @@
 
 #include <SPI.h>              // include libraries
 #include <LoRa.h>
-const byte rxPin = 6;
-const byte txPin = 5;
+
 const long frequency = 411E6;  // LoRa Frequency
 
 const int csPin = 10;          // LoRa radio chip select
@@ -38,7 +37,6 @@ const int irqPin = 2;          // change for your board; must be a hardware inte
 #define LED_FEQ1 5
 #define LED_FEQ2 6
 #define LED_FEQ3 7
-SoftwareSerial mySerial (rxPin, txPin);
 void setup() {
   pinMode( LED_DATA ,OUTPUT);
   pinMode( LED_MODE ,OUTPUT);
@@ -51,7 +49,6 @@ void setup() {
   digitalWrite( LED_FEQ2 ,HIGH);
   digitalWrite( LED_FEQ3 ,HIGH);
   Serial.begin(9600);                   // initialize serial
-  mySerial.begin(57600);
   while (!Serial);
 
   LoRa.setPins(csPin, resetPin, irqPin);
