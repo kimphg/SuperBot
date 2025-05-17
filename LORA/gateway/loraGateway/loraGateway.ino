@@ -75,16 +75,10 @@ void loop() {
     LoRa_sendData(loraSendBuf,buffCurPos);
       buffCurPos=0;
   }
-  // if (runEvery(5000)) { // repeat every 5000 millis
-
-  //   String message = "HeLoRa World! ";
-  //   message += "I'm a Gateway! ";
-  //   message += millis();
-
-  //   LoRa_sendMessage(message); // send a message
-
-  //   Serial.println("Send Message!");
-  // }
+  if (runEvery(5000)) { 
+    // repeat every 5000 millis
+    Serial.println("Send Message!");
+  }
 }
 
 void LoRa_rxMode(){
@@ -111,17 +105,17 @@ void LoRa_sendData(uint8_t* data,int len) {
   lastTimeSend=millis();
 }
 void onReceive(int packetSize) {
-  String message = "";
-
+  // String message = "";
+  Serial.write("\r\nmsg:");
   while (LoRa.available()) {
-    message += (char)LoRa.read();
+    Serial.write(LoRa.read());
   }
 
-  Serial.print("Gateway Receive: ");
-  Serial.println(message);
-  Serial.println("RSSI: " + String(LoRa.packetRssi()));
-  Serial.println("Snr: " + String(LoRa.packetSnr()));
-  Serial.println();
+  // Serial.print("Gateway Receive: ");
+  // Serial.println(message);
+  // Serial.println("RSSI: " + String(LoRa.packetRssi()));
+  // Serial.println("Snr: " + String(LoRa.packetSnr()));
+  // Serial.println();
 }
 
 void onTxDone() {

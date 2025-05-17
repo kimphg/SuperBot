@@ -34,21 +34,11 @@ minicore
 #define  BT1 A6
 #define  BT2 A7
 #define LED_DATA 8
-#define LED_MODE 3
+#define LED_MODE LED1
 #define LED_FEQ1 5
 #define LED_FEQ2 6
 #define LED_FEQ3 7
-void setup() {
-  pinMode( LED_DATA ,OUTPUT);
-  pinMode( LED_MODE ,OUTPUT);
-  pinMode( LED_FEQ1 ,OUTPUT);
-  pinMode( LED_FEQ2 ,OUTPUT);
-  pinMode( LED_FEQ3 ,OUTPUT);
-  digitalWrite( LED_DATA ,HIGH);
-  digitalWrite( LED_MODE ,HIGH);
-  digitalWrite( LED_FEQ1 ,HIGH);
-  digitalWrite( LED_FEQ2 ,HIGH);
-  digitalWrite( LED_FEQ3 ,HIGH);
+#define NODE_ID 1
 const long frequency = 411E6;  // LoRa Frequency
 
 const int csPin = 10;          // LoRa radio chip select
@@ -56,8 +46,11 @@ const int resetPin = 9;        // LoRa radio reset
 const int irqPin = 2;          // change for your board; must be a hardware interrupt pin
 SoftwareSerial mySerial(6, 5);
 unsigned char pinStat[30];
+unsigned char handShake1[]={0x7c,0x53,0x0d};
+unsigned char handShake2[]={0x7c,0x44,0x0d};
 int pinDelay[30];
-boolean checkInput(int pinID)
+
+bool checkInput(int pinID)
 {
   if(pinDelay[pinID]>100)
   {
@@ -74,13 +67,77 @@ boolean checkInput(int pinID)
   return false;
 
 }
-void setup() {
-  mySerial.begin(38400);    
-  pinMode(RF_EN,OUTPUT);
+void initLed()
+{
+    pinMode(RF_EN,OUTPUT);
   
   pinMode(LED3,OUTPUT);
   pinMode(LED2,OUTPUT);
   pinMode(LED1,OUTPUT);
+  pinMode(LED_DATA,OUTPUT);
+  pinMode(LED_MODE,OUTPUT);
+  pinMode(LED_FEQ1,OUTPUT);
+  pinMode(LED_FEQ2,OUTPUT);
+  pinMode(LED_FEQ3,OUTPUT);
+  delay(10);
+  digitalWrite(RF_EN,HIGH);
+  digitalWrite(LED3,HIGH);
+  digitalWrite(LED2,HIGH);
+  digitalWrite(LED1,HIGH);
+  digitalWrite(LED_DATA,HIGH);
+  digitalWrite(LED_MODE,HIGH);
+  digitalWrite(LED_FEQ1,HIGH);
+  digitalWrite(LED_FEQ2,HIGH);
+  digitalWrite(LED_FEQ3,HIGH);
+  delay(500);
+  digitalWrite(RF_EN,LOW);
+  digitalWrite(LED3,LOW);
+  digitalWrite(LED2,LOW);
+  digitalWrite(LED1,LOW);
+  digitalWrite(LED_DATA,LOW);
+  digitalWrite(LED_MODE,LOW);
+  digitalWrite(LED_FEQ1,LOW);
+  digitalWrite(LED_FEQ2,LOW);
+  digitalWrite(LED_FEQ3,LOW);
+  delay(500);
+  digitalWrite(RF_EN,HIGH);
+  digitalWrite(LED3,HIGH);
+  digitalWrite(LED2,HIGH);
+  digitalWrite(LED1,HIGH);
+  digitalWrite(LED_DATA,HIGH);
+  digitalWrite(LED_MODE,HIGH);
+  digitalWrite(LED_FEQ1,HIGH);
+  digitalWrite(LED_FEQ2,HIGH);
+  digitalWrite(LED_FEQ3,HIGH);
+  delay(500);
+  digitalWrite(RF_EN,LOW);
+  digitalWrite(LED3,LOW);
+  digitalWrite(LED2,LOW);
+  digitalWrite(LED1,LOW);
+  digitalWrite(LED_DATA,LOW);
+  digitalWrite(LED_MODE,LOW);
+  digitalWrite(LED_FEQ1,LOW);
+  digitalWrite(LED_FEQ2,LOW);
+  digitalWrite(LED_FEQ3,LOW);
+
+
+}
+uint8_t loraSendBuf[200];
+uint8_t loraReportBuf[20];
+int buffCurPos=1;
+unsigned long long int lastTimeSend=0;
+void setup() {
+  mySerial.begin(38400);    
+  initLed();
+  initLed();
+  loraSendBuf[0] = NODE_ID;
+  for(int i=0;i<20;i++)
+  {
+    loraReportBuf[i]=0;
+  }
+  loraReportBuf[0] =0x00;//indicator of report message
+  loraReportBuf[1] =NODE_ID;
+  
   pinMode(BT1,INPUT);
   pinMode(BT2,INPUT);
   digitalWrite(RF_EN, HIGH);
@@ -110,25 +167,28 @@ void setup() {
   digitalWrite( LED_FEQ2 ,HIGH);
   digitalWrite( LED_FEQ3 ,LOW);
 }
-uint8_t loraSendBuf[200];
-int buffCurPos=0;
-unsigned long long int lastTimeSend=0;
+
 void loop() {
+  // send data if buffer overflow
   while(mySerial.available())
   {
-    loraSendBuf[buffCurPos]=mySerial.read();
+    char input = mySerial.read();
+    // mySerial.write(input);
+    loraSendBuf[buffCurPos]=input;
     buffCurPos++;
     if(buffCurPos>=199)
     {
       LoRa_sendData(loraSendBuf,buffCurPos);
-      buffCurPos=0;
+      buffCurPos=1;
     }
   }
-  if((buffCurPos>0)&&(millis()-lastTimeSend>100))
+  // send data if timeout
+  if((buffCurPos>1)&&(millis()-lastTimeSend>10))
   {
     LoRa_sendData(loraSendBuf,buffCurPos);
-      buffCurPos=0;
+      buffCurPos=1;
   }
+  // check button press
   if(checkInput(BT1))
   {
     if(pinStat[BT1]==HIGH)
@@ -138,12 +198,22 @@ void loop() {
       mySerial.println(pinStat[LED1]);
     }
   }
-  if (runEvery(5000)) { // repeat every 1000 millis
-    String message = "Node1:";
-    message += millis()/1000;
+  if (runEvery(1000)) { // repeat every 1000 millis
+    int time_sec = millis()/1000;
 
-    LoRa_sendMessage(message); // send a message
-// Serial.print(message);
+    if(time_sec%3==0)
+    {
+      mySerial.write(handShake1,3);
+    }
+    else if(time_sec%3==1)
+    {
+      mySerial.write(handShake2,3);
+    }
+    else {
+        loraReportBuf[2]=time_sec/256;
+        loraReportBuf[3]= (unsigned char)time_sec;
+        LoRa_sendData(loraReportBuf,20);
+    }
   }
 }
 
