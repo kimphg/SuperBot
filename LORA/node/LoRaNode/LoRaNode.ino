@@ -46,8 +46,10 @@ const int resetPin = 9;        // LoRa radio reset
 const int irqPin = 2;          // change for your board; must be a hardware interrupt pin
 SoftwareSerial mySerial(6, 5);
 unsigned char pinStat[30];
-unsigned char handShake1[]={0x7c,0x53,0x0d};
-unsigned char handShake2[]={0x7c,0x44,0x0d};
+// unsigned char handShake1[]={0x7c,0x53,0x0d,0x55,0xaa,0xaa,0xaa,0xaa,0x00,0x20,0xaa,0x01,0x0d,0x0d};//len=14
+// unsigned char handShake2[]={0x7c,0x57,0x3a,0x4f,0x49,0x3f,0x0d};//len=7
+unsigned char handShake1[]={0x7c,0x44,0x0d};
+unsigned char handShake2[]={0x7c,0x53,0x0d};
 int pinDelay[30];
 
 bool checkInput(int pinID)
@@ -127,7 +129,7 @@ uint8_t loraReportBuf[20];
 int buffCurPos=1;
 unsigned long long int lastTimeSend=0;
 void setup() {
-  mySerial.begin(38400);    
+  mySerial.begin(57600);    
   initLed();
   initLed();
   loraSendBuf[0] = NODE_ID;
@@ -200,15 +202,16 @@ void loop() {
   }
   if (runEvery(1000)) { // repeat every 1000 millis
     int time_sec = millis()/1000;
-
-    if(time_sec%3==0)
+    int preiod_operation = 3;
+    if((time_sec%preiod_operation)==0)
     {
       mySerial.write(handShake1,3);
     }
-    else if(time_sec%3==1)
+    else if((time_sec%preiod_operation)==1)
     {
       mySerial.write(handShake2,3);
     }
+    
     else {
         loraReportBuf[2]=time_sec/256;
         loraReportBuf[3]= (unsigned char)time_sec;
