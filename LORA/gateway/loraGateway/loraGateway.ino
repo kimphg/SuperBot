@@ -34,7 +34,7 @@ const int resetPin = 9;        // LoRa radio reset
 const int irqPin = 2;          // change for your board; must be a hardware interrupt pin
 
 void setup() {
-  Serial.begin(9600);                   // initialize serial
+  Serial.begin(115200);                   // initialize serial
   while (!Serial);
 
   LoRa.setPins(csPin, resetPin, irqPin);
@@ -75,10 +75,10 @@ void loop() {
     LoRa_sendData(loraSendBuf,buffCurPos);
       buffCurPos=0;
   }
-  if (runEvery(5000)) { 
-    // repeat every 5000 millis
-    Serial.println("Send Message!");
-  }
+  // if (runEvery(5000)) { 
+  //   // repeat every 5000 millis
+  //   Serial.println("Send Message!");
+  // }
 }
 
 void LoRa_rxMode(){
