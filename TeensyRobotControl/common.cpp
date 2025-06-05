@@ -19,7 +19,15 @@ float ConvXYtoAngle(double x, double y)
   return degrees(azi);
 }
 #define CRC16 0x8005
-
+float getRom(int id)
+{
+  return bytes2float(id);
+}
+void setRom(int id,float value)
+{
+  float2bytes(id*4,value);
+  //  EEPROM.write(id*4);
+}
 uint16_t gen_crc16(const uint8_t *data, uint16_t size)
 {
     uint16_t out = 0;
@@ -174,7 +182,25 @@ void radioSetup()
     Serial.flush();
 
 }
+float bytes2float(int id)
+{
+  float output;
+  uint8_t* valueAddr = (uint8_t*)&output;
+  for(int i=0;i<4;i++)
+  {
+    *(valueAddr+i)=EEPROM.read(id*4+i);
+  }
+  return output;
+}
+void float2bytes(int id, float value)
+{
+  uint8_t* valueAddr = (uint8_t*)(&value);
+  for(int i=0;i<4;i++)
+  {
+    EEPROM.write((id*4+i), *(valueAddr+i));
+  }
 
+}
 uint8_t calcCS8(uint8_t* startbyte, uint8_t len)
 {
   int cs = 0;

@@ -11,7 +11,7 @@
 #define S_MOTORS  Serial3
 #define S_COMMAND Serial1
 #define S_DEBUG   Serial
-
+#include <EEPROM.h>
 #define DT_CONTROL 0.02 //50hz control loop
 #define PI2 6.2831853
 #define PI 3.1415926535897932384626433832795
@@ -54,8 +54,12 @@ void ConvXYToPolar(float x, float y, float* azi, float* range);
 void setupBlink(int numBlinks, int upTime, int downTime);
 void indicateErrorLed(int errorCode) ;
 void radioSetup() ;
+float getRom(int id);
+void setRom(int id,float value);
 uint8_t calcCS8(uint8_t* startbyte, uint8_t len);
 uint8_t calcMinus(uint8_t* startbyte, uint8_t len);
+float bytes2float(int id);
+void float2bytes(int id, float value);
 void blink(int n);
 bool isPrintable(uint8_t ch);
 std::vector<String> splitString(String input,char sep);

@@ -378,8 +378,8 @@ void c_evironment_widget::processDebugString(QString addr)
 {
     addr.remove(QChar(':'));
     addr.remove(QChar('f'));
-    printf("\n%s:\t",addr.toStdString().data());
-    printf("%s",debugString.toStdString().data());
+//    printf("\n%s:\t",addr.toStdString().data());
+//    printf("%s",debugString.toStdString().data());
     if(!mDroneList.contains(addr))
     {
         c_drone newDrone;
@@ -399,11 +399,16 @@ void c_evironment_widget::processDebugString(QString addr)
     if(dataFields.size()<2){debugString="";return;}
     QByteArray msgID = dataFields[0];
     if(addr==this->robotIP){
-        printf("\n%s:\t",addr.toStdString().data());
-        printf("%s",debugString.toStdString().data());
+        if(msgID=="$BINCOMACK")
+        {
 
+        }
         if(msgID=="$MCU")
         {
+
+            printf("\n%s:\t",addr.toStdString().data());
+            printf("%s",debugString.toStdString().data());
+
             //        int len= dataFields.length();
             if(dataFields.length()==20){
                 float angle = dataFields.at(3).toDouble();
@@ -431,6 +436,7 @@ void c_evironment_widget::processDebugString(QString addr)
         }
         else if(msgID=="$CAM1")
         {
+
             debugString.replace('\n',' ');
 //            float camAngle = dataFields.at(4).toDouble();
             if (dataFields.size() ==9) {
@@ -465,6 +471,7 @@ void c_evironment_widget::processDebugString(QString addr)
             debugString.replace('\n',' ');
 
         }
+
         else if(msgID=="$MCUPARAM")
         {
 
@@ -590,10 +597,11 @@ void c_evironment_widget::uploadParams(QString id, QString value)
     command.append(id.toLatin1());
     command.append(',');
     command.append(value.toLatin1());
-    command.append(',');
-    command.append('\n');
+//    command.append(',');
+//    command.append('\n');
 
-    udpSocket->writeDatagram(command,QHostAddress(robotIP),1234);
+//    udpSocket->writeDatagram(command,QHostAddress(robotIP),1234);
+    sendCommand(command);
 }
 
 bool c_evironment_widget::getIsRecording() const

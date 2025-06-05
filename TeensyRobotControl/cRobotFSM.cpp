@@ -276,6 +276,7 @@ void RobotDriver::setParam(String id, float value) {
   for (unsigned int i = 0; i < paramTable.size(); i++) {
     if (paramTable[i].paramName.equals(id)) {
       paramTable[i].paraValue = value;
+      if(id.equals("botCameraCorrection"))  setRom(0,value);
       loadParams();
       return;
     }
@@ -1074,16 +1075,17 @@ void RobotDriver::update() {  //high speed update to read sensor bus
         float bearingFromTag = tagBearing + sbus.cambot.tagAngle - 180;
         float dx = tagDistance * sin(bearingFromTag / DEG_RAD);
         float dy = tagDistance * cos(bearingFromTag / DEG_RAD);
-        if (abs(curSpeed) < 0.08)
-        {        botx = mapPoint.x + dx;
-        boty = mapPoint.y + dy;
+        if (abs(curSpeed) < 0.15)
+        {        
+          botx = mapPoint.x + dx;
+                boty = mapPoint.y + dy;
         }
 
         
         // botCameraCorrection=2.1;//robot 4
-
+        
         float tagAngleAcc = abs(dx*dy)/200.0;
-        tagAngleAcc+= abs(botRotationSpeed);// 0.2 sec delay
+        tagAngleAcc+= abs(botRotationSpeed*3);// 0.2 sec delay
 
 
         // // Serial.println(sbus.cambot.tagAngle+botCameraCorrection);
@@ -1455,6 +1457,7 @@ void RobotDriver::loadParams()  //load robot parameters from memory
   Ki_lift = loadParam("Ki_lift", 0.0);
   Kd_lift = loadParam("Kd_lift", 1.2);
   Ks_lift = loadParam("Ks_lift", 0.6);
+  botCameraCorrection = loadParam("botCameraCorrection", getRom(0));
   maxBotSpeed = loadParam("maxBotSpeed", 0.3);
   maxBotRotSpd = loadParam("maxBotRotSpd", 0.65);
   maxBotAcc = loadParam("maxBotAcc", 4.0) / 1000.0;
