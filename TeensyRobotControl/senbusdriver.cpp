@@ -115,9 +115,13 @@ int SenBusDriver::processCamera(String inputStr) {
   int result = 0;
   
   std::vector<String> tokens = splitString(inputStr, ',');
-  // Serial.println(inputStr);
-  if (tokens.size() ==9) {
+  
+  if (((tokens.size()-4)%5) ==0) {
+    // Serial.println(inputStr);
+    // Serial.println(tokens.size());
+    
     if(crc8check(inputStr)==false)return 0;
+    // for(int i=3; i<(tokens.size()-4))
     if (tokens[3].equals("TD")) {
       int newtagID = tokens[4].toInt();
       float angle = tokens[7].toFloat() / 10.0;
@@ -127,10 +131,6 @@ int SenBusDriver::processCamera(String inputStr) {
       float tagy = (50 - tokens[6].toFloat()) * 1.44;
       cambot.setValue(newtagID, tagx, tagy, angle);
       result = 1;
-      // Serial.print("Camera bot:");
-      // Serial.print(tagx);Serial.print(",");
-      // Serial.print(tagy);Serial.print(",");
-      // Serial.println(angle);
     }
 
     // DPRINT("!$Camera data:");DPRINTLN(tagAngle);DPRINTLN(tagX);DPRINTLN(tagY); DPRINT("#");DPRINT("@");

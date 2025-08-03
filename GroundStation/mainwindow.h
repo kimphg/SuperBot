@@ -71,6 +71,8 @@ private slots:
 
     void on_comboBox_robot_select_currentIndexChanged(int index);
 
+    void on_pushButton_stop_5_clicked();
+
 private:
     QRect mapRect;
     c_drone mDrone;

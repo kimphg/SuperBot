@@ -24,6 +24,7 @@
 #define MODE_MOVE 1
 #define MODE_ROTATE 2
 #define MODE_LIFT 3
+#define MODE_DOCK 4
 #define MAX_MOTION_SPEED 1.3
 #define LIFT_PPR 1485.0
 #define STEP_PPR 14688
@@ -45,7 +46,7 @@ class RobotDriver
   public:
       
       RobotDriver();
-      int getclosestTag(float x, float y);
+      void getclosestTag(float x, float y);
       int closestID=-1;
       int closestIDDist=0;
       int palletAligned=0;
@@ -93,8 +94,9 @@ class RobotDriver
   void processMotorReport(uint8_t bytein);
   int  processFrontBoard(String inputStr);
   void checkMinMax();
-  void loopMove(float maxDistance=25);
+  void loopMove(float maxDistance=25,int endMode  = MODE_STANDBY,int direction=1);
   void loopLift();
+  void loopDock();
   void stepOutput(int dir);
   void loopStandby();
   IMUData imu_data;

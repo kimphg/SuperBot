@@ -338,6 +338,7 @@ void c_evironment_widget::draw_drones(QPainter *p,c_drone drone)
     QPen pen2(Qt::red);
     pen2.setWidth(4);
     p->setPen(pen2);
+    p->drawText(pos.x()+20,pos.y()+20,QString::number(drone.tagID));
     p->drawLine(pos,desPos);
     p->drawEllipse(QPoint(width()-200,200),2,2);
     p->drawLine(QPoint(width()-400,200),QPoint(width(),200));
@@ -352,6 +353,7 @@ void c_evironment_widget::draw_drones(QPainter *p,c_drone drone)
     pen2.setWidth(4);
     p->setPen(pen2);
     p->drawEllipse(QPoint(width()-200+errx*1000,200-erry*1000),2,2);
+
 //    p->drawImage(pos.x()-20,pos.y()-20,*roboticon);
 }
 void c_evironment_widget::draw_pos_cam(QPainter *p)
@@ -399,6 +401,8 @@ void c_evironment_widget::processDebugString(QString addr)
     if(dataFields.size()<2){debugString="";return;}
     QByteArray msgID = dataFields[0];
     if(addr==this->robotIP){
+        printf("\n%s:\t",addr.toStdString().data());
+        printf("%s",debugString.toStdString().data());
         if(msgID=="$BINCOMACK")
         {
 
@@ -406,8 +410,8 @@ void c_evironment_widget::processDebugString(QString addr)
         if(msgID=="$MCU")
         {
 
-            printf("\n%s:\t",addr.toStdString().data());
-            printf("%s",debugString.toStdString().data());
+
+
 
             //        int len= dataFields.length();
             if(dataFields.length()==20){
@@ -418,6 +422,7 @@ void c_evironment_widget::processDebugString(QString addr)
                 mDroneList[addr].setPosition(QPointF(botx,boty));
                 mDroneList[addr].desX   = dataFields.at(9).toDouble()/1000.0;
                 mDroneList[addr].desY        = dataFields.at(10).toDouble()/1000.0;
+                mDroneList[addr].tagID = dataFields.at(15).toInt();
                 errx = botx-mDroneList[addr].desX;
                 erry = boty-mDroneList[addr].desY;
                 liftAngle = dataFields.at(4).toDouble();
@@ -508,8 +513,9 @@ void c_evironment_widget::processDebugString(QString addr)
             mDroneList[addr].setPosition(QPointF(botx,boty));
             mDroneList[addr].desX   = dataFields.at(9).toDouble()/1000.0;
             mDroneList[addr].desY        = dataFields.at(10).toDouble()/1000.0;
+            mDroneList[addr].tagID = dataFields.at(15).toInt();
 //            errx = botx-mDroneList[addr].desX;
-//            erry = boty-mDroneList[addr].desY;
+//            erry = boty-mDroneList[addr].desY;draw
 //            liftAngle = dataFields.at(4).toDouble();
 //            tagID = dataFields.at(11).toInt();
 //            yawTagID = dataFields.at(12).toInt();

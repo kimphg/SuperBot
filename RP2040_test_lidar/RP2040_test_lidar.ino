@@ -134,7 +134,7 @@ void setup() {
 }
 
 
-
+int warning_count =0;
 void processFrameHex(unsigned char* data)
 {
     float angle = data[0]-160;
@@ -143,6 +143,7 @@ void processFrameHex(unsigned char* data)
     {
         int realAngle = angle*16+miniangle;
         if(realAngle==600)newFrameAvailable = true;
+        
         if((realAngle>= 1390)||(realAngle<=530))
         {
           // Serial.println(realAngle);
@@ -156,19 +157,29 @@ void processFrameHex(unsigned char* data)
           if(realAzDeg>180)realAzDeg-=(360);
           
           
-          if (range<10){ continue;}
+          if (range<15){ continue;}
           float xmm = range*sin(realAzDeg/57.2957795);
           float ymm = range*cos(realAzDeg/57.2957795);
-          if(ymm<50)continue;
+          if(ymm<20)continue;
           int new_warning_level=1;
           if((abs(xmm))<270)
-            {
-                if(ymm<160)new_warning_level=3;
-                else if(ymm<500)new_warning_level=2;
-                else new_warning_level=1;
-            }
-            
-            
+          {
+                if(ymm<150){
+                  new_warning_level=2;
+                  warning_count++;
+                  if(warning_count>75)new_warning_level=3;
+                }
+                else if(ymm<500)
+                {
+                  new_warning_level=2;
+                  if(warning_count)warning_count--;
+                }
+                else 
+                {
+                  new_warning_level=1;
+                  if(warning_count)warning_count--;
+                }
+          }
           Serial.print(realAzDeg);
           Serial.print(',');
           Serial.print(range);

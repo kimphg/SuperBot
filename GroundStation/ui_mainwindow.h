@@ -99,6 +99,7 @@ public:
     QLabel *label;
     QPushButton *pushButton_3;
     QComboBox *comboBox_robot_select;
+    QPushButton *pushButton_stop_5;
     QMenuBar *menubar;
     QMenu *menuFile;
     QMenu *menuView;
@@ -460,6 +461,11 @@ public:
 
         gridLayout->addWidget(comboBox_robot_select, 0, 1, 1, 3);
 
+        pushButton_stop_5 = new QPushButton(groupBox);
+        pushButton_stop_5->setObjectName(QString::fromUtf8("pushButton_stop_5"));
+
+        gridLayout->addWidget(pushButton_stop_5, 10, 3, 1, 1);
+
 
         gridLayout_4->addWidget(groupBox, 0, 0, 1, 1);
 
@@ -556,6 +562,7 @@ public:
         label_2->setText(QCoreApplication::translate("MainWindow", "Tag lost time:", nullptr));
         label->setText(QCoreApplication::translate("MainWindow", "Tag ID:", nullptr));
         pushButton_3->setText(QCoreApplication::translate("MainWindow", "6H", nullptr));
+        pushButton_stop_5->setText(QCoreApplication::translate("MainWindow", "DOCK", nullptr));
         menuFile->setTitle(QCoreApplication::translate("MainWindow", "File", nullptr));
         menuView->setTitle(QCoreApplication::translate("MainWindow", "View", nullptr));
         menuTool->setTitle(QCoreApplication::translate("MainWindow", "Tool", nullptr));
