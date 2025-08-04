@@ -282,6 +282,7 @@ void RobotDriver::setParam(String id, float value) {
   for (unsigned int i = 0; i < paramTable.size(); i++) {
     if (paramTable[i].paramName.equals(id)) {
       paramTable[i].paraValue = value;
+      if (id.equals("botID")) setRom(1, value);
       if (id.equals("botCameraCorrection")) setRom(0, value);
       loadParams();
       return;
@@ -595,6 +596,8 @@ RobotDriver::RobotDriver() {
   imu.IMU_init(portIMU);
   Serial.println("start");
   //initialize floor map
+  #define MAP_2
+#ifdef MAP_1
   addFloorTag(0, 0, 0);
   addFloorTag(1, 0, 0);
   addFloorTag(2, 0, 1000);
@@ -621,6 +624,48 @@ RobotDriver::RobotDriver() {
   addFloorTag(29, 6000, -4000);
   addFloorTag(30, 6000, -6000);
   addFloorTag(21, 0, 3000);
+#endif
+#ifdef MAP_2
+  addFloorTag(258,  0,    0);
+  addFloorTag(53,   1000, 0);
+  addFloorTag(199,  0,    1000);
+  addFloorTag(394,  1000, 1000);
+  addFloorTag(410,  0,    2000);
+  addFloorTag(65,   1000, 2000);
+  addFloorTag(337,  0,    3000);
+  addFloorTag(343,  1000, 3000);
+  addFloorTag(42,   0,    4000);
+  addFloorTag(271,  1000, 4000);
+  addFloorTag(254,  0,    5000);
+  addFloorTag(211,  1000, 5000);
+  addFloorTag(316,  0,    6000);
+  addFloorTag(398,  1000, 6000);
+  addFloorTag(397,  0,    7000);
+  addFloorTag(201,  1000, 7000);
+  addFloorTag(267,  0,    8000);
+  addFloorTag(192,  1000, 8000);
+  addFloorTag(489,  0,    9000);
+  addFloorTag(216,  1000, 9000);
+  addFloorTag(191,  0,    10000);
+  addFloorTag(200,  1000, 10000);
+  addFloorTag(459,  0,    11000);
+  addFloorTag(478,  1000, 11000);
+  addFloorTag(22,   0,    12000);
+  addFloorTag(440,  1000, 12000);
+  addFloorTag(186,  0,    13000);
+  addFloorTag(322,  1000, 13000);
+  addFloorTag(385,  0,    14000);
+  addFloorTag(443,  1000, 14000);
+  addFloorTag(350,  0,    15000);
+  addFloorTag(435,  1000, 15000);
+  addFloorTag(208,  0,    16000);
+  addFloorTag(467,  1000, 16000);
+  addFloorTag(335,  0,    17000);
+  addFloorTag(444,  1000, 17000);
+  addFloorTag(481,  0,    18000);
+  addFloorTag(370,  1000, 18000);
+  
+#endif
   // addFloorTag(31,7000, -6000);
   // addFloorTag(26,6000, 2000);
   // addFloorTag(25,6000, 4000);
@@ -816,7 +861,7 @@ void RobotDriver::DebugReport() {
   S_SENSORS.print(',');
   S_SENSORS.print(botangle);  //3
   S_SENSORS.print(',');
-  S_SENSORS.print(liftAngle);  //4
+  S_SENSORS.print(botID);  //4
   S_SENSORS.print(',');
   S_SENSORS.print(curSpeedL);  //5
   S_SENSORS.print(',');
@@ -998,10 +1043,19 @@ void RobotDriver::loopMove(float requiredError, int endMode, int direction) {  /
 
   desDistance = sqrt(dx * dx + dy * dy);
   desBearing = ConvXYtoAngle(dx, dy);
-
-  yaw_PID = calcPIDyaw(desBearing);
+  
   // Serial.println(yaw_PID);
   //PID speed
+  if(direction<0)
+  {
+    yaw_PID = calcPIDyaw(desBearing+180);
+    error_yaw-=180;
+  }
+  else 
+  {
+    yaw_PID = calcPIDyaw(desBearing);
+    
+  }
   error_pos = desDistance * cos((error_yaw) / DEG_RAD);
   float error_pos_perpendic = desDistance * sin((error_yaw) / DEG_RAD);
 
@@ -1024,9 +1078,11 @@ void RobotDriver::loopMove(float requiredError, int endMode, int direction) {  /
     if (stillCount > 0) stillCount--;
   }
   pos_PID = calcPIDPos(error_pos);
-  desSpeed = (desMotSpdL + desMotSpdR) / 2.0;
-  if ((abs(error_yaw) > 20) && (abs(error_yaw) < 160)) desSpeed *= 0;
-  if (abs(error_pos_perpendic) > abs(error_pos)) desSpeed = 0;
+  
+  
+  // desSpeed = (desMotSpdL + desMotSpdR) / 2.0;
+  // if ((abs(error_yaw) > 20) && (abs(error_yaw) < 160)) desSpeed = 0;
+  // if (abs(error_pos_perpendic) > abs(error_pos)) desSpeed = 0;
   float newdesSpeed = constrainVal(pos_PID, -maxBotSpeed, maxBotSpeed);
   float acc = newdesSpeed - desSpeed;
   if (acc * desSpeed < 0) acc = constrainVal(acc, -maxBotAcc * 0.8, maxBotAcc * 0.8);  //slow down
@@ -1034,22 +1090,28 @@ void RobotDriver::loopMove(float requiredError, int endMode, int direction) {  /
   desSpeed += acc;
   float rotationReductionRatio = (maxBotSpeed - abs(desSpeed)) / maxBotSpeed;  //high desSpeed less rotation speed
   if (rotationReductionRatio < 0.2) rotationReductionRatio = 0.2;
-  if(abs(error_yaw)>=160&&(direction<0))
-  {desRotSpd = constrainVal(-yaw_PID, -maxBotRotSpd/5.0, maxBotRotSpd/5.0);
-  desSpeed=constrainVal(desSpeed,-0.10,0.10);
+  if ((abs(error_yaw) > 20) ) desSpeed = 0;
+  if(direction<0)
+  {desRotSpd = constrainVal(yaw_PID, -maxBotRotSpd/6.0, maxBotRotSpd/6.0);
+  desSpeed=constrainVal(desSpeed,-0.14,0.14);
   }
-  else desRotSpd = constrainVal(yaw_PID, -maxBotRotSpd, maxBotRotSpd);
-  desRotSpd *= rotationReductionRatio;
+  else 
+  {
+    desRotSpd = constrainVal(yaw_PID, -maxBotRotSpd, maxBotRotSpd);
+    desRotSpd *= rotationReductionRatio;
 
-  if (sbus.fb_warning_level == 2) desSpeed = constrainVal(pos_PID, -0.2, 0.2);
-  else if (sbus.fb_warning_level == 3) {
-    if (sbus.warning_repeated > 5) desSpeed = constrainVal(pos_PID, -0.0, 0.0);
-    else desSpeed = constrainVal(pos_PID, -0.1, 0.);
+    if (sbus.fb_warning_level == 2) desSpeed = constrainVal(pos_PID, -0.2, 0.2);
+    else if (sbus.fb_warning_level == 3) {
+      if (sbus.warning_repeated > 5) desSpeed = constrainVal(pos_PID, -0.0, 0.0);
+      else desSpeed = constrainVal(pos_PID, -0.1, 0.1);
+    }
   }
   // Serial.print("\nSpeed R: ");
   // Serial.print(desSpeed - desRotSpd * BASE_LEN / 2.0);
   // Serial.print(" Speed L:");
   // Serial.print(desSpeed + desRotSpd * BASE_LEN / 2.0);
+  //  Serial.print(" yaw_PID:");
+  // Serial.print(yaw_PID);
   setSpeedRight(desSpeed - desRotSpd * BASE_LEN / 2.0);
   setSpeedLeft(desSpeed + desRotSpd * BASE_LEN / 2.0);
   // liftStabilize();
@@ -1102,7 +1164,7 @@ void RobotDriver::update() {  //high speed update to read sensor bus
 
         float tagAngleAcc = abs(dx * dy) / 400.0;
         tagAngleAcc += abs(botRotationSpeed * 2);  // 0.2 sec delay
-
+        if(tagID>500)tagAngleAcc+=0.3;
         // Serial.println("tagID:");
         // Serial.print(botx);
         // Serial.print(",");
@@ -1486,6 +1548,7 @@ void RobotDriver::loadParams()  //load robot parameters from memory
   Ki_lift = loadParam("Ki_lift", 0.0);
   Kd_lift = loadParam("Kd_lift", 1.2);
   Ks_lift = loadParam("Ks_lift", 0.6);
+  botID = loadParam("botID", getRom(1));
   botCameraCorrection = loadParam("botCameraCorrection", getRom(0));
   maxBotSpeed = loadParam("maxBotSpeed", 0.3);
   maxBotRotSpd = loadParam("maxBotRotSpd", 0.65);

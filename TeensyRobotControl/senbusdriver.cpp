@@ -116,11 +116,11 @@ int SenBusDriver::processCamera(String inputStr) {
   
   std::vector<String> tokens = splitString(inputStr, ',');
   
-  if (((tokens.size()-4)%5) ==0) {
+  if (tokens.size()>7) {
     // Serial.println(inputStr);
     // Serial.println(tokens.size());
     
-    if(crc8check(inputStr)==false)return 0;
+    // if(crc8check(inputStr)==false)return 0;
     // for(int i=3; i<(tokens.size()-4))
     if (tokens[3].equals("TD")) {
       int newtagID = tokens[4].toInt();

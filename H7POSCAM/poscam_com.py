@@ -130,6 +130,8 @@ while(True):
             packet += (",")
             packet += (str(int(tag.rotation*1800.0/3.141592653589793)))
             packet += (",")
+            if(len(packet)>35):
+                break
 #            if(last_tag_id == tag.id()):
 #                stable_count=stable_count+1
 #            else:

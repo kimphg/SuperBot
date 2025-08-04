@@ -305,5 +305,5 @@ void MainWindow::on_comboBox_robot_select_currentIndexChanged(int index)
 
 void MainWindow::on_pushButton_stop_5_clicked()
 {
-    ui->frame_view->sendCommand("$COM,dock,1000,2200");//xoay phải
+    ui->frame_view->sendCommand("$COM,dock,-18,2550");//xoay phải
 }

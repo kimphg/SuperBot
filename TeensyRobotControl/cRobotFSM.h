@@ -44,7 +44,7 @@ struct FloorTag
 class RobotDriver
 {
   public:
-      
+      int botID=0;
       RobotDriver();
       void getclosestTag(float x, float y);
       int closestID=-1;
