@@ -21,7 +21,7 @@ float ConvXYtoAngle(double x, double y)
 #define CRC16 0x8005
 float getRom(int id)
 {
-  return bytes2float(id);
+  return bytes2float(id*4);
 }
 void setRom(int id,float value)
 {

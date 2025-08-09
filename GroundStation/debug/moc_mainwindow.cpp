@@ -22,8 +22,8 @@ QT_BEGIN_MOC_NAMESPACE
 QT_WARNING_PUSH
 QT_WARNING_DISABLE_DEPRECATED
 struct qt_meta_stringdata_MainWindow_t {
-    QByteArrayData data[35];
-    char stringdata0[732];
+    QByteArrayData data[36];
+    char stringdata0[761];
 };
 #define QT_MOC_LITERAL(idx, ofs, len) \
     Q_STATIC_BYTE_ARRAY_DATA_HEADER_INITIALIZER_WITH_OFFSET(len, \
@@ -66,7 +66,8 @@ QT_MOC_LITERAL(30, 607, 24), // "on_pushButton_11_clicked"
 QT_MOC_LITERAL(31, 632, 43), // "on_comboBox_robot_select_curr..."
 QT_MOC_LITERAL(32, 676, 4), // "arg1"
 QT_MOC_LITERAL(33, 681, 44), // "on_comboBox_robot_select_curr..."
-QT_MOC_LITERAL(34, 726, 5) // "index"
+QT_MOC_LITERAL(34, 726, 5), // "index"
+QT_MOC_LITERAL(35, 732, 28) // "on_pushButton_stop_5_clicked"
 
     },
     "MainWindow\0paintEvent\0\0QPaintEvent*\0"
@@ -91,7 +92,7 @@ QT_MOC_LITERAL(34, 726, 5) // "index"
     "on_pushButton_11_clicked\0"
     "on_comboBox_robot_select_currentTextChanged\0"
     "arg1\0on_comboBox_robot_select_currentIndexChanged\0"
-    "index"
+    "index\0on_pushButton_stop_5_clicked"
 };
 #undef QT_MOC_LITERAL
 
@@ -101,7 +102,7 @@ static const uint qt_meta_data_MainWindow[] = {
        8,       // revision
        0,       // classname
        0,    0, // classinfo
-      27,   14, // methods
+      28,   14, // methods
        0,    0, // properties
        0,    0, // enums/sets
        0,    0, // constructors
@@ -109,33 +110,34 @@ static const uint qt_meta_data_MainWindow[] = {
        0,       // signalCount
 
  // slots: name, argc, parameters, tag, flags
-       1,    1,  149,    2, 0x09 /* Protected */,
-       5,    1,  152,    2, 0x09 /* Protected */,
-       7,    1,  155,    2, 0x09 /* Protected */,
-       9,    0,  158,    2, 0x08 /* Private */,
-      10,    0,  159,    2, 0x08 /* Private */,
-      11,    0,  160,    2, 0x08 /* Private */,
-      12,    0,  161,    2, 0x08 /* Private */,
-      13,    1,  162,    2, 0x08 /* Private */,
-      15,    0,  165,    2, 0x08 /* Private */,
-      16,    0,  166,    2, 0x08 /* Private */,
-      17,    0,  167,    2, 0x08 /* Private */,
-      18,    0,  168,    2, 0x08 /* Private */,
-      19,    0,  169,    2, 0x08 /* Private */,
-      20,    0,  170,    2, 0x08 /* Private */,
-      21,    0,  171,    2, 0x08 /* Private */,
-      22,    0,  172,    2, 0x08 /* Private */,
-      23,    0,  173,    2, 0x08 /* Private */,
-      24,    0,  174,    2, 0x08 /* Private */,
-      25,    1,  175,    2, 0x08 /* Private */,
-      27,    0,  178,    2, 0x08 /* Private */,
-      28,    0,  179,    2, 0x08 /* Private */,
-      13,    0,  180,    2, 0x08 /* Private */,
-      29,    0,  181,    2, 0x08 /* Private */,
-       9,    1,  182,    2, 0x08 /* Private */,
-      30,    0,  185,    2, 0x08 /* Private */,
-      31,    1,  186,    2, 0x08 /* Private */,
-      33,    1,  189,    2, 0x08 /* Private */,
+       1,    1,  154,    2, 0x09 /* Protected */,
+       5,    1,  157,    2, 0x09 /* Protected */,
+       7,    1,  160,    2, 0x09 /* Protected */,
+       9,    0,  163,    2, 0x08 /* Private */,
+      10,    0,  164,    2, 0x08 /* Private */,
+      11,    0,  165,    2, 0x08 /* Private */,
+      12,    0,  166,    2, 0x08 /* Private */,
+      13,    1,  167,    2, 0x08 /* Private */,
+      15,    0,  170,    2, 0x08 /* Private */,
+      16,    0,  171,    2, 0x08 /* Private */,
+      17,    0,  172,    2, 0x08 /* Private */,
+      18,    0,  173,    2, 0x08 /* Private */,
+      19,    0,  174,    2, 0x08 /* Private */,
+      20,    0,  175,    2, 0x08 /* Private */,
+      21,    0,  176,    2, 0x08 /* Private */,
+      22,    0,  177,    2, 0x08 /* Private */,
+      23,    0,  178,    2, 0x08 /* Private */,
+      24,    0,  179,    2, 0x08 /* Private */,
+      25,    1,  180,    2, 0x08 /* Private */,
+      27,    0,  183,    2, 0x08 /* Private */,
+      28,    0,  184,    2, 0x08 /* Private */,
+      13,    0,  185,    2, 0x08 /* Private */,
+      29,    0,  186,    2, 0x08 /* Private */,
+       9,    1,  187,    2, 0x08 /* Private */,
+      30,    0,  190,    2, 0x08 /* Private */,
+      31,    1,  191,    2, 0x08 /* Private */,
+      33,    1,  194,    2, 0x08 /* Private */,
+      35,    0,  197,    2, 0x08 /* Private */,
 
  // slots: parameters
     QMetaType::Void, 0x80000000 | 3,    4,
@@ -165,6 +167,7 @@ static const uint qt_meta_data_MainWindow[] = {
     QMetaType::Void,
     QMetaType::Void, QMetaType::QString,   32,
     QMetaType::Void, QMetaType::Int,   34,
+    QMetaType::Void,
 
        0        // eod
 };
@@ -202,6 +205,7 @@ void MainWindow::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, 
         case 24: _t->on_pushButton_11_clicked(); break;
         case 25: _t->on_comboBox_robot_select_currentTextChanged((*reinterpret_cast< const QString(*)>(_a[1]))); break;
         case 26: _t->on_comboBox_robot_select_currentIndexChanged((*reinterpret_cast< int(*)>(_a[1]))); break;
+        case 27: _t->on_pushButton_stop_5_clicked(); break;
         default: ;
         }
     }
@@ -236,13 +240,13 @@ int MainWindow::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
     if (_id < 0)
         return _id;
     if (_c == QMetaObject::InvokeMetaMethod) {
-        if (_id < 27)
+        if (_id < 28)
             qt_static_metacall(this, _c, _id, _a);
-        _id -= 27;
+        _id -= 28;
     } else if (_c == QMetaObject::RegisterMethodArgumentMetaType) {
-        if (_id < 27)
+        if (_id < 28)
             *reinterpret_cast<int*>(_a[0]) = -1;
-        _id -= 27;
+        _id -= 28;
     }
     return _id;
 }

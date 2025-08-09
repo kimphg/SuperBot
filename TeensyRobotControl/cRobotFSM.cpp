@@ -813,6 +813,8 @@ void RobotDriver::posUpdate() {  //update robot position, lifter status and angl
   // Serial.println(curSpeedLift);
   float distance = (distanceLeft + distanceRight) / 2.0 * 0.95;
   curSpeed = distance / 1000.0 / DT_POS_UPDATE;
+  // Serial.print("curSpeed:");
+  // Serial.println(curSpeed);
   curSpeedL = distanceLeft / 1000.0 / DT_POS_UPDATE;
   curSpeedR = distanceRight / 1000.0 / DT_POS_UPDATE;
   curSpeedLift = liftLevelDistance / LIFT_PPR / DT_POS_UPDATE / 0.925;  //round per Sec
@@ -867,7 +869,7 @@ void RobotDriver::DebugReport() {
   S_SENSORS.print(',');
   S_SENSORS.print(curSpeedR);  //6
   S_SENSORS.print(',');
-  S_SENSORS.print(botRotationSpeed);  //7
+  S_SENSORS.print(desRotSpd);  //7
   S_SENSORS.print(',');
   S_SENSORS.print(sbus.camtop.tagID);  //8
   S_SENSORS.print(',');
@@ -990,10 +992,10 @@ void RobotDriver::controlLoop()  // high frequency(>1khz) controll loop
     DebugReport();
     report_pos_to_PPU();
     if (botAngleAcc < 100) botAngleAcc += 0.03;
-    else {
+    
       Serial.print("botAngleAcc:");
       Serial.println(botAngleAcc);
-    }
+    
     lastSyncSec = times500ms;
   }
   posUpdate();
@@ -1006,15 +1008,16 @@ void RobotDriver::controlLoop()  // high frequency(>1khz) controll loop
       loopStandby();
       break;
     case MODE_MOVE:
-      loopMove();
+      loopMove(25,MODE_ROTATE,1);
       break;
     case MODE_ROTATE:
       loopRotate();
       break;
     case MODE_LIFT:
+      // loopMove(25,MODE_LIFT,1);
       loopLift();
       break;
-      case MODE_DOCK:
+    case MODE_DOCK:
       loopDock();
       break;
     default:
@@ -1043,24 +1046,25 @@ void RobotDriver::loopMove(float requiredError, int endMode, int direction) {  /
 
   desDistance = sqrt(dx * dx + dy * dy);
   desBearing = ConvXYtoAngle(dx, dy);
-  
+
   // Serial.println(yaw_PID);
   //PID speed
   if(direction<0)
   {
     yaw_PID = calcPIDyaw(desBearing+180);
-    error_yaw-=180;
+    // error_yaw-=180;
   }
   else 
   {
     yaw_PID = calcPIDyaw(desBearing);
     
   }
+
   error_pos = desDistance * cos((error_yaw) / DEG_RAD);
   float error_pos_perpendic = desDistance * sin((error_yaw) / DEG_RAD);
 
-  if (cur_lift_stat == 0 && (desDistance < 200)) {
-  }
+  // if (cur_lift_stat == 0 && (desDistance < 200)) {
+  // }
   if ((abs(desDistance) < requiredError)) {
     stillCount++;
     if (stillCount > 100) {
@@ -1078,8 +1082,8 @@ void RobotDriver::loopMove(float requiredError, int endMode, int direction) {  /
     if (stillCount > 0) stillCount--;
   }
   pos_PID = calcPIDPos(error_pos);
-  
-  
+  // if(direction>0){if(pos_PID<0)pos_PID/=3.0;}
+       
   // desSpeed = (desMotSpdL + desMotSpdR) / 2.0;
   // if ((abs(error_yaw) > 20) && (abs(error_yaw) < 160)) desSpeed = 0;
   // if (abs(error_pos_perpendic) > abs(error_pos)) desSpeed = 0;
@@ -1090,10 +1094,13 @@ void RobotDriver::loopMove(float requiredError, int endMode, int direction) {  /
   desSpeed += acc;
   float rotationReductionRatio = (maxBotSpeed - abs(desSpeed)) / maxBotSpeed;  //high desSpeed less rotation speed
   if (rotationReductionRatio < 0.2) rotationReductionRatio = 0.2;
-  if ((abs(error_yaw) > 20) ) desSpeed = 0;
+  if ((abs(error_yaw) > 10) ) desSpeed = 0;
+  Serial.print("error_yaw_2:");
+  Serial.print(error_yaw);
   if(direction<0)
-  {desRotSpd = constrainVal(yaw_PID, -maxBotRotSpd/6.0, maxBotRotSpd/6.0);
-  desSpeed=constrainVal(desSpeed,-0.14,0.14);
+  {
+    desRotSpd = constrainVal(yaw_PID, -maxBotRotSpd/6.0, maxBotRotSpd/6.0);
+    desSpeed=constrainVal(desSpeed,-0.14,0.14);
   }
   else 
   {
@@ -1106,14 +1113,19 @@ void RobotDriver::loopMove(float requiredError, int endMode, int direction) {  /
       else desSpeed = constrainVal(pos_PID, -0.1, 0.1);
     }
   }
-  // Serial.print("\nSpeed R: ");
-  // Serial.print(desSpeed - desRotSpd * BASE_LEN / 2.0);
-  // Serial.print(" Speed L:");
-  // Serial.print(desSpeed + desRotSpd * BASE_LEN / 2.0);
-  //  Serial.print(" yaw_PID:");
-  // Serial.print(yaw_PID);
-  setSpeedRight(desSpeed - desRotSpd * BASE_LEN / 2.0);
-  setSpeedLeft(desSpeed + desRotSpd * BASE_LEN / 2.0);
+  if(botAngleAcc>5)desSpeed = constrainVal(pos_PID, -0.1, 0.1);
+  Serial.print("\nSpeed R: ");
+  Serial.print(desSpeed - desRotSpd * BASE_LEN / 2.0);
+  Serial.print(" Speed L:");
+  Serial.print(desSpeed + desRotSpd * BASE_LEN / 2.0);
+   Serial.print(" yaw_PID:");
+  Serial.print(yaw_PID);
+  // Serial.print(" direction:");
+  // Serial.print(direction);
+  Serial.print("error_yaw_3:");
+  Serial.println(error_yaw);
+  //setSpeedRight(desSpeed - desRotSpd * BASE_LEN / 2.0);
+  //setSpeedLeft(desSpeed + desRotSpd * BASE_LEN / 2.0);
   // liftStabilize();
 }
 void RobotDriver::update() {  //high speed update to read sensor bus
@@ -1128,26 +1140,38 @@ void RobotDriver::update() {  //high speed update to read sensor bus
     //
     if (result == 1)  //camera 1
     {
-      FloorTag mapPoint;
+      
+      if ((sbus.cambot.stable > 0)) {
+
+        FloorTag mapPoint;
       int tagID = sbus.cambot.tagID;
-      if (tagID > 500) {
+      if ((tagID > 500)&&(tagID <510)) {
         mapPoint = getFloorTag(closestID);
         if (tagID == 501) {
-          mapPoint.y = mapPoint.y + 30;
+          mapPoint.y = mapPoint.y + 27;
         }
         if (tagID == 502) {
-          mapPoint.x = mapPoint.x - 30;
+          mapPoint.x = mapPoint.x - 27;
         }
         if (tagID == 503) {
-          mapPoint.y = mapPoint.y - 30;
+          mapPoint.y = mapPoint.y - 27;
         }
         if (tagID == 504) {
-          mapPoint.x = mapPoint.x + 30;
+          mapPoint.x = mapPoint.x + 27;
+        }
+        if (tagID == 505) {
+          mapPoint.y = mapPoint.y + 70;
+        }
+        if (tagID == 506) {
+          mapPoint.x = mapPoint.x - 70;
+        }
+        if (tagID == 507) {
+          mapPoint.y = mapPoint.y - 70;
+        }
+        if (tagID == 508) {
+          mapPoint.x = mapPoint.x + 70;
         }
       } else mapPoint = getFloorTag(sbus.cambot.tagID);
-      if (mapPoint.id > 0 && (sbus.cambot.stable > 0)) {
-
-
         float tagDistance = 0;  //sqrt(sbus.tagX*sbus.tagX+sbus.tagY*sbus.tagY);
         float tagBearing = 0;
         ConvXYToPolar(sbus.cambot.tagX, sbus.cambot.tagY, &tagBearing, &tagDistance);
@@ -1162,9 +1186,10 @@ void RobotDriver::update() {  //high speed update to read sensor bus
 
         // botCameraCorrection=2.1;//robot 4
 
-        float tagAngleAcc = abs(dx * dy) / 400.0;
-        tagAngleAcc += abs(botRotationSpeed * 2);  // 0.2 sec delay
-        if(tagID>500)tagAngleAcc+=0.3;
+        float tagAngleAcc = abs(dx * dy) / 1000.0;
+        // tagAngleAcc += abs(botRotationSpeed * 2);  // 0.2 sec delay
+        if(tagID>500)tagAngleAcc+=0.2;
+        tagAngleAcc+=(abs(curSpeedL)*20+abs(curSpeedR)*20);
         // Serial.println("tagID:");
         // Serial.print(botx);
         // Serial.print(",");
@@ -1191,7 +1216,7 @@ void RobotDriver::update() {  //high speed update to read sensor bus
       // boty = sbus.tagY;
       // S_SENSORS.print("$CAM1ACK,");
       // S_SENSORS.println(lastFloorTagid);
-      reportPPU();
+      // reportDebug();
 
     } else if (result == 2)  //command
     {
@@ -1274,10 +1299,14 @@ float RobotDriver::calcPIDPos(float epos)  //PID calculation for position loop
   if (abs(error_pos) < 150) setIntegralPos(error_pos * DT_CONTROL);
   else setIntegralPos(0);
   integral_pos = getIntegralPos();
+  
   // integral_pos += error_pos * DT_CONTROL;
   // integral_pos = constrainVal(integral_pos, -i_limit_pos, i_limit_pos);  //saturate integrator to prevent unsafe buildup
   if (error_pos_prev == 0) error_pos_prev = error_pos;
   derivative_pos = (error_pos - error_pos_prev) / DT_CONTROL;
+  if(cur_lift_stat%2){
+    integral_pos/=3;derivative_pos*=2;
+  }
   float pid_out = (Kp_pos * error_pos + Ki_pos * integral_pos + Kd_pos * derivative_pos) / 1000.0;  //scaled by .01 to bring within -1 to 1 range
   error_pos_prev = error_pos;
   return pid_out;
@@ -1286,9 +1315,14 @@ float RobotDriver::calcPIDPos(float epos)  //PID calculation for position loop
 float RobotDriver::calcPIDyaw(float targetAngle)  //PID calculation for yaw loop
 {
   error_yaw = targetAngle - botangle;
-
-  while (error_yaw > 180) error_yaw -= 360;
-  while (error_yaw < -180) error_yaw += 360;
+      Serial.print("error_yaw_0:");
+  Serial.print(error_yaw); 
+  if (error_yaw > 180.0) error_yaw -= 360.0;
+  Serial.print("error_yaw_1:");
+  Serial.print(error_yaw); 
+  if (error_yaw < -180.0) error_yaw += 360.0;
+Serial.print("error_yaw_2:");
+  Serial.print(error_yaw); 
   int predictedLiftStep = (curLiftStep + STEP_PPR / 360 * error_yaw);
   if (predictedLiftStep > (desLiftStep + STEP_PPR * 0.55)) error_yaw -= 360;
   if (predictedLiftStep < (desLiftStep - STEP_PPR * 0.55)) error_yaw += 360;
@@ -1548,7 +1582,7 @@ void RobotDriver::loadParams()  //load robot parameters from memory
   Ki_lift = loadParam("Ki_lift", 0.0);
   Kd_lift = loadParam("Kd_lift", 1.2);
   Ks_lift = loadParam("Ks_lift", 0.6);
-  botID = loadParam("botID", getRom(1));
+  botID = loadParam("botID", int(getRom(1)) );
   botCameraCorrection = loadParam("botCameraCorrection", getRom(0));
   maxBotSpeed = loadParam("maxBotSpeed", 0.3);
   maxBotRotSpd = loadParam("maxBotRotSpd", 0.65);
@@ -1675,7 +1709,8 @@ void RobotDriver::loopDock()  // control loop when robot is on docking mode
   desAngle = 180;
   // desX = 1000;
   // desY = 1000;
-  loopMove(100,MODE_STANDBY,-1);
+  Serial.println("docking");
+  loopMove(50,MODE_STANDBY,-1);
 }
 void RobotDriver::loopLift()  // control loop when robot is on lifting mode
 {
@@ -1686,7 +1721,7 @@ void RobotDriver::loopLift()  // control loop when robot is on lifting mode
 
       break;
     case 1:
-      desLiftStep = minLiftStep + STEP_PPR * 8;
+      desLiftStep = minLiftStep + STEP_PPR * 6.0;
 
       break;
     case 2:
@@ -1694,7 +1729,7 @@ void RobotDriver::loopLift()  // control loop when robot is on lifting mode
 
       break;
     case 3:
-      desLiftStep = minLiftStep + STEP_PPR * 8;
+      desLiftStep = minLiftStep + STEP_PPR * 6.0;
 
       break;
     default:

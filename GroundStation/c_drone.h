@@ -23,6 +23,7 @@ public:
     float desX=0;
     float desY=0;
     float tagID = 0;
+    int botID = 0;
 private:
     QSerialPort *m_serial=0;
     float x=0;

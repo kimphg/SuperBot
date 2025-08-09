@@ -87,7 +87,7 @@ void loop() {
   // using motor.voltage_limit and motor.velocity_limit
     // float pos = (millis()%100000)/100000.0;
   // motor.move(pos*30);
-  // Serial.println(target_position);
+  Serial.println(target_position);
   motor.move(target_position);
   // Serial.println(target_position);
   // target_position=(analogRead(A0)-500)/500.0;

@@ -311,9 +311,9 @@ void c_evironment_widget::draw_grid(QPainter *p)
 void c_evironment_widget::draw_drones(QPainter *p,c_drone drone)
 {
     QPen pen(Qt::blue);
-    pen.setWidth(5);
+    pen.setWidth(2);
     p->setPen(pen);
-    int robotSize = 0.6*grid_size;
+    int robotSize = 0.7*grid_size;
     QPointF pos = drone.getPosition();
     pos.setY(-pos.y());
     pos*=grid_size;
@@ -326,7 +326,7 @@ void c_evironment_widget::draw_drones(QPainter *p,c_drone drone)
     QPointF dirPoint(pos.x()+2*robotSize*sin(angle),pos.y()-2*robotSize*cos(angle));
     p->drawLine(pos,dirPoint);
     p->drawEllipse(pos.x()-robotSize/2,pos.y()-robotSize/2,robotSize,robotSize);
-    p->drawText(pos,drone.name);
+    p->drawText(pos.x()-robotSize/4.0,pos.y(),drone.name.split('.').last());
     QPointF dirLoad(pos.x()+80*sin(loadAngle),pos.y()-80*cos(loadAngle));
     //    p->drawLine(pos,dirLoad);
     QPointF desPos(drone.desX,drone.desY);
@@ -339,6 +339,7 @@ void c_evironment_widget::draw_drones(QPainter *p,c_drone drone)
     pen2.setWidth(4);
     p->setPen(pen2);
     p->drawText(pos.x()+20,pos.y()+20,QString::number(drone.tagID));
+    p->drawText(pos.x()+20,pos.y()+10,QString::number(drone.botID));
     p->drawLine(pos,desPos);
     p->drawEllipse(QPoint(width()-200,200),2,2);
     p->drawLine(QPoint(width()-400,200),QPoint(width(),200));
@@ -423,9 +424,9 @@ void c_evironment_widget::processDebugString(QString addr)
                 mDroneList[addr].desX   = dataFields.at(9).toDouble()/1000.0;
                 mDroneList[addr].desY        = dataFields.at(10).toDouble()/1000.0;
                 mDroneList[addr].tagID = dataFields.at(15).toInt();
+                mDroneList[addr].botID = dataFields.at(4).toInt();
                 errx = botx-mDroneList[addr].desX;
                 erry = boty-mDroneList[addr].desY;
-                liftAngle = dataFields.at(4).toDouble();
                 tagID = dataFields.at(11).toInt();
                 yawTagID = dataFields.at(12).toFloat();
                 robotStat = dataFields.at(13).toInt();
