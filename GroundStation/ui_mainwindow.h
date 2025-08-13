@@ -54,6 +54,30 @@ public:
     QTableWidget *tableWidget;
     QGroupBox *groupBox;
     QGridLayout *gridLayout;
+    QLabel *label_3;
+    QLabel *label_speed_R;
+    QLabel *label_4;
+    QPushButton *pushButton_stop_2;
+    QPushButton *pushButton_10;
+    QPushButton *pushButton_7;
+    QPushButton *pushButton_4;
+    QPushButton *pushButton_stop;
+    QLabel *label;
+    QPushButton *pushButton;
+    QLabel *label_2;
+    QLabel *label_tag_id_4;
+    QLineEdit *lineEdit_msg_2;
+    QPushButton *pushButton_down;
+    QPushButton *pushButton_3;
+    QLabel *label_tag_id_3;
+    QPushButton *pushButton_up;
+    QPushButton *pushButton_11;
+    QLineEdit *lineEdit_msg_1;
+    QLabel *label_speed_L;
+    QLabel *label_tag_id_2;
+    QLabel *label_5;
+    QPushButton *pushButton_stop_3;
+    QComboBox *comboBox_robot_select;
     QGroupBox *groupBox_2;
     QFormLayout *formLayout;
     QLineEdit *lineEdit_des_x;
@@ -68,38 +92,14 @@ public:
     QPushButton *pushButton_lift_before;
     QPushButton *pushButton_lift_after;
     QLabel *label_connection_stat;
-    QPushButton *pushButton_stop_3;
-    QLabel *label_tag_id_2;
-    QLabel *label_5;
-    QLineEdit *lineEdit_msg_2;
-    QPushButton *pushButton_5;
-    QPushButton *pushButton_11;
-    QPushButton *pushButton_stop;
-    QLabel *label_connection_stat_2;
-    QPushButton *pushButton_7;
-    QLabel *label_tag_id_3;
-    QPushButton *pushButton_stop_2;
-    QPushButton *pushButton_2;
     QLabel *label_connection_last_msg;
-    QLabel *label_speed_L;
-    QLabel *label_tag_id;
-    QPushButton *pushButton_10;
-    QPushButton *pushButton_4;
-    QLabel *label_connection_fps;
-    QPushButton *pushButton_down;
-    QPushButton *pushButton_up;
-    QLabel *label_3;
-    QLabel *label_4;
-    QLabel *label_tag_id_4;
-    QLabel *label_speed_R;
     QPushButton *pushButton_6;
-    QLineEdit *lineEdit_msg_1;
-    QPushButton *pushButton;
-    QLabel *label_2;
-    QLabel *label;
-    QPushButton *pushButton_3;
-    QComboBox *comboBox_robot_select;
+    QLabel *label_tag_id;
+    QLabel *label_connection_fps;
+    QLabel *label_connection_stat_2;
     QPushButton *pushButton_stop_5;
+    QPushButton *pushButton_2;
+    QPushButton *pushButton_5;
     QMenuBar *menubar;
     QMenu *menuFile;
     QMenu *menuView;
@@ -232,6 +232,126 @@ public:
         groupBox->setMinimumSize(QSize(400, 0));
         gridLayout = new QGridLayout(groupBox);
         gridLayout->setObjectName(QString::fromUtf8("gridLayout"));
+        label_3 = new QLabel(groupBox);
+        label_3->setObjectName(QString::fromUtf8("label_3"));
+
+        gridLayout->addWidget(label_3, 5, 0, 1, 1);
+
+        label_speed_R = new QLabel(groupBox);
+        label_speed_R->setObjectName(QString::fromUtf8("label_speed_R"));
+
+        gridLayout->addWidget(label_speed_R, 11, 2, 1, 1);
+
+        label_4 = new QLabel(groupBox);
+        label_4->setObjectName(QString::fromUtf8("label_4"));
+
+        gridLayout->addWidget(label_4, 6, 0, 1, 1);
+
+        pushButton_stop_2 = new QPushButton(groupBox);
+        pushButton_stop_2->setObjectName(QString::fromUtf8("pushButton_stop_2"));
+
+        gridLayout->addWidget(pushButton_stop_2, 9, 0, 1, 1);
+
+        pushButton_10 = new QPushButton(groupBox);
+        pushButton_10->setObjectName(QString::fromUtf8("pushButton_10"));
+
+        gridLayout->addWidget(pushButton_10, 7, 1, 1, 1);
+
+        pushButton_7 = new QPushButton(groupBox);
+        pushButton_7->setObjectName(QString::fromUtf8("pushButton_7"));
+
+        gridLayout->addWidget(pushButton_7, 7, 3, 1, 1);
+
+        pushButton_4 = new QPushButton(groupBox);
+        pushButton_4->setObjectName(QString::fromUtf8("pushButton_4"));
+
+        gridLayout->addWidget(pushButton_4, 6, 2, 1, 1);
+
+        pushButton_stop = new QPushButton(groupBox);
+        pushButton_stop->setObjectName(QString::fromUtf8("pushButton_stop"));
+
+        gridLayout->addWidget(pushButton_stop, 7, 2, 1, 1);
+
+        label = new QLabel(groupBox);
+        label->setObjectName(QString::fromUtf8("label"));
+
+        gridLayout->addWidget(label, 2, 0, 1, 1);
+
+        pushButton = new QPushButton(groupBox);
+        pushButton->setObjectName(QString::fromUtf8("pushButton"));
+
+        gridLayout->addWidget(pushButton, 13, 0, 1, 1);
+
+        label_2 = new QLabel(groupBox);
+        label_2->setObjectName(QString::fromUtf8("label_2"));
+
+        gridLayout->addWidget(label_2, 4, 0, 1, 1);
+
+        label_tag_id_4 = new QLabel(groupBox);
+        label_tag_id_4->setObjectName(QString::fromUtf8("label_tag_id_4"));
+
+        gridLayout->addWidget(label_tag_id_4, 6, 1, 1, 1);
+
+        lineEdit_msg_2 = new QLineEdit(groupBox);
+        lineEdit_msg_2->setObjectName(QString::fromUtf8("lineEdit_msg_2"));
+
+        gridLayout->addWidget(lineEdit_msg_2, 14, 2, 1, 3);
+
+        pushButton_down = new QPushButton(groupBox);
+        pushButton_down->setObjectName(QString::fromUtf8("pushButton_down"));
+
+        gridLayout->addWidget(pushButton_down, 9, 2, 1, 1);
+
+        pushButton_3 = new QPushButton(groupBox);
+        pushButton_3->setObjectName(QString::fromUtf8("pushButton_3"));
+
+        gridLayout->addWidget(pushButton_3, 8, 2, 1, 1);
+
+        label_tag_id_3 = new QLabel(groupBox);
+        label_tag_id_3->setObjectName(QString::fromUtf8("label_tag_id_3"));
+
+        gridLayout->addWidget(label_tag_id_3, 5, 1, 1, 1);
+
+        pushButton_up = new QPushButton(groupBox);
+        pushButton_up->setObjectName(QString::fromUtf8("pushButton_up"));
+
+        gridLayout->addWidget(pushButton_up, 9, 1, 1, 1);
+
+        pushButton_11 = new QPushButton(groupBox);
+        pushButton_11->setObjectName(QString::fromUtf8("pushButton_11"));
+
+        gridLayout->addWidget(pushButton_11, 2, 3, 1, 1);
+
+        lineEdit_msg_1 = new QLineEdit(groupBox);
+        lineEdit_msg_1->setObjectName(QString::fromUtf8("lineEdit_msg_1"));
+
+        gridLayout->addWidget(lineEdit_msg_1, 13, 2, 1, 3);
+
+        label_speed_L = new QLabel(groupBox);
+        label_speed_L->setObjectName(QString::fromUtf8("label_speed_L"));
+
+        gridLayout->addWidget(label_speed_L, 11, 1, 1, 1);
+
+        label_tag_id_2 = new QLabel(groupBox);
+        label_tag_id_2->setObjectName(QString::fromUtf8("label_tag_id_2"));
+
+        gridLayout->addWidget(label_tag_id_2, 4, 1, 1, 1);
+
+        label_5 = new QLabel(groupBox);
+        label_5->setObjectName(QString::fromUtf8("label_5"));
+
+        gridLayout->addWidget(label_5, 11, 0, 1, 1);
+
+        pushButton_stop_3 = new QPushButton(groupBox);
+        pushButton_stop_3->setObjectName(QString::fromUtf8("pushButton_stop_3"));
+
+        gridLayout->addWidget(pushButton_stop_3, 9, 3, 1, 1);
+
+        comboBox_robot_select = new QComboBox(groupBox);
+        comboBox_robot_select->setObjectName(QString::fromUtf8("comboBox_robot_select"));
+
+        gridLayout->addWidget(comboBox_robot_select, 0, 1, 1, 3);
+
         groupBox_2 = new QGroupBox(groupBox);
         groupBox_2->setObjectName(QString::fromUtf8("groupBox_2"));
         formLayout = new QFormLayout(groupBox_2);
@@ -304,167 +424,47 @@ public:
         formLayout->setWidget(0, QFormLayout::LabelRole, label_connection_stat);
 
 
-        gridLayout->addWidget(groupBox_2, 11, 0, 1, 5);
-
-        pushButton_stop_3 = new QPushButton(groupBox);
-        pushButton_stop_3->setObjectName(QString::fromUtf8("pushButton_stop_3"));
-
-        gridLayout->addWidget(pushButton_stop_3, 9, 3, 1, 1);
-
-        label_tag_id_2 = new QLabel(groupBox);
-        label_tag_id_2->setObjectName(QString::fromUtf8("label_tag_id_2"));
-
-        gridLayout->addWidget(label_tag_id_2, 4, 1, 1, 1);
-
-        label_5 = new QLabel(groupBox);
-        label_5->setObjectName(QString::fromUtf8("label_5"));
-
-        gridLayout->addWidget(label_5, 10, 0, 1, 1);
-
-        lineEdit_msg_2 = new QLineEdit(groupBox);
-        lineEdit_msg_2->setObjectName(QString::fromUtf8("lineEdit_msg_2"));
-
-        gridLayout->addWidget(lineEdit_msg_2, 13, 2, 1, 3);
-
-        pushButton_5 = new QPushButton(groupBox);
-        pushButton_5->setObjectName(QString::fromUtf8("pushButton_5"));
-
-        gridLayout->addWidget(pushButton_5, 4, 2, 1, 1);
-
-        pushButton_11 = new QPushButton(groupBox);
-        pushButton_11->setObjectName(QString::fromUtf8("pushButton_11"));
-
-        gridLayout->addWidget(pushButton_11, 2, 3, 1, 1);
-
-        pushButton_stop = new QPushButton(groupBox);
-        pushButton_stop->setObjectName(QString::fromUtf8("pushButton_stop"));
-
-        gridLayout->addWidget(pushButton_stop, 7, 2, 1, 1);
-
-        label_connection_stat_2 = new QLabel(groupBox);
-        label_connection_stat_2->setObjectName(QString::fromUtf8("label_connection_stat_2"));
-
-        gridLayout->addWidget(label_connection_stat_2, 1, 0, 1, 1);
-
-        pushButton_7 = new QPushButton(groupBox);
-        pushButton_7->setObjectName(QString::fromUtf8("pushButton_7"));
-
-        gridLayout->addWidget(pushButton_7, 7, 3, 1, 1);
-
-        label_tag_id_3 = new QLabel(groupBox);
-        label_tag_id_3->setObjectName(QString::fromUtf8("label_tag_id_3"));
-
-        gridLayout->addWidget(label_tag_id_3, 5, 1, 1, 1);
-
-        pushButton_stop_2 = new QPushButton(groupBox);
-        pushButton_stop_2->setObjectName(QString::fromUtf8("pushButton_stop_2"));
-
-        gridLayout->addWidget(pushButton_stop_2, 9, 0, 1, 1);
-
-        pushButton_2 = new QPushButton(groupBox);
-        pushButton_2->setObjectName(QString::fromUtf8("pushButton_2"));
-
-        gridLayout->addWidget(pushButton_2, 2, 2, 1, 1);
+        gridLayout->addWidget(groupBox_2, 12, 0, 1, 5);
 
         label_connection_last_msg = new QLabel(groupBox);
         label_connection_last_msg->setObjectName(QString::fromUtf8("label_connection_last_msg"));
 
         gridLayout->addWidget(label_connection_last_msg, 1, 2, 1, 3);
 
-        label_speed_L = new QLabel(groupBox);
-        label_speed_L->setObjectName(QString::fromUtf8("label_speed_L"));
+        pushButton_6 = new QPushButton(groupBox);
+        pushButton_6->setObjectName(QString::fromUtf8("pushButton_6"));
 
-        gridLayout->addWidget(label_speed_L, 10, 1, 1, 1);
+        gridLayout->addWidget(pushButton_6, 14, 0, 1, 1);
 
         label_tag_id = new QLabel(groupBox);
         label_tag_id->setObjectName(QString::fromUtf8("label_tag_id"));
 
         gridLayout->addWidget(label_tag_id, 2, 1, 1, 1);
 
-        pushButton_10 = new QPushButton(groupBox);
-        pushButton_10->setObjectName(QString::fromUtf8("pushButton_10"));
-
-        gridLayout->addWidget(pushButton_10, 7, 1, 1, 1);
-
-        pushButton_4 = new QPushButton(groupBox);
-        pushButton_4->setObjectName(QString::fromUtf8("pushButton_4"));
-
-        gridLayout->addWidget(pushButton_4, 6, 2, 1, 1);
-
         label_connection_fps = new QLabel(groupBox);
         label_connection_fps->setObjectName(QString::fromUtf8("label_connection_fps"));
 
         gridLayout->addWidget(label_connection_fps, 1, 1, 1, 1);
 
-        pushButton_down = new QPushButton(groupBox);
-        pushButton_down->setObjectName(QString::fromUtf8("pushButton_down"));
+        label_connection_stat_2 = new QLabel(groupBox);
+        label_connection_stat_2->setObjectName(QString::fromUtf8("label_connection_stat_2"));
 
-        gridLayout->addWidget(pushButton_down, 9, 2, 1, 1);
-
-        pushButton_up = new QPushButton(groupBox);
-        pushButton_up->setObjectName(QString::fromUtf8("pushButton_up"));
-
-        gridLayout->addWidget(pushButton_up, 9, 1, 1, 1);
-
-        label_3 = new QLabel(groupBox);
-        label_3->setObjectName(QString::fromUtf8("label_3"));
-
-        gridLayout->addWidget(label_3, 5, 0, 1, 1);
-
-        label_4 = new QLabel(groupBox);
-        label_4->setObjectName(QString::fromUtf8("label_4"));
-
-        gridLayout->addWidget(label_4, 6, 0, 1, 1);
-
-        label_tag_id_4 = new QLabel(groupBox);
-        label_tag_id_4->setObjectName(QString::fromUtf8("label_tag_id_4"));
-
-        gridLayout->addWidget(label_tag_id_4, 6, 1, 1, 1);
-
-        label_speed_R = new QLabel(groupBox);
-        label_speed_R->setObjectName(QString::fromUtf8("label_speed_R"));
-
-        gridLayout->addWidget(label_speed_R, 10, 2, 1, 1);
-
-        pushButton_6 = new QPushButton(groupBox);
-        pushButton_6->setObjectName(QString::fromUtf8("pushButton_6"));
-
-        gridLayout->addWidget(pushButton_6, 13, 0, 1, 1);
-
-        lineEdit_msg_1 = new QLineEdit(groupBox);
-        lineEdit_msg_1->setObjectName(QString::fromUtf8("lineEdit_msg_1"));
-
-        gridLayout->addWidget(lineEdit_msg_1, 12, 2, 1, 3);
-
-        pushButton = new QPushButton(groupBox);
-        pushButton->setObjectName(QString::fromUtf8("pushButton"));
-
-        gridLayout->addWidget(pushButton, 12, 0, 1, 1);
-
-        label_2 = new QLabel(groupBox);
-        label_2->setObjectName(QString::fromUtf8("label_2"));
-
-        gridLayout->addWidget(label_2, 4, 0, 1, 1);
-
-        label = new QLabel(groupBox);
-        label->setObjectName(QString::fromUtf8("label"));
-
-        gridLayout->addWidget(label, 2, 0, 1, 1);
-
-        pushButton_3 = new QPushButton(groupBox);
-        pushButton_3->setObjectName(QString::fromUtf8("pushButton_3"));
-
-        gridLayout->addWidget(pushButton_3, 8, 2, 1, 1);
-
-        comboBox_robot_select = new QComboBox(groupBox);
-        comboBox_robot_select->setObjectName(QString::fromUtf8("comboBox_robot_select"));
-
-        gridLayout->addWidget(comboBox_robot_select, 0, 1, 1, 3);
+        gridLayout->addWidget(label_connection_stat_2, 1, 0, 1, 1);
 
         pushButton_stop_5 = new QPushButton(groupBox);
         pushButton_stop_5->setObjectName(QString::fromUtf8("pushButton_stop_5"));
 
-        gridLayout->addWidget(pushButton_stop_5, 10, 3, 1, 1);
+        gridLayout->addWidget(pushButton_stop_5, 11, 3, 1, 1);
+
+        pushButton_2 = new QPushButton(groupBox);
+        pushButton_2->setObjectName(QString::fromUtf8("pushButton_2"));
+
+        gridLayout->addWidget(pushButton_2, 10, 2, 1, 1);
+
+        pushButton_5 = new QPushButton(groupBox);
+        pushButton_5->setObjectName(QString::fromUtf8("pushButton_5"));
+
+        gridLayout->addWidget(pushButton_5, 10, 3, 1, 1);
 
 
         gridLayout_4->addWidget(groupBox, 0, 0, 1, 1);
@@ -520,6 +520,29 @@ public:
         ___qtablewidgetitem3->setText(QCoreApplication::translate("MainWindow", "Gi\303\241 tr\341\273\213", nullptr));
         tabWidget->setTabText(tabWidget->indexOf(tab_2), QCoreApplication::translate("MainWindow", "Management", nullptr));
         groupBox->setTitle(QCoreApplication::translate("MainWindow", "GroupBox", nullptr));
+        label_3->setText(QCoreApplication::translate("MainWindow", "Robot status:", nullptr));
+        label_speed_R->setText(QCoreApplication::translate("MainWindow", "--", nullptr));
+        label_4->setText(QCoreApplication::translate("MainWindow", "Warning level", nullptr));
+        pushButton_stop_2->setText(QCoreApplication::translate("MainWindow", "RESET POSITION", nullptr));
+        pushButton_10->setText(QCoreApplication::translate("MainWindow", "9H", nullptr));
+        pushButton_7->setText(QCoreApplication::translate("MainWindow", "3H", nullptr));
+        pushButton_4->setText(QCoreApplication::translate("MainWindow", "0H", nullptr));
+        pushButton_stop->setText(QCoreApplication::translate("MainWindow", "STOP", nullptr));
+        label->setText(QCoreApplication::translate("MainWindow", "Tag ID:", nullptr));
+        pushButton->setText(QCoreApplication::translate("MainWindow", "Custom Message1", nullptr));
+        label_2->setText(QCoreApplication::translate("MainWindow", "Tag lost time:", nullptr));
+        label_tag_id_4->setText(QCoreApplication::translate("MainWindow", "--", nullptr));
+        lineEdit_msg_2->setText(QCoreApplication::translate("MainWindow", "$COM,m,4,5,", nullptr));
+        pushButton_down->setText(QCoreApplication::translate("MainWindow", "DOWN", nullptr));
+        pushButton_3->setText(QCoreApplication::translate("MainWindow", "6H", nullptr));
+        label_tag_id_3->setText(QCoreApplication::translate("MainWindow", "--", nullptr));
+        pushButton_up->setText(QCoreApplication::translate("MainWindow", "UP", nullptr));
+        pushButton_11->setText(QCoreApplication::translate("MainWindow", "FORWARD 0.7", nullptr));
+        lineEdit_msg_1->setText(QCoreApplication::translate("MainWindow", "aa558300ab0101", nullptr));
+        label_speed_L->setText(QCoreApplication::translate("MainWindow", "--", nullptr));
+        label_tag_id_2->setText(QCoreApplication::translate("MainWindow", "--", nullptr));
+        label_5->setText(QCoreApplication::translate("MainWindow", "Speed L-R", nullptr));
+        pushButton_stop_3->setText(QCoreApplication::translate("MainWindow", "HOME", nullptr));
         groupBox_2->setTitle(QCoreApplication::translate("MainWindow", "GroupBox", nullptr));
         lineEdit_des_x->setText(QCoreApplication::translate("MainWindow", "0", nullptr));
         label_connection_fps_2->setText(QCoreApplication::translate("MainWindow", "Des Y", nullptr));
@@ -532,37 +555,14 @@ public:
         pushButton_lift_before->setText(QCoreApplication::translate("MainWindow", "Lift", nullptr));
         pushButton_lift_after->setText(QCoreApplication::translate("MainWindow", "Lift", nullptr));
         label_connection_stat->setText(QCoreApplication::translate("MainWindow", "Des X", nullptr));
-        pushButton_stop_3->setText(QCoreApplication::translate("MainWindow", "HOME", nullptr));
-        label_tag_id_2->setText(QCoreApplication::translate("MainWindow", "--", nullptr));
-        label_5->setText(QCoreApplication::translate("MainWindow", "Speed L-R", nullptr));
-        lineEdit_msg_2->setText(QCoreApplication::translate("MainWindow", "$COM,m,4,5,", nullptr));
-        pushButton_5->setText(QCoreApplication::translate("MainWindow", "FORWARD 2", nullptr));
-        pushButton_11->setText(QCoreApplication::translate("MainWindow", "FORWARD 0.7", nullptr));
-        pushButton_stop->setText(QCoreApplication::translate("MainWindow", "STOP", nullptr));
-        label_connection_stat_2->setText(QCoreApplication::translate("MainWindow", "Connection FPS", nullptr));
-        pushButton_7->setText(QCoreApplication::translate("MainWindow", "3H", nullptr));
-        label_tag_id_3->setText(QCoreApplication::translate("MainWindow", "--", nullptr));
-        pushButton_stop_2->setText(QCoreApplication::translate("MainWindow", "RESET POSITION", nullptr));
-        pushButton_2->setText(QCoreApplication::translate("MainWindow", "FORWARD 1", nullptr));
         label_connection_last_msg->setText(QCoreApplication::translate("MainWindow", "--", nullptr));
-        label_speed_L->setText(QCoreApplication::translate("MainWindow", "--", nullptr));
-        label_tag_id->setText(QCoreApplication::translate("MainWindow", "--", nullptr));
-        pushButton_10->setText(QCoreApplication::translate("MainWindow", "9H", nullptr));
-        pushButton_4->setText(QCoreApplication::translate("MainWindow", "0H", nullptr));
-        label_connection_fps->setText(QCoreApplication::translate("MainWindow", "--", nullptr));
-        pushButton_down->setText(QCoreApplication::translate("MainWindow", "DOWN", nullptr));
-        pushButton_up->setText(QCoreApplication::translate("MainWindow", "UP", nullptr));
-        label_3->setText(QCoreApplication::translate("MainWindow", "Robot status:", nullptr));
-        label_4->setText(QCoreApplication::translate("MainWindow", "Warning level", nullptr));
-        label_tag_id_4->setText(QCoreApplication::translate("MainWindow", "--", nullptr));
-        label_speed_R->setText(QCoreApplication::translate("MainWindow", "--", nullptr));
         pushButton_6->setText(QCoreApplication::translate("MainWindow", "Custom Message 2", nullptr));
-        lineEdit_msg_1->setText(QCoreApplication::translate("MainWindow", "aa558300ab0101", nullptr));
-        pushButton->setText(QCoreApplication::translate("MainWindow", "Custom Message1", nullptr));
-        label_2->setText(QCoreApplication::translate("MainWindow", "Tag lost time:", nullptr));
-        label->setText(QCoreApplication::translate("MainWindow", "Tag ID:", nullptr));
-        pushButton_3->setText(QCoreApplication::translate("MainWindow", "6H", nullptr));
+        label_tag_id->setText(QCoreApplication::translate("MainWindow", "--", nullptr));
+        label_connection_fps->setText(QCoreApplication::translate("MainWindow", "--", nullptr));
+        label_connection_stat_2->setText(QCoreApplication::translate("MainWindow", "Connection FPS", nullptr));
         pushButton_stop_5->setText(QCoreApplication::translate("MainWindow", "DOCK", nullptr));
+        pushButton_2->setText(QCoreApplication::translate("MainWindow", "CW", nullptr));
+        pushButton_5->setText(QCoreApplication::translate("MainWindow", "CCW", nullptr));
         menuFile->setTitle(QCoreApplication::translate("MainWindow", "File", nullptr));
         menuView->setTitle(QCoreApplication::translate("MainWindow", "View", nullptr));
         menuTool->setTitle(QCoreApplication::translate("MainWindow", "Tool", nullptr));

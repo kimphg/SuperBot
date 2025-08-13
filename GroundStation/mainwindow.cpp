@@ -39,7 +39,7 @@ void MainWindow::timerEvent(QTimerEvent *event)
         QStringList itemsInComboBox;
         for (int index = 0; index < ui->comboBox_robot_select->count(); index++)
             itemsInComboBox << ui->comboBox_robot_select->itemText(index);
-        if(itemsInComboBox.contains(id))break;
+        if(itemsInComboBox.contains(id))continue;
         ui->comboBox_robot_select->addItem(id);
 
     }
@@ -114,7 +114,7 @@ MainWindow::~MainWindow()
 
 void MainWindow::on_pushButton_2_clicked()
 {
-    ui->frame_view->sendCommand("$COM,d,1");//tiến 1 ô
+    ui->frame_view->sendCommand("$COM,top_rot,1");//tiến 1 ô
 }
 
 void MainWindow::on_actionConnect_triggered()
@@ -155,7 +155,7 @@ void MainWindow::on_pushButton_7_clicked(bool checked)
 
 void MainWindow::on_pushButton_5_clicked()
 {
-    ui->frame_view->sendCommand("$COM,d,2");//tiến 2 ô
+    ui->frame_view->sendCommand("$COM,top_rot,-1");//tiến 2 ô
 }
 
 void MainWindow::on_pushButton_4_clicked()
