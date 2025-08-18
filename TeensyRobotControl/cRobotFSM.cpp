@@ -483,6 +483,7 @@ void RobotDriver::processCommandBytes() {
     if ((commandMessage[3] == 0xf2) && (commandMessage[4] == 0x00)) {
       if ((commandMessage[5] == 0x02) && (commandMessage[6] == 0x00)) {
         if (commandMessageI >= 16) {
+          
           uint16_t crc = gen_crc16(commandMessage, 15);
           uint16_t real_crc = (commandMessage[15] << 8) + commandMessage[16];
           if (crc == real_crc) sendPPUack(2);
@@ -506,7 +507,7 @@ void RobotDriver::processCommandBytes() {
           else if (angle == 2) desAngle = -90;
           else if (angle == 3) desAngle = 180;
           newliftComm = (action & 0x0c) >> 2;
-
+          
 
           if (bot_mode == MODE_STANDBY) {
 
@@ -813,7 +814,7 @@ void RobotDriver::posUpdate() {  //update robot position, lifter status and angl
   float distanceLeft = -(encPosLeft - encLefto) * 0.65;
 #endif
   // Serial.println(curSpeedLift);
-  float distance = (distanceLeft + distanceRight) / 2.0 * 0.95;
+  float distance = (distanceLeft + distanceRight) / 2.0 * K_encoder;
   curSpeed = distance / 1000.0 / DT_POS_UPDATE;
   // Serial.print("curSpeed:");
   // Serial.println(curSpeed);
@@ -1065,7 +1066,7 @@ void RobotDriver::loopMove(float requiredError, int endMode, int direction) {  /
   // }
   if ((abs(desDistance) < requiredError)) {
     stillCount++;
-    if (stillCount > 100) {
+    if (stillCount > 500) {
       // if (cur_lift_stat != newliftComm) {
       //   cur_lift_stat = newliftComm;
       //   gotoMode(MODE_LIFT);
@@ -1136,7 +1137,7 @@ void RobotDriver::update() {  //high speed update to read sensor bus
     if (result == 1)  //camera 1
     {
 
-      if ((sbus.cambot.tagID > 0) && (sbus.cambot.stable > 2)) {
+      if ((sbus.cambot.tagID > 0) && (sbus.cambot.stable > 1)) {
 
         FloorTag mapPoint;
         int tagID = sbus.cambot.tagID;
@@ -1186,8 +1187,8 @@ void RobotDriver::update() {  //high speed update to read sensor bus
 
         float tagAngleAcc = abs(dx * dy) / 1000.0;
         // tagAngleAcc += abs(botRotationSpeed * 2);  // 0.2 sec delay
-        if (tagID > 500) tagAngleAcc += 0.2;
-        tagAngleAcc += (abs(curSpeedL) * 20 + abs(curSpeedR) * 20);
+        if (tagID > 500) tagAngleAcc += 0.7;
+        tagAngleAcc += (abs(curSpeedL) * 100 + abs(curSpeedR) * 100);
         // Serial.println("tagID:");
         // Serial.print(botx);
         // Serial.print(",");
@@ -1352,7 +1353,7 @@ void RobotDriver::setSpeedRight(float value)  // set the speed of right wheel
 }
 void RobotDriver::setSpeedLeft(float value)  // set the speed of left wheel
 {
-  value = constrainVal(value, -maxBotSpeed, maxBotSpeed);
+  value = constrainVal(value*wheel_diff, -maxBotSpeed, maxBotSpeed);
   float acc = value - desMotSpdL;  //todo: use curSpeedL for better accuracy
   // if(acc*desMotSpdL<0)acc = constrainVal(acc, -maxBotAcc*3, maxBotAcc*3);
   // else
@@ -1584,6 +1585,8 @@ void RobotDriver::loadParams()  //load robot parameters from memory
   Ki_lift = loadParam("Ki_lift", 0.0);
   Kd_lift = loadParam("Kd_lift", 1.2);
   Ks_lift = loadParam("Ks_lift", 9.0);
+  K_encoder = loadParam("K_encoder", 0.95);
+  wheel_diff = loadParam("wheel_diff", 1.0);
   botID = loadParam("botID", int(getRom(1)));
   botCameraCorrection = loadParam("botCameraCorrection", getRom(0));
   maxBotSpeed = loadParam("maxBotSpeed", 0.3);

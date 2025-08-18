@@ -104,6 +104,8 @@ class RobotDriver
   void liftStabilizeBLV();
   int bot_mode = MODE_STANDBY;
   int stillCount=0;
+  float K_encoder=0.95;
+  float wheel_diff = 1.0;
   float palletAngle =0;
   bool isActive=false;
   float botAngleAcc = 100;
