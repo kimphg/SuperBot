@@ -1,8 +1,8 @@
 //micro controller type: LGT8F328P
 // #define LIFT_MOTOR
-// #define WHEEL_MOTOR_LEFT
+#define WHEEL_MOTOR_LEFT
 // #define DEBUG
-#define WHEEL_MOTOR_RIGHT
+// #define WHEEL_MOTOR_RIGHT
 
 
 
@@ -270,10 +270,12 @@ void setup() {
   reportPacket[0] = 0xAA;
   reportPacket[1] = 0x55;
   blink(MOTOR_ID);
-  Serial.begin(230400);
+  Serial.begin(115200);
 
-  setSpeed(0);
+  // setSpeed(0);
   digitalWrite(LED_1, LOW);
+  Serial.print("motor:");
+  Serial.println(MOTOR_ID);
 }
 
 void loop() {
