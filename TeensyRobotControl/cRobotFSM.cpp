@@ -587,7 +587,7 @@ void RobotDriver::sendPPUack(uint8_t commandCode = 0) {
 RobotDriver::RobotDriver() {
   S_IMU.begin(921600);      //IMU 1Mbps
   S_SENSORS.begin(921600);  //sensor bus 1Mbps
-  S_MOTORS.begin(230400);   // motor control bus 0.23Mbps
+  S_MOTORS.begin(115200);   // motor control bus 0.23Mbps
   S_COMMAND.begin(921600);  // command bus 1Mbps
   S_DEBUG.begin(2000000);   // debug data 2Mbps
   portIMU = &S_IMU;
@@ -754,7 +754,7 @@ RobotDriver::RobotDriver() {
 
   attachInterrupt(digitalPinToInterrupt(ENC_A1), encRightInt, RISING);
   attachInterrupt(digitalPinToInterrupt(ENC_A2), EncLeftInt, RISING);
-  attachInterrupt(digitalPinToInterrupt(ENC_A3), EncIntLift, RISING);
+  // attachInterrupt(digitalPinToInterrupt(ENC_A3), EncIntLift, RISING);
   desAngle = 0;
   loadParams();
   controlPacket[0] = 0xaa;
@@ -1343,7 +1343,7 @@ float RobotDriver::calcPIDyaw(float targetAngle)  //PID calculation for yaw loop
 }
 void RobotDriver::setSpeedRight(float value)  // set the speed of right wheel
 {
-  value = constrainVal(value, -maxBotSpeed, maxBotSpeed);
+  value = constrainVal(value*0.8, -maxBotSpeed, maxBotSpeed);
   float acc = value - desMotSpdR;  //todo: use curSpeedR for better accuracy
   // if(acc*desMotSpdR<0)acc = constrainVal(acc, -maxBotAcc*3, maxBotAcc*3 );
   // else
@@ -1353,7 +1353,7 @@ void RobotDriver::setSpeedRight(float value)  // set the speed of right wheel
 }
 void RobotDriver::setSpeedLeft(float value)  // set the speed of left wheel
 {
-  value = constrainVal(value*wheel_diff, -maxBotSpeed, maxBotSpeed);
+  value = constrainVal(value*wheel_diff*0.8, -maxBotSpeed, maxBotSpeed);
   float acc = value - desMotSpdL;  //todo: use curSpeedL for better accuracy
   // if(acc*desMotSpdL<0)acc = constrainVal(acc, -maxBotAcc*3, maxBotAcc*3);
   // else

@@ -144,7 +144,7 @@ void processFrameHex(unsigned char* data)
         int realAngle = angle*16+miniangle;
         if(realAngle==600)newFrameAvailable = true;
         
-        if((realAngle>= 1390)||(realAngle<=530))
+        if((realAngle>= 1400)||(realAngle<=520))
         {
           // Serial.println(realAngle);
           float range  = data[3+miniangle*2] +data[4+miniangle*2]*256 ;
@@ -157,7 +157,7 @@ void processFrameHex(unsigned char* data)
           if(realAzDeg>180)realAzDeg-=(360);
           
           
-          if (range<15){ continue;}
+          if (range<50){ continue;}
           float xmm = range*sin(realAzDeg/57.2957795);
           float ymm = range*cos(realAzDeg/57.2957795);
           if(ymm<20)continue;

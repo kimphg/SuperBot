@@ -4,8 +4,6 @@
 // #define DEBUG
 #define WHEEL_MOTOR_RIGHT
 
-
-
 #ifdef WHEEL_MOTOR_RIGHT
 #define MEN 2
 #define REV 2
@@ -18,7 +16,7 @@
 #define ALARM_IN 9
 #define MAX_LIM 10  //emergency stop
 #define DEBUG_TELEMETRY Serial
-#define COMMAND_LEN_MAX 100
+#define COMMAND_LEN_MAX 50
 #define MOTOR_ID 1
 #endif
 #ifdef WHEEL_MOTOR_LEFT
@@ -33,7 +31,7 @@
 #define ALARM_IN 9
 #define MAX_LIM 10
 #define DEBUG_TELEMETRY Serial
-#define COMMAND_LEN_MAX 100
+#define COMMAND_LEN_MAX 50
 #define MOTOR_ID 2
 #endif
 #ifdef LIFT_MOTOR
@@ -174,8 +172,7 @@ bool updateBinaryCommand() {
 
 void sendReport() {
   delay(2+MOTOR_ID*2);
-  // Serial.println(MOTOR_ID);
-  return;
+
   reportPacket[2] = (0x80 + MOTOR_ID);
   reportPacket[3] = ((abs(output_speed)) & 0xff);
   if (output_speed >= 0)
@@ -270,7 +267,7 @@ void setup() {
   reportPacket[0] = 0xAA;
   reportPacket[1] = 0x55;
   blink(MOTOR_ID);
-  Serial.begin(230400);
+  Serial.begin(115200);
 
   setSpeed(0);
   digitalWrite(LED_1, LOW);
@@ -294,4 +291,5 @@ void loop() {
     delay(200);
     sendReport();
   }
+ 
 }
