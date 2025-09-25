@@ -23,18 +23,19 @@
   created 05 August 2018
   by Luiz H. Cassettari
 */
-
+#include <SoftwareSerial.h>
 #include <SPI.h>              // include libraries
 #include <LoRa.h>
 
 const long frequency = 411E6;  // LoRa Frequency
 
+SoftwareSerial mySerial(6, 5);
 const int csPin = 10;          // LoRa radio chip select
 const int resetPin = 9;        // LoRa radio reset
 const int irqPin = 2;          // change for your board; must be a hardware interrupt pin
 
 void setup() {
-  Serial.begin(115200);                   // initialize serial
+  mySerial.begin(115200);                   // initialize serial
   while (!Serial);
 
   LoRa.setPins(csPin, resetPin, irqPin);
@@ -44,13 +45,13 @@ void setup() {
     while (true);                       // if failed, do nothing
   }
 
-  Serial.println("LoRa init succeeded.");
-  Serial.println();
-  Serial.println("LoRa Simple Gateway");
-  Serial.println("Only receive messages from nodes");
-  Serial.println("Tx: invertIQ enable");
-  Serial.println("Rx: invertIQ disable");
-  Serial.println();
+  mySerial.println("LoRa init succeeded.");
+  mySerial.println();
+  mySerial.println("LoRa Simple Gateway");
+  mySerial.println("Only receive messages from nodes");
+  mySerial.println("Tx: invertIQ enable");
+  mySerial.println("Rx: invertIQ disable");
+  mySerial.println();
 
   LoRa.onReceive(onReceive);
   LoRa.onTxDone(onTxDone);
@@ -60,9 +61,9 @@ uint8_t loraSendBuf[200];
 int buffCurPos=0;
 unsigned long long int lastTimeSend=0;
 void loop() {
-  while(Serial.available())
+  while(mySerial.available())
   {
-    loraSendBuf[buffCurPos]=Serial.read();
+    loraSendBuf[buffCurPos]=mySerial.read();
     buffCurPos++;
     if(buffCurPos>=199)
     {
@@ -106,9 +107,9 @@ void LoRa_sendData(uint8_t* data,int len) {
 }
 void onReceive(int packetSize) {
   // String message = "";
-  Serial.write("\r\nmsg:");
+  mySerial.write("\r\nmsg:");
   while (LoRa.available()) {
-    Serial.write(LoRa.read());
+    mySerial.write(LoRa.read());
   }
 
   // Serial.print("Gateway Receive: ");
