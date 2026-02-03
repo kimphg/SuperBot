@@ -86,7 +86,7 @@ while(True):
     if(workMode>0):
         tagCount=0
         for tag in img.find_apriltags(families=tag_families):
-            packet=bytearray((b'\xaa\x55\x01\x11'))
+            packet=bytearray((b'\xaa\x55'))
 #            packet.append(byte())
             packet.append((tag.id()>>8))
             packet.append((tag.id()&0xff))
