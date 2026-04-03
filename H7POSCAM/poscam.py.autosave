@@ -76,6 +76,7 @@ masterFrameLen=6
 workMode=1
 frameWidth = sensor.width()
 frameHeight = sensor.height()
+fps = 0
 while(True):
     clock.tick()
 #    print(sensor.get_exposure_us())
@@ -83,10 +84,10 @@ while(True):
 
     #img.save ("example.jpg")
 #    while uart
-    if(workMode>0):
+    if(workMode==1):
         tagCount=0
         for tag in img.find_apriltags(families=tag_families):
-            packet=bytearray((b'\xaa\x55'))
+            packet=bytearray((b'\xaa\x55\x01\x11'))
 #            packet.append(byte())
             packet.append((tag.id()>>8))
             packet.append((tag.id()&0xff))
@@ -142,4 +143,4 @@ while(True):
                     workMode=0
     if(len(uartBuff)>1000):
         uartBuff=[]
-    print(clock.fps())
+    fps = (clock.fps())

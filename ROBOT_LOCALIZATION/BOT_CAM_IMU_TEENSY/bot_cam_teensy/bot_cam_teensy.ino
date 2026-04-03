@@ -1,5 +1,6 @@
 #include <SPI.h>  // include the SPI library:
 SPISettings settingsA(5000000, MSBFIRST, SPI_MODE0);
+H7PacketReader h7_reader;
 IntervalTimer myTimer;
 const int slaveSelectPin = 10;
 void setup() {
@@ -58,6 +59,8 @@ void IMU_CSR_2100_READ() {
 }
 
 int sec=0;
+
+
 void loop() {
   if(int(millis()/1000)!=sec)
   {
@@ -69,7 +72,7 @@ void loop() {
   }
   if(Serial1.available())
   {
-    Serial.println(Serial1.read());
+    h7_reader.input(Serial1.read());
 
   }
   
