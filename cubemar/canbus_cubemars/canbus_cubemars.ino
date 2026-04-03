@@ -284,7 +284,9 @@ void loop() {
   }
 
   if (Serial.available()) {
-    targetAngle = Serial.parseFloat();
+    float val = Serial.parseFloat();
+    while (Serial.available()) Serial.read();  // discard leftover newline/whitespace
+    targetAngle = val;
     Serial.print("Target: "); Serial.print(targetAngle); Serial.println(" deg");
   }
 }
