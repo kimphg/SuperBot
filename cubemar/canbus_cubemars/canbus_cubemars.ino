@@ -67,18 +67,11 @@ return (int) ((x-x_min)*((float)((1<<bits)/span)));
 }
 void sendCommand(int id, float p_des, float kp = 20, float kd = 1, float t_ff = 10) {
   /// limit data to be within bounds ///
-  float v_des = 100;
-  // float P_MIN = -95.5;
-  // float P_MAX = 95.5;
-  // float V_MIN = -30;
-  // float V_MAX = 30;
-  // float T_MIN = -18;
-  // float T_MAX = 18;
+  float v_des = 0.0f;
   float Kp_MIN = 0;
   float Kp_MAX = 500;
   float Kd_MIN = 0;
   float Kd_MAX = 5;
-  float Test_Pos = 0.0;
   p_des = fminf(fmaxf(P_MIN, p_des), P_MAX);
   v_des = fminf(fmaxf(V_MIN, v_des), V_MAX);
   kp = fminf(fmaxf(Kp_MIN, kp), Kp_MAX);
@@ -88,7 +81,7 @@ void sendCommand(int id, float p_des, float kp = 20, float kd = 1, float t_ff = 
   int p_int = float_to_uint(p_des, P_MIN, P_MAX, 16);
   int v_int = float_to_uint(v_des, V_MIN, V_MAX, 12);
   int kp_int = float_to_uint(kp, KP_MIN, KP_MAX, 12);
-  int kd_int = float_to_uint(kd, KD_MIN, KD_MAX, 12);
+  int kd_int = float_to_uint(kd, Kd_MIN, Kd_MAX, 12);
   int t_int = float_to_uint(t_ff, T_MIN, T_MAX, 12);
   /// pack ints into the can buffer ///
   canData[0] = p_int >> 8;                             // Position 8 higher
@@ -97,9 +90,8 @@ void sendCommand(int id, float p_des, float kp = 20, float kd = 1, float t_ff = 
   canData[3] = ((v_int & 0xF) << 4) | (kp_int >> 8);   //
   canData[4] = kp_int & 0xFF;                          // KP 8 bit lower
   canData[5] = kd_int >> 4;                            // Kd 8 bit higher
-  canData[6] = ((kd_int & 0xF) << 4) | (kp_int >> 8);  //KP 4 bit lower torque 4 bit higher
-  canData[7] = t_int & 0xff;
-  // torque 4 bit lower
+  canData[6] = ((kd_int & 0xF) << 4) | (t_int >> 8);   // Kd 4 bit lower torque 4 bit higher
+  canData[7] = t_int & 0xFF;                           // torque 8 bit lower
   CAN.sendMsgBuf(id, /*ext=*/0, 8, canData);
 }
 // ── MIT helper: float → unsigned int (n bits) ─────────────────────────────────
@@ -156,8 +148,7 @@ void sendMotorCommand(uint8_t id,
 // Position servo: degrees → MIT command (no vel/torque feedforward)
 void sendAngleControl(uint8_t id, float angleDeg, float kp, float kd) {
   float angleRad = angleDeg * (float)M_PI / 180.0f;
-  // sendMotorCommand(id, angleRad, 0.0f, kp, kd, 0.0f);
-  sendCommand(id, angleRad, kp, kd, 10);
+  sendMotorCommand(id, angleRad, 0.0f, kp, kd, 0.0f);
 }
 
 // ── Status reply parser ───────────────────────────────────────────────────────
@@ -169,8 +160,8 @@ static bool isReplyFrom(uint32_t rxId, uint8_t motorId) {
 
 bool parseReply(const uint8_t *d, uint8_t len, MotorState &s) {
   if (len < 7) return false;
-  int16_t rawPos = (int16_t)((uint16_t)d[1] | ((uint16_t)d[0] << 8));
-  int16_t rawSpeed = (int16_t)(((uint16_t)d[3] >> 4) | ((uint16_t)d[2] << 4));
+  int16_t rawSpeed = (int16_t)((uint16_t)d[1] | ((uint16_t)d[2] << 8));
+  int16_t rawPos = (int16_t)((uint16_t)d[3] | ((uint16_t)d[4] << 8));
   s.speedRPM = rawSpeed * 0.1f;        // 0.1 RPM per count
   s.angleDeg = rawPos * 0.1f;          // 0.1 deg per count
   s.currentA = (int8_t)d[5] * 0.001f;  // ~1 mA per count (tune if needed)
