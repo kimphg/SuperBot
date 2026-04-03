@@ -171,7 +171,7 @@ void setup() {
   Serial.begin(115200);
   while (!Serial) {}
 
-  while (CAN.begin(MCP_ANY, CAN_500KBPS, MCP_8MHZ) != CAN_OK) {
+  while (CAN.begin(MCP_ANY, CAN_1000KBPS, MCP_8MHZ) != CAN_OK) {
     Serial.println("MCP2515 init failed, retrying...");
     delay(200);
   }
