@@ -1,28 +1,42 @@
-// CubeMars AK48-36 servo mode control via MCP2515 (SPI CAN) on Teensy 4.0
+// CubeMars AK48-36 position control via MCP2515 (SPI CAN) on Teensy 4.0
 // MCP2515 CS pin: D10
-// Library required: mcp_can by coryjfowler (Library Manager: "MCP_CAN")
+// Library: mcp_can by coryjfowler (Library Manager: "MCP_CAN")
 //
-// ── Extended CAN frame protocol ───────────────────────────────────────────────
-// Commands  (host → motor):
-//   Extended CAN ID = motorId  (29-bit, same numeric value as motor ID)
-//   8 bytes:
-//     [0]   command type:  0x0A = position, 0x0B = speed, 0x0C = torque
-//     [1-4] float32 target (little-endian): degrees / RPM / Amps
-//     [5-6] int16 speed limit in RPM (little-endian, position mode only)
-//     [7]   0x00
+// ── Protocol ─────────────────────────────────────────────────────────────────
+// Commands  (host → motor): MIT mini-cheetah protocol, STANDARD CAN frame
+//   CAN ID = motorId (11-bit)
+//   8 bytes, big-endian bit-packed:
+//     [15:0]  position  16-bit  P_MIN..P_MAX  (rad)
+//     [27:16] velocity  12-bit  V_MIN..V_MAX  (rad/s)
+//     [39:28] Kp        12-bit  0..500
+//     [51:40] Kd        12-bit  0..5
+//     [63:52] torque FF 12-bit  T_MIN..T_MAX  (Nm)
 //
-// Status reply (motor → host):
-//   Extended CAN ID = (0x29 << 8) | motorId   e.g. 0x296F for ID=111
+// Status reply (motor → host): EXTENDED CAN frame
+//   CAN ID = (0x29<<8)|motorId  e.g. 0x296F for ID=111
+//   mcp_can sets bit-31 on extended frames → rxId & 0x80000000
 //   8 bytes:
-//     [0]   status  0xFF = enabled/running
-//     [1-2] int16 LE position  (unit: 0.1 deg)
-//     [3-4] int16 LE velocity  (unit: RPM)
-//     [5]   uint8  current     (unit: 0.1 A)
-//     [6]   uint8  temperature (°C)
-//     [7]   uint8  error code  (0 = OK)
+//     [0]   status byte
+//     [1-2] int16 LE  speed    (0.1 RPM / count) — confirmed from live data
+//     [3-4] int16 LE  position (0.1 deg / count) — confirmed: changes with rotation
+//     [5]   int8       current  (~1 mA / count, signed; tune scale as needed)
+//     [6]   uint8      temperature (°C)
+//     [7]   uint8      error (0 = OK)
 
 #include <SPI.h>
 #include <mcp_can.h>
+
+// ── MIT protocol limits for AK48-36 ──────────────────────────────────────────
+#define P_MIN   -12.5f   // rad
+#define P_MAX    12.5f
+#define V_MIN   -30.0f   // rad/s  (covers ~286 RPM output)
+#define V_MAX    30.0f
+#define KP_MIN    0.0f
+#define KP_MAX  500.0f
+#define KD_MIN    0.0f
+#define KD_MAX    5.0f
+#define T_MIN   -18.0f   // Nm
+#define T_MAX    18.0f
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 struct MotorState {
@@ -37,85 +51,108 @@ struct MotorState {
 #define CAN_CS_PIN  10
 MCP_CAN CAN(CAN_CS_PIN);
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-static void packFloat(uint8_t *dst, float v) { memcpy(dst, &v, 4); }
-static void packI16  (uint8_t *dst, int16_t v) {
-  dst[0] = (uint8_t)(v & 0xFF);
-  dst[1] = (uint8_t)((v >> 8) & 0xFF);
+// ── MIT helper: float → unsigned int (n bits) ─────────────────────────────────
+static uint16_t floatToUint(float x, float xMin, float xMax, int bits) {
+  float span   = xMax - xMin;
+  float offset = x - xMin;
+  if (offset < 0.0f) offset = 0.0f;
+  uint32_t maxVal = (1u << bits) - 1;
+  uint16_t result = (uint16_t)(offset / span * (float)maxVal);
+  if (result > maxVal) result = (uint16_t)maxVal;
+  return result;
 }
 
-// ── Command helpers ───────────────────────────────────────────────────────────
-// All commands use extended CAN frames (ext = 1).
-// The reply CAN ID is (0x29 << 8) | motorId; we identify the motor by
-// checking (rxId & 0xFF) == motorId when bit 31 (extended flag) is set.
-
+// ── Special commands (standard CAN frame, ext=0) ───────────────────────────────
 void motorEnable(uint8_t id) {
   uint8_t d[8] = {0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFC};
-  CAN.sendMsgBuf(id, /*ext=*/1, 8, d);
+  CAN.sendMsgBuf(id, /*ext=*/0, 8, d);
 }
 
 void motorDisable(uint8_t id) {
   uint8_t d[8] = {0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFD};
-  CAN.sendMsgBuf(id, /*ext=*/1, 8, d);
+  CAN.sendMsgBuf(id, /*ext=*/0, 8, d);
 }
 
 void motorSetZero(uint8_t id) {
   uint8_t d[8] = {0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFE};
-  CAN.sendMsgBuf(id, /*ext=*/1, 8, d);
+  CAN.sendMsgBuf(id, /*ext=*/0, 8, d);
 }
 
-void sendPositionCmd(uint8_t id, float angleDeg, int16_t maxRPM = 200) {
-  uint8_t d[8] = {};
-  d[0] = 0x0A;
-  packFloat(&d[1], angleDeg);
-  packI16  (&d[5], maxRPM);
-  d[7] = 0x00;
-  CAN.sendMsgBuf(id, /*ext=*/1, 8, d);
+// ── MIT command frame ─────────────────────────────────────────────────────────
+void sendMotorCommand(uint8_t id,
+                      float posRad, float velRad_s,
+                      float kp,     float kd,
+                      float torqueFF_Nm) {
+  uint16_t p   = floatToUint(posRad,       P_MIN,  P_MAX,  16);
+  uint16_t v   = floatToUint(velRad_s,     V_MIN,  V_MAX,  12);
+  uint16_t kpI = floatToUint(kp,           KP_MIN, KP_MAX, 12);
+  uint16_t kdI = floatToUint(kd,           KD_MIN, KD_MAX, 12);
+  uint16_t t   = floatToUint(torqueFF_Nm,  T_MIN,  T_MAX,  12);
+
+  uint8_t d[8];
+  d[0] = (uint8_t)(p >> 8);
+  d[1] = (uint8_t)(p & 0xFF);
+  d[2] = (uint8_t)(v >> 4);
+  d[3] = (uint8_t)((v & 0x0F) << 4) | (uint8_t)(kpI >> 8);
+  d[4] = (uint8_t)(kpI & 0xFF);
+  d[5] = (uint8_t)(kdI >> 4);
+  d[6] = (uint8_t)((kdI & 0x0F) << 4) | (uint8_t)(t >> 8);
+  d[7] = (uint8_t)(t & 0xFF);
+
+  CAN.sendMsgBuf(id, /*ext=*/0, 8, d);
 }
 
-// ── Reply parser ──────────────────────────────────────────────────────────────
+// Position servo: degrees → MIT command (no vel/torque feedforward)
+void sendAngleControl(uint8_t id, float angleDeg, float kp, float kd) {
+  float angleRad = angleDeg * (float)M_PI / 180.0f;
+  sendMotorCommand(id, angleRad, 0.0f, kp, kd, 0.0f);
+}
+
+// ── Status reply parser ───────────────────────────────────────────────────────
+// Motor sends extended frame; mcp_can marks bit-31 of rxId for extended frames.
+// Motor ID is in the low byte of the actual 29-bit CAN ID.
+static bool isReplyFrom(uint32_t rxId, uint8_t motorId) {
+  return (rxId & 0x80000000) && ((rxId & 0xFF) == motorId);
+}
+
 bool parseReply(const uint8_t *d, uint8_t len, MotorState &s) {
   if (len < 7) return false;
-  int16_t rawPos = (int16_t)((uint16_t)d[1] | ((uint16_t)d[2] << 8));
-  int16_t rawVel = (int16_t)((uint16_t)d[3] | ((uint16_t)d[4] << 8));
-  s.angleDeg = rawPos * 0.1f;          // 0.1 deg per count
-  s.speedRPM = (float)rawVel;
-  s.currentA = d[5] * 0.1f;           // 0.1 A per count
+  int16_t rawSpeed = (int16_t)((uint16_t)d[1] | ((uint16_t)d[2] << 8));
+  int16_t rawPos   = (int16_t)((uint16_t)d[3] | ((uint16_t)d[4] << 8));
+  s.speedRPM = rawSpeed * 0.1f;          // 0.1 RPM per count
+  s.angleDeg = rawPos   * 0.1f;          // 0.1 deg per count
+  s.currentA = (int8_t)d[5] * 0.001f;   // ~1 mA per count (tune if needed)
   s.tempC    = d[6];
   s.error    = (len >= 8) ? d[7] : 0;
   return true;
 }
 
-// Check if rxId (from mcp_can) is an extended-frame reply from motorId.
-// mcp_can sets bit 31 for extended frames; the motor puts its ID in bits [7:0].
-static bool isReplyFrom(uint32_t rxId, uint8_t motorId) {
-  return (rxId & 0x80000000) && ((rxId & 0xFF) == motorId);
-}
-
 // ── Motor scan ────────────────────────────────────────────────────────────────
-#define SCAN_ID_MIN      1
-#define SCAN_ID_MAX      127
-#define SCAN_TIMEOUT_MS  100
+#define SCAN_ID_MIN     1
+#define SCAN_ID_MAX     127
+#define SCAN_TIMEOUT_MS 100
 
 uint8_t foundIds[SCAN_ID_MAX];
 uint8_t foundCount = 0;
 static bool idFound[SCAN_ID_MAX + 1];
 
 static bool probeMotor(uint8_t id) {
-  // Flush pending frames
-  while (CAN.checkReceive() == CAN_MSGAVAIL) {
+  while (CAN.checkReceive() == CAN_MSGAVAIL) {  // flush
     uint8_t len; uint8_t buf[8]; uint32_t rxId;
     CAN.readMsgBuf(&rxId, &len, buf);
   }
 
-  sendPositionCmd(id, 0.0f, 0);   // elicit a status reply
+  motorEnable(id);  // MIT enter command → motor replies with status frame
 
   unsigned long t0 = millis();
   while (millis() - t0 < SCAN_TIMEOUT_MS) {
     if (CAN.checkReceive() == CAN_MSGAVAIL) {
       uint8_t len; uint8_t buf[8]; uint32_t rxId;
       CAN.readMsgBuf(&rxId, &len, buf);
-      if (isReplyFrom(rxId, id) && len >= 6) return true;
+      if (isReplyFrom(rxId, id) && len >= 6) {
+        motorDisable(id);
+        return true;
+      }
     }
   }
   return false;
@@ -124,7 +161,7 @@ static bool probeMotor(uint8_t id) {
 void scanMotors() {
   foundCount = 0;
   memset(idFound, 0, sizeof(idFound));
-  Serial.println("Scanning for AK48-36 motors (extended CAN)...");
+  Serial.println("Scanning for AK48-36 motors...");
 
   // Phase 1: passive — catch motors already broadcasting
   Serial.println("  Phase 1: passive listen (500 ms)...");
@@ -133,7 +170,7 @@ void scanMotors() {
     if (CAN.checkReceive() == CAN_MSGAVAIL) {
       uint8_t len; uint8_t buf[8]; uint32_t rxId;
       CAN.readMsgBuf(&rxId, &len, buf);
-      if (!(rxId & 0x80000000)) continue;          // ignore standard frames
+      if (!(rxId & 0x80000000)) continue;  // ignore standard frames
       uint8_t id = rxId & 0xFF;
       if (id >= SCAN_ID_MIN && id <= SCAN_ID_MAX && len >= 6 && !idFound[id]) {
         idFound[id] = true;
@@ -165,6 +202,7 @@ void scanMotors() {
 
 // ── Globals ───────────────────────────────────────────────────────────────────
 uint8_t activeMotorId = 0;
+float   initialAngle  = 0.0f;
 
 // ── Setup ─────────────────────────────────────────────────────────────────────
 void setup() {
@@ -186,6 +224,22 @@ void setup() {
     delay(100);
     motorEnable(activeMotorId);
     Serial.println("Motor enabled");
+
+    // Read initial position so motor holds in place on startup
+    delay(50);
+    unsigned long t0 = millis();
+    while (millis() - t0 < 200) {
+      if (CAN.checkReceive() == CAN_MSGAVAIL) {
+        uint32_t rxId; uint8_t len; uint8_t buf[8];
+        CAN.readMsgBuf(&rxId, &len, buf);
+        if (isReplyFrom(rxId, activeMotorId) && len >= 5) {
+          int16_t rawPos = (int16_t)((uint16_t)buf[3] | ((uint16_t)buf[4] << 8));
+          initialAngle = rawPos * 0.1f;
+          Serial.print("Initial angle: "); Serial.print(initialAngle); Serial.println(" deg");
+          break;
+        }
+      }
+    }
   }
 }
 
@@ -193,19 +247,19 @@ void setup() {
 void loop() {
   if (activeMotorId == 0) return;
 
-  static float targetAngle = 0.0f;
-  static unsigned long lastCmd = 0;
+  static float targetAngle = -1.0e10f;
+  if (targetAngle < -1.0e9f) targetAngle = initialAngle;
 
-  if (millis() - lastCmd >= 20) {    // 50 Hz
+  static unsigned long lastCmd = 0;
+  if (millis() - lastCmd >= 20) {   // 50 Hz
     lastCmd = millis();
-    sendPositionCmd(activeMotorId, targetAngle, /*maxRPM=*/200);
+    sendAngleControl(activeMotorId, targetAngle, /*Kp=*/50.0f, /*Kd=*/1.0f);
   }
 
   while (CAN.checkReceive() == CAN_MSGAVAIL) {
     uint32_t rxId; uint8_t len; uint8_t buf[8];
     CAN.readMsgBuf(&rxId, &len, buf);
 
-    // Raw frame
     Serial.print("CAN ID=0x"); Serial.print(rxId, HEX);
     Serial.print(rxId & 0x80000000 ? " [ext]" : " [std]");
     Serial.print(" len="); Serial.print(len);
@@ -217,14 +271,13 @@ void loop() {
     }
     Serial.println();
 
-    // Parse if it is a reply from our motor
     if (isReplyFrom(rxId, activeMotorId)) {
       MotorState st;
       if (parseReply(buf, len, st)) {
         Serial.print("  -> angle="); Serial.print(st.angleDeg, 1);
-        Serial.print(" deg  speed="); Serial.print(st.speedRPM, 0);
-        Serial.print(" RPM  current="); Serial.print(st.currentA, 2);
-        Serial.print(" A  temp="); Serial.print(st.tempC);
+        Serial.print(" deg  speed="); Serial.print(st.speedRPM, 1);
+        Serial.print(" RPM  current="); Serial.print(st.currentA * 1000.0f, 0);
+        Serial.print(" mA  temp="); Serial.print(st.tempC);
         Serial.print(" C  err=0x"); Serial.println(st.error, HEX);
       }
     }
