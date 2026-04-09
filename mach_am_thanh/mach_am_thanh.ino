@@ -20,7 +20,7 @@ DFPlayer - A Mini MP3 Player For Arduino
  ****************************************************/
 #define LED_INDICATOR 4
 #include "Arduino.h"
-#include "DFRobotDFPlayerMini.h"
+#include <DFPlayerMini_Fast.h>
 #define ARDUINO_AVR_UNO
 #if (defined(ARDUINO_AVR_UNO) || defined(ESP8266))  // Using a soft serial port
 #include <SoftwareSerial.h>
@@ -60,10 +60,9 @@ int check_btn() {
   if (!digitalRead(BT8)) return 7;
   return 0;
 }
-DFRobotDFPlayerMini myDFPlayer;
+DFPlayerMini_Fast myDFPlayer;
 int volume = 25;
 int countDown =0;
-void printDetail(uint8_t type, int value);
 bool sdok = false;
 int combine_1st=0;
 int combine_2nd=0;
@@ -104,7 +103,7 @@ void setup() {
   Serial.println(F("DFRobot DFPlayer Mini   "));
   Serial.println(F("Initializing DFPlayer ... (May take 3~5 seconds)"));
 
-  if (!myDFPlayer.begin(FPSerial, /*isACK = */ true, /*doReset = */ true)) {  //Use serial to communicate with mp3.
+  if (!myDFPlayer.begin(FPSerial, /*debug = */ true)) {  //Use serial to communicate with mp3.
     Serial.println(F("Unable to begin:"));
     Serial.println(F("1.Please recheck the connection!"));
     Serial.println(F("2.Please insert the SD card!"));
@@ -125,9 +124,6 @@ void processCommand(int command)
   digitalWrite(LED_INDICATOR,HIGH);
 
   FPSerial.listen();
-  while (myDFPlayer.available()) {
-    printDetail(myDFPlayer.readType(), myDFPlayer.read());  //Print the detail message from DFPlayer to handle different errors and states.
-  }
   Serial.print("Command received: ");
   Serial.println(command);
   
@@ -232,64 +228,4 @@ void loop() {
     }
   }
 }
-
-void printDetail(uint8_t type, int value) {
-  switch (type) {
-    case TimeOut:
-      Serial.println(F("Time Out!"));
-      break;
-    case WrongStack:
-      Serial.println(F("Stack Wrong!"));
-      break;
-    case DFPlayerCardInserted:
-      Serial.println(F("Card Inserted!"));
-      break;
-    case DFPlayerCardRemoved:
-      Serial.println(F("Card Removed!"));
-      break;
-    case DFPlayerCardOnline:
-      Serial.println(F("Card Online!"));
-      break;
-    case DFPlayerUSBInserted:
-      Serial.println("USB Inserted!");
-      break;
-    case DFPlayerUSBRemoved:
-      Serial.println("USB Removed!");
-      break;
-    case DFPlayerPlayFinished:
-      Serial.print(F("Number:"));
-      Serial.print(value);
-      Serial.println(F(" Play Finished!"));
-      break;
-    case DFPlayerError:
-      Serial.print(F("DFPlayerError:"));
-      switch (value) {
-        case Busy:
-          Serial.println(F("Card not found"));
-          break;
-        case Sleeping:
-          Serial.println(F("Sleeping"));
-          break;
-        case SerialWrongStack:
-          Serial.println(F("Get Wrong Stack"));
-          break;
-        case CheckSumNotMatch:
-          Serial.println(F("Check Sum Not Match"));
-          break;
-        case FileIndexOut:
-          Serial.println(F("File Index Out of Bound"));
-          break;
-        case FileMismatch:
-          Serial.println(F("Cannot Find File"));
-          break;
-        case Advertise:
-          Serial.println(F("In Advertise"));
-          break;
-        default:
-          break;
-      }
-      break;
-    default:
-      break;
-  }
-}
+    
