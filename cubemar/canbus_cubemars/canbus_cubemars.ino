@@ -27,6 +27,7 @@
 
 uint8_t canData[8];
 bool verbose = false;  // Forward declare for use in functions
+bool useServoMode = true;  // Use servo mode by default (MIT mode had issues)
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 struct MotorState {
@@ -63,11 +64,57 @@ void motorSetZero(uint8_t id) {
   CAN.sendMsgBuf(id, /*ext=*/0, 8, d);
 }
 
+// Servo mode position control (extended CAN frame)
+// Mode 4: Position Loop Mode - position in 0.01° steps (int32_t * 10000)
+void sendServoPositionCommand(uint8_t id, float angleDeg) {
+  // Clamp angle to safe range (±180°)
+  if (angleDeg < -180.0f) angleDeg = -180.0f;
+  if (angleDeg > 180.0f) angleDeg = 180.0f;
+
+  // Convert degrees to int32 with 10000x scaling (0.01° resolution)
+  // Range: -360000000 to 360000000 represents -36000° to +36000°
+  int32_t posInt = (int32_t)(angleDeg * 10000.0f);
+
+  uint8_t data[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+  // Pack int32_t into bytes 0-3 (little-endian)
+  data[0] = (posInt >> 0) & 0xFF;
+  data[1] = (posInt >> 8) & 0xFF;
+  data[2] = (posInt >> 16) & 0xFF;
+  data[3] = (posInt >> 24) & 0xFF;
+
+  uint32_t canId = (uint32_t)id | (0x04UL << 8);  // Mode 4 = Position Loop Mode
+
+  if (verbose) {
+    Serial.print("[SERVO POS] ID="); Serial.print(id);
+    Serial.print(" angle="); Serial.print(angleDeg, 2);
+    Serial.print("° posInt="); Serial.print(posInt);
+    Serial.print(" canId=0x"); Serial.print(canId, HEX);
+    Serial.print(" bytes: ");
+    for (int i = 0; i < 4; i++) {
+      if (data[i] < 0x10) Serial.print("0");
+      Serial.print(data[i], HEX);
+      Serial.print(" ");
+    }
+    Serial.println();
+  }
+
+  CAN.sendMsgBuf(canId, /*ext=*/1, 8, data);
+}
+
 // Switch motor from servo mode to MIT Cheetah mode
 void setMITMode(uint8_t id) {
   Serial.print(">> switching motor ID "); Serial.print(id); Serial.println(" to MIT mode");
   // Send via extended servo mode CAN ID with mode-switch code
   uint8_t d[8] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFB };
+  uint32_t canId = (uint32_t)id | (0x05UL << 8);  // mode-switch command prefix
+  CAN.sendMsgBuf(canId, /*ext=*/1, 8, d);
+  delay(100);
+}
+
+// Switch motor to servo mode
+void setServoMode(uint8_t id) {
+  Serial.print(">> switching motor ID "); Serial.print(id); Serial.println(" to Servo mode");
+  uint8_t d[8] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFC };
   uint32_t canId = (uint32_t)id | (0x05UL << 8);  // mode-switch command prefix
   CAN.sendMsgBuf(canId, /*ext=*/1, 8, d);
   delay(100);
@@ -337,12 +384,22 @@ void processSerial() {
     Serial.println(verbose ? "ON" : "OFF");
     return;
   } else if (line == "mit") {
-    Serial.println("Switching all motors to MIT mode...");
+    useServoMode = false;
+    Serial.println("Switched to MIT mode. Switching hardware...");
     for (uint8_t i = 0; i < motorCount; i++) {
       setMITMode(motorIds[i]);
     }
     delay(200);
-    Serial.println("Motors switched. Send 'enable' to activate.");
+    Serial.println("Motors in MIT mode. Send 'enable' to activate.");
+    return;
+  } else if (line == "servo") {
+    useServoMode = true;
+    Serial.println("Switched to SERVO mode. Switching hardware...");
+    for (uint8_t i = 0; i < motorCount; i++) {
+      setServoMode(motorIds[i]);
+    }
+    delay(200);
+    Serial.println("Motors in SERVO mode. Send 'enable' to activate.");
     return;
   }
 
@@ -457,8 +514,8 @@ void setup() {
 
   Serial.print(motorCount);
   Serial.println(" motor(s) found.");
-  Serial.println("⚠ Motors disabled at startup for safety.");
-  Serial.println("Commands: 'enable' | 'disable' | 'v' verbose | 'move,<deg>,<deg>' | 'pid,<h|v>,<kp>,<kd>' | 'testmove,<deg>,<h|v>'");
+  Serial.println("⚠ Motors disabled at startup for safety. Using SERVO mode by default.");
+  Serial.println("Commands: 'enable' | 'disable' | 'servo' | 'mit' | 'v' verbose | 'move,<deg>,<deg>' | 'pid,<h|v>,<kp>,<kd>' | 'testmove,<deg>,<h|v>'");
 }
 
 // ── Loop ──────────────────────────────────────────────────────────────────────
@@ -487,19 +544,29 @@ void loop() {
       slewAngles[i] += diff;
 
       if (doLog) {
-        Serial.print(">> MIT cmd "); Serial.print(motorName[i]);
-        Serial.print(" target="); Serial.print(targetAngles[i], 2);
-        Serial.print(" slew="); Serial.print(slewAngles[i], 2);
-        Serial.print(" pos="); Serial.print(slewAngles[i] * DEG_TO_RAD, 2); Serial.print(" kp="); Serial.print(mitCfg[i].kp, 1);
-        Serial.print(" kd="); Serial.println(mitCfg[i].kd, 2);
+        if (useServoMode) {
+          Serial.print(">> SERVO cmd "); Serial.print(motorName[i]);
+          Serial.print(" target="); Serial.print(targetAngles[i], 2);
+          Serial.print(" slew="); Serial.println(slewAngles[i], 2);
+        } else {
+          Serial.print(">> MIT cmd "); Serial.print(motorName[i]);
+          Serial.print(" target="); Serial.print(targetAngles[i], 2);
+          Serial.print(" slew="); Serial.print(slewAngles[i], 2);
+          Serial.print(" pos="); Serial.print(slewAngles[i] * DEG_TO_RAD, 2); Serial.print(" kp="); Serial.print(mitCfg[i].kp, 1);
+          Serial.print(" kd="); Serial.println(mitCfg[i].kd, 2);
+        }
       }
-      // Calculate desired velocity towards target (ramp up to target velocity)
-      float targetVel = 0.0f;
-      float errorDeg = targetAngles[i] - slewAngles[i];
-      if (errorDeg > 0.1f) targetVel = 2.0f;      // moving towards positive target
-      else if (errorDeg < -0.1f) targetVel = -2.0f; // moving towards negative target
 
-      sendMITCommand(motorIds[i], i, slewAngles[i] * DEG_TO_RAD, targetVel * DEG_TO_RAD, 0.0f);
+      if (useServoMode) {
+        sendServoPositionCommand(motorIds[i], slewAngles[i]);
+      } else {
+        // MIT mode: Calculate desired velocity towards target
+        float targetVel = 0.0f;
+        float errorDeg = targetAngles[i] - slewAngles[i];
+        if (errorDeg > 0.1f) targetVel = 2.0f;      // moving towards positive target
+        else if (errorDeg < -0.1f) targetVel = -2.0f; // moving towards negative target
+        sendMITCommand(motorIds[i], i, slewAngles[i] * DEG_TO_RAD, targetVel * DEG_TO_RAD, 0.0f);
+      }
     }
   }
 
