@@ -26,9 +26,9 @@
 uint8_t canData[8];
 // ── Types ─────────────────────────────────────────────────────────────────────
 struct MotorState {
-  float angleDeg;
-  float speedRPM;
-  float currentA;
+  int16_t angleDeg;   // -180 to +180, store as int to save space
+  int16_t speedRPM;   // store as int
+  int16_t currentA_mA; // current in mA (int16_t instead of float)
   uint8_t tempC;
   uint8_t error;
 };
@@ -129,11 +129,12 @@ bool parseMITReply(const uint8_t *d, uint8_t len, uint8_t motorIdx, MotorState &
   uint16_t t_int = ((uint16_t)(d[4] & 0xF) << 8) | d[5];
   float posRad  = p_int / 65535.0f * (cfg.pMax - cfg.pMin) + cfg.pMin;
   float velRadS = v_int / 4095.0f  * (cfg.vMax - cfg.vMin) + cfg.vMin;
-  s.angleDeg = posRad  * (180.0f / PI);
-  s.speedRPM = velRadS * (60.0f / (2.0f * PI));
-  s.currentA = t_int / 4095.0f * (cfg.iffMax - cfg.iffMin) + cfg.iffMin;
-  s.tempC    = 0;
-  s.error    = 0;
+  float currA = t_int / 4095.0f * (cfg.iffMax - cfg.iffMin) + cfg.iffMin;
+  s.angleDeg = (int16_t)(posRad * (180.0f / PI));
+  s.speedRPM = (int16_t)(velRadS * (60.0f / (2.0f * PI)));
+  s.currentA_mA = (int16_t)(currA * 1000.0f);
+  s.tempC = 0;
+  s.error = 0;
   return true;
 }
 
@@ -141,9 +142,9 @@ bool parseReply(const uint8_t *d, uint8_t len, MotorState &s) {
   if (len < 8) return false;
   int16_t rawSpeed = (int16_t)((uint16_t)d[1] | ((uint16_t)d[2] << 8));
   int16_t rawPos = (int16_t)((uint16_t)d[3] | ((uint16_t)d[4] << 8));
-  s.speedRPM = rawSpeed * 0.01f;        // ERPM (approximate RPM)
-  s.angleDeg = rawPos * 0.01f;          // 0.01 deg per count
-  s.currentA = (int8_t)d[5] * 0.001f;  // ~1 mA per count (tune if needed)
+  s.speedRPM = (int16_t)(rawSpeed * 0.01f);
+  s.angleDeg = (int16_t)(rawPos * 0.01f);
+  s.currentA_mA = (int16_t)((int8_t)d[5]);  // ~1 mA per count
   s.tempC = d[6];
   s.error = d[7];
   return true;
@@ -154,9 +155,16 @@ bool parseReply(const uint8_t *d, uint8_t len, MotorState &s) {
 #define SCAN_ID_MAX 127
 #define SCAN_TIMEOUT_MS 100  // increased for MIT mode motors
 
-uint8_t foundIds[SCAN_ID_MAX];
+uint8_t foundIds[MAX_MOTORS];  // Only store found motors, not 127 possible IDs
 uint8_t foundCount = 0;
-static bool idFound[SCAN_ID_MAX + 1];
+
+// Check if motor ID already found (avoids duplicates)
+static bool isMotorFound(uint8_t id) {
+  for (uint8_t i = 0; i < foundCount; i++) {
+    if (foundIds[i] == id) return true;
+  }
+  return false;
+}
 
 static bool probeMotor(uint8_t id) {
   while (CAN.checkReceive() == CAN_MSGAVAIL) {  // flush
@@ -191,7 +199,6 @@ static bool probeMotor(uint8_t id) {
 
 void scanMotors() {
   foundCount = 0;
-  memset(idFound, 0, sizeof(idFound));
   Serial.println("Scanning for CubeMars motors...");
 
   // Phase 1: passive — catch motors already broadcasting (both servo & MIT modes)
@@ -210,8 +217,7 @@ void scanMotors() {
       } else {
         id = rxId & 0x7FF;  // standard frame: motor ID is the whole ID
       }
-      if (id >= SCAN_ID_MIN && id <= SCAN_ID_MAX && len >= 6 && !idFound[id]) {
-        idFound[id] = true;
+      if (id >= SCAN_ID_MIN && id <= SCAN_ID_MAX && len >= 6 && !isMotorFound(id) && foundCount < MAX_MOTORS) {
         foundIds[foundCount++] = id;
         Serial.print("  Found motor ID (passive, "); Serial.print(isExt ? "ext" : "std");
         Serial.print(" frame): ");
@@ -223,10 +229,9 @@ void scanMotors() {
   // Phase 2: active probe remaining IDs (only if passive didn't find anything)
   if (foundCount == 0) {
     Serial.println("  Phase 2: active probe...");
-    for (uint8_t id = SCAN_ID_MIN; id <= SCAN_ID_MAX; id++) {
-      if (idFound[id]) continue;
+    for (uint8_t id = SCAN_ID_MIN; id <= SCAN_ID_MAX && foundCount < MAX_MOTORS; id++) {
+      if (isMotorFound(id)) continue;
       if (probeMotor(id)) {
-        idFound[id] = true;
         foundIds[foundCount++] = id;
         Serial.print("  Found motor ID (active): ");
         Serial.println(id);
@@ -258,8 +263,8 @@ float slewAngles[MAX_MOTORS]  = {0.0f, 0.0f};
 #define MOTOR1_STEP_DEG  1.8f   // ~90 deg/s
 static const float maxStep[MAX_MOTORS] = { MOTOR0_STEP_DEG, MOTOR1_STEP_DEG };
 MotorState prevStates[MAX_MOTORS] = {
-  {-999.0f, -999.0f, -999.0f, 255, 255},
-  {-999.0f, -999.0f, -999.0f, 255, 255}
+  {-999, -999, -999, 255, 255},
+  {-999, -999, -999, 255, 255}
 };
 bool verbose = false;
 bool motorsEnabled = false;
@@ -278,7 +283,6 @@ void processSerial() {
   // Check for simple commands (no comma)
   if (line == "enable") {
     motorsEnabled = true;
-    Serial.print("DEBUG: motorsEnabled set to "); Serial.println(motorsEnabled);
     Serial.println("Motors ENABLED - be careful!");
     for (uint8_t i = 0; i < motorCount; i++) {
       motorEnable(motorIds[i]);
@@ -317,15 +321,8 @@ void processSerial() {
     if (c2 < 0) { Serial.println("err"); return; }
     float a0 = line.substring(c1 + 1, c2).toFloat();
     float a1 = line.substring(c2 + 1).toFloat();
-    Serial.print("DEBUG: move cmd parsed a0="); Serial.print(a0, 2); Serial.print(" a1="); Serial.println(a1, 2);
-    if (motorCount > 0) {
-      targetAngles[0] = a0;
-      Serial.print("DEBUG: Set targetAngles[0]="); Serial.println(a0, 2);
-    }
-    if (motorCount > 1) {
-      targetAngles[1] = a1;
-      Serial.print("DEBUG: Set targetAngles[1]="); Serial.println(a1, 2);
-    }
+    if (motorCount > 0) targetAngles[0] = a0;
+    if (motorCount > 1) targetAngles[1] = a1;
     Serial.print("ok,");
     Serial.print(a0, 2);
     Serial.print(",");
@@ -405,14 +402,6 @@ void loop() {
 
   for (uint8_t i = 0; i < motorCount; i++) {
     if (targetAngles[i] < -1.0e9f) targetAngles[i] = slewAngles[i];  // hold current position
-    else {
-      // Debug: show when targetAngles is set by move command
-      static float lastTarget[MAX_MOTORS] = {-1.0e10f, -1.0e10f};
-      if (targetAngles[i] != lastTarget[i]) {
-        Serial.print("DEBUG: targetAngles["); Serial.print(i); Serial.print("]="); Serial.println(targetAngles[i], 2);
-        lastTarget[i] = targetAngles[i];
-      }
-    }
   }
 
   static unsigned long lastCmd = 0;
@@ -445,11 +434,11 @@ void loop() {
         if (parseMITReply(buf, len, i, st) && verbose) {
           MotorState &prev = prevStates[i];
           if (st.angleDeg != prev.angleDeg || st.speedRPM != prev.speedRPM ||
-              st.currentA != prev.currentA || st.tempC != prev.tempC || st.error != prev.error) {
+              st.currentA_mA != prev.currentA_mA || st.tempC != prev.tempC || st.error != prev.error) {
             Serial.print("  "); Serial.print(motorName[i]);
-            Serial.print(" angle="); Serial.print(st.angleDeg, 1);
-            Serial.print(" deg  speed="); Serial.print(st.speedRPM, 1);
-            Serial.print(" RPM  current="); Serial.print(st.currentA * 1000.0f, 0);
+            Serial.print(" angle="); Serial.print(st.angleDeg);
+            Serial.print(" deg  speed="); Serial.print(st.speedRPM);
+            Serial.print(" RPM  current="); Serial.print(st.currentA_mA);
             Serial.print(" mA  temp="); Serial.print(st.tempC);
             Serial.print(" C  err=0x"); Serial.println(st.error, HEX);
             prev = st;
