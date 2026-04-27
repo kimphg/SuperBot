@@ -26,6 +26,8 @@
 #define MAX_MOTORS 2
 
 uint8_t canData[8];
+bool verbose = false;  // Forward declare for use in functions
+
 // ── Types ─────────────────────────────────────────────────────────────────────
 struct MotorState {
   int16_t angleDeg;   // -180 to +180, store as int to save space
@@ -88,9 +90,11 @@ struct MITConfig {
 
 // Index 0 = h_motor (AK60-6 V1.1 KV80,  6:1 ratio, ID 104)
 // Index 1 = v_motor (AK45-36    KV80, 36:1 ratio, ID 111)
+// NOTE: Velocity range is FIXED at ±30 rad/s in the CAN message encoding
+//       (per official CubeMars sample code), regardless of motor's max velocity
 MITConfig mitCfg[2] = {
-  { -12.5f, 12.5f, -65.0f,  65.0f, -18.0f, 18.0f, 5.0f, 0.5f },
-  { -12.5f, 12.5f, -18.0f,  18.0f, -30.0f, 30.0f, 5.0f, 0.5f },
+  { -12.5f, 12.5f, -30.0f,  30.0f, -18.0f, 18.0f, 5.0f, 0.5f },
+  { -12.5f, 12.5f, -30.0f,  30.0f, -30.0f, 30.0f, 5.0f, 0.5f },
 };
 
 static const char* motorName[2] = { "h_motor", "v_motor" };
@@ -292,7 +296,6 @@ MotorState prevStates[MAX_MOTORS] = {
   {-999, -999, -999, 255, 255},
   {-999, -999, -999, 255, 255}
 };
-bool verbose = false;
 bool motorsEnabled = false;
 
 // ── Serial protocol ───────────────────────────────────────────────────────────
