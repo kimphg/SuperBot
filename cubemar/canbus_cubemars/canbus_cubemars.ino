@@ -23,6 +23,8 @@
 #include <SPI.h>
 #include <mcp_can.h>
 
+#define MAX_MOTORS 2
+
 uint8_t canData[8];
 // ── Types ─────────────────────────────────────────────────────────────────────
 struct MotorState {
@@ -250,8 +252,6 @@ void scanMotors() {
 }
 
 // ── Globals ───────────────────────────────────────────────────────────────────
-#define MAX_MOTORS 2
-
 uint8_t motorIds[MAX_MOTORS] = {0, 0};
 uint8_t motorCount = 0;
 float initialAngles[MAX_MOTORS] = {0.0f, 0.0f};
