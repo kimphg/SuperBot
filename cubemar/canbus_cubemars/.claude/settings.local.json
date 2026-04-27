@@ -10,7 +10,13 @@
       "WebSearch",
       "WebFetch(domain:www.cubemars.com)",
       "WebFetch(domain:github.com)",
-      "Bash(python -m py_compile canbus_cubemars.ino)"
+      "Bash(python -m py_compile canbus_cubemars.ino)",
+      "Bash(git commit -m 'FIX: Correct velocity range in MIT command encoding to ±30 rad/s *)",
+      "Bash(git commit -m 'Fix servo mode to use correct Position Loop Mode \\(mode 4\\) format *)",
+      "Bash(git commit -m 'Add serial debug output and test command *)",
+      "Bash(git commit -m 'MEMORY OPTIMIZATION: Remove all MIT mode code, servo-only now *)",
+      "Bash(arduino-cli compile *)",
+      "Bash(git commit -m 'Add MIT mode archive and fix readInitialAngle function *)"
     ]
   }
 }
