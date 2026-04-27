@@ -359,12 +359,23 @@ void processSerial() {
   String line = Serial.readStringUntil('\n');
   line.trim();
 
-  Serial.print("[DEBUG] processSerial got: '");
+  Serial.print("[DEBUG] processSerial got '");
+  Serial.print(line.length());
+  Serial.print("' chars: '");
   Serial.print(line);
   Serial.println("'");
 
+  // If line is empty after trim, warn user
+  if (line.length() == 0) {
+    Serial.println("[WARN] Empty command - check baud rate is 115200");
+    return;
+  }
+
   // Check for simple commands (no comma)
-  if (line == "enable") {
+  if (line == "test") {
+    Serial.println("✓ Serial communication OK!");
+    return;
+  } else if (line == "enable") {
     motorsEnabled = true;
     Serial.println("Motors ENABLED - be careful!");
     for (uint8_t i = 0; i < motorCount; i++) {
