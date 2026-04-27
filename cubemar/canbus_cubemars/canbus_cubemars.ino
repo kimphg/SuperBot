@@ -99,18 +99,21 @@ MITConfig mitCfg[2] = {
 
 static const char* motorName[2] = { "h_motor", "v_motor" };
 
-static uint16_t floatToUint(float x, float xMin, float xMax, uint8_t bits) {
-  float c = x < xMin ? xMin : (x > xMax ? xMax : x);
-  return (uint16_t)((c - xMin) / (xMax - xMin) * ((1 << bits) - 1));
+// Matches official CubeMars float_to_uint implementation exactly
+static int floatToUint(float x, float xMin, float xMax, uint8_t bits) {
+  float span = xMax - xMin;
+  if (x < xMin) x = xMin;
+  else if (x > xMax) x = xMax;
+  return (int)((x - xMin) * ((float)((1 << bits) / span)));
 }
 
 void sendMITCommand(uint8_t id, uint8_t motorIdx, float posRad, float velRadS, float iff) {
   const MITConfig &cfg = mitCfg[motorIdx];
-  uint16_t p    = floatToUint(posRad,  cfg.pMin,   cfg.pMax,   16);
-  uint16_t v    = floatToUint(velRadS, cfg.vMin,   cfg.vMax,   12);
-  uint16_t kp_  = floatToUint(cfg.kp,  MIT_KP_MIN, MIT_KP_MAX, 12);
-  uint16_t kd_  = floatToUint(cfg.kd,  MIT_KD_MIN, MIT_KD_MAX, 12);
-  uint16_t iff_ = floatToUint(iff,     cfg.iffMin, cfg.iffMax, 12);
+  int p    = floatToUint(posRad,  cfg.pMin,   cfg.pMax,   16);
+  int v    = floatToUint(velRadS, cfg.vMin,   cfg.vMax,   12);
+  int kp_  = floatToUint(cfg.kp,  MIT_KP_MIN, MIT_KP_MAX, 12);
+  int kd_  = floatToUint(cfg.kd,  MIT_KD_MIN, MIT_KD_MAX, 12);
+  int iff_ = floatToUint(iff,     cfg.iffMin, cfg.iffMax, 12);
   uint8_t data[8];
   data[0] = p >> 8;
   data[1] = p & 0xFF;
