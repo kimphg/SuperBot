@@ -15,8 +15,8 @@ class MotorControlApp:
     def __init__(self, root):
         self.root = root
         self.root.title("CubeMars Dual Motor Controller")
-        self.root.geometry("500x600")
-        self.root.resizable(False, False)
+        self.root.geometry("700x800")
+        self.root.resizable(True, True)
 
         self.ser = None
         self.running = False
@@ -27,6 +27,9 @@ class MotorControlApp:
         # Default values
         self.h_angle = tk.DoubleVar(value=0.0)
         self.v_angle = tk.DoubleVar(value=0.0)
+        self.kp = tk.DoubleVar(value=1.0)
+        self.kd = tk.DoubleVar(value=0.5)
+        self.motor_select = tk.StringVar(value="h")
 
         self.setup_ui()
         self.find_ports()
@@ -93,6 +96,38 @@ class MotorControlApp:
         self.motor_status = ttk.Label(control_frame, text="Motors: DISABLED", foreground="red", font=("Arial", 10, "bold"))
         self.motor_status.pack(fill=tk.X, pady=5)
 
+        # ── PID Tuning Frame ──
+        pid_frame = ttk.LabelFrame(self.root, text="PID Tuning", padding=10)
+        pid_frame.pack(fill=tk.X, padx=10, pady=10)
+
+        # Motor selection
+        motor_select_frame = ttk.Frame(pid_frame)
+        motor_select_frame.pack(fill=tk.X, pady=(0, 10))
+        ttk.Label(motor_select_frame, text="Motor:").pack(side=tk.LEFT, padx=5)
+        ttk.Radiobutton(motor_select_frame, text="H-Motor", variable=self.motor_select, value="h").pack(side=tk.LEFT, padx=5)
+        ttk.Radiobutton(motor_select_frame, text="V-Motor", variable=self.motor_select, value="v").pack(side=tk.LEFT, padx=5)
+
+        # Kp slider
+        kp_frame = ttk.Frame(pid_frame)
+        kp_frame.pack(fill=tk.X, pady=5)
+        ttk.Label(kp_frame, text="Kp (0.0-500.0):", width=15).pack(side=tk.LEFT)
+        self.kp_slider = ttk.Scale(kp_frame, from_=0.0, to=500.0, orient=tk.HORIZONTAL, variable=self.kp, command=self.on_pid_change)
+        self.kp_slider.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5)
+        self.kp_label = ttk.Label(kp_frame, text="1.0", width=8, foreground="blue")
+        self.kp_label.pack(side=tk.LEFT)
+
+        # Kd slider
+        kd_frame = ttk.Frame(pid_frame)
+        kd_frame.pack(fill=tk.X, pady=5)
+        ttk.Label(kd_frame, text="Kd (0.0-5.0):", width=15).pack(side=tk.LEFT)
+        self.kd_slider = ttk.Scale(kd_frame, from_=0.0, to=5.0, orient=tk.HORIZONTAL, variable=self.kd, command=self.on_pid_change)
+        self.kd_slider.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5)
+        self.kd_label = ttk.Label(kd_frame, text="0.5", width=8, foreground="green")
+        self.kd_label.pack(side=tk.LEFT)
+
+        # Set PID button
+        ttk.Button(pid_frame, text="Send PID Command", command=self.send_pid).pack(pady=5)
+
         # ── H-Motor Slider ──
         h_frame = ttk.LabelFrame(self.root, text="H-Motor (Horizontal)", padding=10)
         h_frame.pack(fill=tk.X, padx=10, pady=10)
@@ -106,7 +141,7 @@ class MotorControlApp:
         self.h_slider.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5)
         ttk.Label(slider_frame, text="180°").pack(side=tk.LEFT)
 
-        self.h_value_label = ttk.Label(h_frame, text="0.0°", font=("Arial", 12, "bold"), foreground="blue")
+        self.h_value_label = ttk.Label(h_frame, text="0.0°", font=("Arial", 16, "bold"), foreground="blue")
         self.h_value_label.pack(fill=tk.X, pady=5)
 
         # ── V-Motor Slider ──
@@ -122,7 +157,7 @@ class MotorControlApp:
         self.v_slider.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5)
         ttk.Label(slider_frame, text="180°").pack(side=tk.LEFT)
 
-        self.v_value_label = ttk.Label(v_frame, text="0.0°", font=("Arial", 12, "bold"), foreground="green")
+        self.v_value_label = ttk.Label(v_frame, text="0.0°", font=("Arial", 16, "bold"), foreground="green")
         self.v_value_label.pack(fill=tk.X, pady=5)
 
         # ── Quick Presets ──
@@ -136,15 +171,17 @@ class MotorControlApp:
         ttk.Button(preset_btn_frame, text="Home (-90°, -90°)", command=lambda: self.set_angles(-90, -90)).pack(side=tk.LEFT, padx=2, fill=tk.X, expand=True)
         ttk.Button(preset_btn_frame, text="Up (0°, 90°)", command=lambda: self.set_angles(0, 90)).pack(side=tk.LEFT, padx=2, fill=tk.X, expand=True)
 
-        # ── Info Frame ──
-        info_frame = ttk.LabelFrame(self.root, text="Info", padding=10)
-        info_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        # ── Serial Log Frame ──
+        log_frame = ttk.LabelFrame(self.root, text="Serial Communication Log", padding=10)
+        log_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
-        self.info_text = tk.Text(info_frame, height=4, width=50, state=tk.DISABLED)
-        self.info_text.pack(fill=tk.BOTH, expand=True)
+        # Create text widget with scrollbar
+        scrollbar = ttk.Scrollbar(log_frame, orient=tk.VERTICAL)
+        self.info_text = tk.Text(log_frame, height=8, width=80, state=tk.DISABLED, yscrollcommand=scrollbar.set, font=("Courier", 9))
+        scrollbar.config(command=self.info_text.yview)
 
-        scrollbar = ttk.Scrollbar(info_frame, orient=tk.VERTICAL, command=self.info_text.yview)
-        self.info_text.config(yscroll=scrollbar.set)
+        self.info_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 5))
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
         self.log_message("Ready. Connect to Arduino and enable motors.")
 
@@ -157,8 +194,10 @@ class MotorControlApp:
 
     def log_message(self, msg):
         """Add message to info text"""
+        from datetime import datetime
+        timestamp = datetime.now().strftime("%H:%M:%S")
         self.info_text.config(state=tk.NORMAL)
-        self.info_text.insert(tk.END, msg + "\n")
+        self.info_text.insert(tk.END, f"[{timestamp}] {msg}\n")
         self.info_text.see(tk.END)
         self.info_text.config(state=tk.DISABLED)
 
@@ -195,7 +234,7 @@ class MotorControlApp:
             self.read_thread.start()
         except Exception as e:
             messagebox.showerror("Connection Error", str(e))
-            self.log_message(f"✗ Connection failed: {e}")
+            self.log_message(f"✗ Connection failed: {e}", "error")
 
     def disconnect_serial(self):
         """Disconnect from Arduino"""
@@ -219,6 +258,7 @@ class MotorControlApp:
             return False
         try:
             self.ser.write((cmd + "\n").encode())
+            self.log_message(f"→ [SEND] {cmd}")
             return True
         except Exception as e:
             self.log_message(f"✗ Send error: {e}")
@@ -231,7 +271,8 @@ class MotorControlApp:
                 if self.ser.in_waiting:
                     line = self.ser.readline().decode().strip()
                     if line:
-                        self.log_message(line)
+                        self.log_message(f"← [RECV] {line}")
+
                         # Track motor responses (any line starting with "h_motor" or containing "MIT")
                         if "h_motor" in line or "MIT cmd" in line or ">>" in line:
                             self.last_motor_response = time.time()
@@ -246,7 +287,7 @@ class MotorControlApp:
             self.motor_enabled = True
             self.motor_status.config(text="Motors: ENABLED ✓", foreground="green")
             self.motor_enabled_status.config(text="✅ Enabled", foreground="green")
-            self.log_message("→ Command: enable")
+            self.log_message("[LOCAL] Motor enabled flag set to True")
 
     def disable_motors(self):
         """Send disable command"""
@@ -254,7 +295,7 @@ class MotorControlApp:
             self.motor_enabled = False
             self.motor_status.config(text="Motors: DISABLED", foreground="red")
             self.motor_enabled_status.config(text="❌ Disabled", foreground="red")
-            self.log_message("→ Command: disable")
+            self.log_message("[LOCAL] Motor enabled flag set to False")
 
     def on_slider_change(self, value=None):
         """Update angle values and send move command"""
@@ -264,26 +305,37 @@ class MotorControlApp:
         self.h_value_label.config(text=f"{h:.1f}°")
         self.v_value_label.config(text=f"{v:.1f}°")
 
-        # Debug: always log the check
-        self.log_message(f"[DEBUG] on_slider_change: h={h:.1f}, v={v:.1f}, motor_enabled={self.motor_enabled}, ser_open={self.ser.is_open if self.ser else False}")
-
+        # Only send command if motors are enabled and connected
         if self.motor_enabled and self.ser and self.ser.is_open:
             cmd = f"move,{h:.1f},{v:.1f}"
             self.send_command(cmd)
-            self.log_message(f"→ {cmd}")
-        else:
-            if not self.motor_enabled:
-                self.log_message("[DEBUG] Motor not enabled!")
-            if not self.ser:
-                self.log_message("[DEBUG] No serial connection!")
-            elif not self.ser.is_open:
-                self.log_message("[DEBUG] Serial connection closed!")
 
     def set_angles(self, h, v):
         """Set both angle sliders and send command"""
         self.h_angle.set(h)
         self.v_angle.set(v)
         self.on_slider_change()
+
+    def on_pid_change(self, value=None):
+        """Update PID labels when sliders change"""
+        kp = self.kp.get()
+        kd = self.kd.get()
+        self.kp_label.config(text=f"{kp:.2f}")
+        self.kd_label.config(text=f"{kd:.3f}")
+
+    def send_pid(self):
+        """Send PID command to Arduino"""
+        kp = self.kp.get()
+        kd = self.kd.get()
+        motor = self.motor_select.get()
+
+        cmd = f"pid,{motor},{kp:.2f},{kd:.3f}"
+        self.log_message(f"[LOCAL] Sending PID: {cmd}")
+
+        if self.ser and self.ser.is_open:
+            self.send_command(cmd)
+        else:
+            self.log_message("✗ Not connected to Arduino")
 
     def update_status(self):
         """Update motor response status periodically"""

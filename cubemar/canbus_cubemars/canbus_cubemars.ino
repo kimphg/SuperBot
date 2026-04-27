@@ -44,6 +44,10 @@ void motorEnable(uint8_t id) {
   uint8_t d[8] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFC };
   Serial.print(">> enable motor ID ");
   Serial.println(id);
+  if (verbose) {
+    Serial.print("[ENABLE RAW] bytes: FF FF FF FF FF FF FF FC");
+    Serial.println();
+  }
   CAN.sendMsgBuf(id, /*ext=*/0, 8, d);
 }
 
@@ -85,8 +89,8 @@ struct MITConfig {
 // Index 0 = h_motor (AK60-6 V1.1 KV80,  6:1 ratio, ID 104)
 // Index 1 = v_motor (AK45-36    KV80, 36:1 ratio, ID 111)
 MITConfig mitCfg[2] = {
-  { -12.5f, 12.5f, -65.0f,  65.0f, -18.0f, 18.0f, 1.0f, 0.5f },
-  { -12.5f, 12.5f, -18.0f,  18.0f, -30.0f, 30.0f, 1.0f, 1.0f },
+  { -12.5f, 12.5f, -65.0f,  65.0f, -18.0f, 18.0f, 5.0f, 0.5f },
+  { -12.5f, 12.5f, -18.0f,  18.0f, -30.0f, 30.0f, 5.0f, 0.5f },
 };
 
 static const char* motorName[2] = { "h_motor", "v_motor" };
@@ -112,6 +116,19 @@ void sendMITCommand(uint8_t id, uint8_t motorIdx, float posRad, float velRadS, f
   data[5] = kd_ >> 4;
   data[6] = ((kd_ & 0xF) << 4) | (iff_ >> 8);
   data[7] = iff_ & 0xFF;
+
+  if (verbose) {
+    Serial.print("[MIT CMD RAW] ID="); Serial.print(id); Serial.print(" bytes: ");
+    for (uint8_t i = 0; i < 8; i++) {
+      if (data[i] < 0x10) Serial.print("0");
+      Serial.print(data[i], HEX);
+      Serial.print(" ");
+    }
+    Serial.print(" (p="); Serial.print(p); Serial.print(" v="); Serial.print(v);
+    Serial.print(" kp="); Serial.print(kp_); Serial.print(" kd="); Serial.print(kd_);
+    Serial.print(" iff="); Serial.print(iff_); Serial.println(")");
+  }
+
   CAN.sendMsgBuf(id, /*ext=*/0, 8, data);
 }
 
@@ -122,16 +139,25 @@ static bool isReplyFrom(uint32_t rxId, uint8_t motorId) {
   return (rxId & 0x80000000) && ((rxId & 0xFF) == motorId);
 }
 
-// MIT reply: 6 bytes — [motorId][p_hi][p_lo][v_hi][v_lo|t_hi][t_lo]
+// MIT reply: can be 6 or 8 bytes (motor sends extended format)
+// 6 bytes: [motorId][p_hi][p_lo][v_hi][v_lo|t_hi][t_lo]
+// 8 bytes: [motorId][p_hi][p_lo][v_hi][v_lo|kp_hi][kp_lo][kd_hi|iff_hi][iff_lo]
 bool parseMITReply(const uint8_t *d, uint8_t len, uint8_t motorIdx, MotorState &s) {
   if (len < 6) return false;
   const MITConfig &cfg = mitCfg[motorIdx];
+
+  // Position is always in bytes 1-2 (same for 6 and 8 byte frames)
   uint16_t p_int = ((uint16_t)d[1] << 8) | d[2];
-  uint16_t v_int = ((uint16_t)d[3] << 4) | (d[4] >> 4);
-  uint16_t t_int = ((uint16_t)(d[4] & 0xF) << 8) | d[5];
   float posRad  = p_int / 65535.0f * (cfg.pMax - cfg.pMin) + cfg.pMin;
-  float velRadS = v_int / 4095.0f  * (cfg.vMax - cfg.vMin) + cfg.vMin;
+
+  // Velocity in bytes 3-4 (bits 0-11 of byte 3 and 4)
+  uint16_t v_int = ((uint16_t)d[3] << 4) | (d[4] >> 4);
+  float velRadS = v_int / 4095.0f * (cfg.vMax - cfg.vMin) + cfg.vMin;
+
+  // Current/torque
+  uint16_t t_int = ((uint16_t)(d[4] & 0xF) << 8) | d[5];
   float currA = t_int / 4095.0f * (cfg.iffMax - cfg.iffMin) + cfg.iffMin;
+
   s.angleDeg = (int16_t)(posRad * (180.0f / PI));
   s.speedRPM = (int16_t)(velRadS * (60.0f / (2.0f * PI)));
   s.currentA_mA = (int16_t)(currA * 1000.0f);
@@ -258,9 +284,9 @@ float initialAngles[MAX_MOTORS] = {0.0f, 0.0f};
 float targetAngles[MAX_MOTORS] = {-1.0e10f, -1.0e10f};
 float slewAngles[MAX_MOTORS]  = {0.0f, 0.0f};
 
-// Max degrees per 20 ms step (50 Hz).  Motor 104 is 1/3 the speed of motor 111.
-#define MOTOR0_STEP_DEG  0.6f   // ~30 deg/s
-#define MOTOR1_STEP_DEG  1.8f   // ~90 deg/s
+// Max degrees per 20 ms step (50 Hz).  Increased for faster response.
+#define MOTOR0_STEP_DEG  2.0f   // ~100 deg/s (was 0.6 = 30 deg/s)
+#define MOTOR1_STEP_DEG  6.0f   // ~300 deg/s (was 1.8 = 90 deg/s)
 static const float maxStep[MAX_MOTORS] = { MOTOR0_STEP_DEG, MOTOR1_STEP_DEG };
 MotorState prevStates[MAX_MOTORS] = {
   {-999, -999, -999, 255, 255},
@@ -279,6 +305,10 @@ void processSerial() {
   if (!Serial.available()) return;
   String line = Serial.readStringUntil('\n');
   line.trim();
+
+  Serial.print("[DEBUG] processSerial got: '");
+  Serial.print(line);
+  Serial.println("'");
 
   // Check for simple commands (no comma)
   if (line == "enable") {
@@ -317,12 +347,27 @@ void processSerial() {
   cmd.toLowerCase();
 
   if (cmd == "move") {
+    Serial.println("[DEBUG] Got 'move' command");
     int c2 = line.indexOf(',', c1 + 1);
-    if (c2 < 0) { Serial.println("err"); return; }
+    if (c2 < 0) {
+      Serial.println("[DEBUG] move: missing second comma - err");
+      Serial.println("err");
+      return;
+    }
     float a0 = line.substring(c1 + 1, c2).toFloat();
     float a1 = line.substring(c2 + 1).toFloat();
-    if (motorCount > 0) targetAngles[0] = a0;
-    if (motorCount > 1) targetAngles[1] = a1;
+    Serial.print("[DEBUG] move parsed: a0="); Serial.print(a0, 2);
+    Serial.print(" a1="); Serial.print(a1, 2);
+    Serial.print(" motorsEnabled="); Serial.println(motorsEnabled);
+
+    if (motorCount > 0) {
+      targetAngles[0] = a0;
+      Serial.print("[DEBUG] Set targetAngles[0]="); Serial.println(a0, 2);
+    }
+    if (motorCount > 1) {
+      targetAngles[1] = a1;
+      Serial.print("[DEBUG] Set targetAngles[1]="); Serial.println(a1, 2);
+    }
     Serial.print("ok,");
     Serial.print(a0, 2);
     Serial.print(",");
@@ -341,6 +386,25 @@ void processSerial() {
     Serial.print("pid,"); Serial.print(motorName[idx]);
     Serial.print(",kp="); Serial.print(mitCfg[idx].kp, 2);
     Serial.print(",kd="); Serial.println(mitCfg[idx].kd, 3);
+  } else if (cmd == "testmove") {
+    // Test: Send raw MIT command with no velocity to test pure position control
+    // Format: testmove,<angle>,<h|v>
+    int c2 = line.indexOf(',', c1 + 1);
+    if (c2 < 0) { Serial.println("err"); return; }
+    float angle = line.substring(c1 + 1, c2).toFloat();
+    String motor = line.substring(c2 + 1);
+    motor.toLowerCase();
+    int idx = motor == "h" ? 0 : motor == "v" ? 1 : -1;
+    if (idx < 0 || idx >= (int)motorCount) { Serial.println("err"); return; }
+
+    Serial.print("[TEST] Sending MIT command to "); Serial.print(motorName[idx]);
+    Serial.print(" at "); Serial.print(angle, 2); Serial.println(" deg");
+    Serial.println("[TEST] Variant 1: With velocity=2.0 rad/s");
+    sendMITCommand(motorIds[idx], idx, angle * DEG_TO_RAD, 2.0f * DEG_TO_RAD, 0.0f);
+
+    delay(100);
+    Serial.println("[TEST] Variant 2: With velocity=0 (pure position)");
+    sendMITCommand(motorIds[idx], idx, angle * DEG_TO_RAD, 0.0f, 0.0f);
   } else {
     Serial.println("err");
   }
@@ -388,7 +452,7 @@ void setup() {
   Serial.print(motorCount);
   Serial.println(" motor(s) found.");
   Serial.println("⚠ Motors disabled at startup for safety.");
-  Serial.println("Commands: 'enable' | 'disable' | 'move,<deg>,<deg>' | 'pid,<h|v>,<kp>,<kd>' | 'v' verbose");
+  Serial.println("Commands: 'enable' | 'disable' | 'v' verbose | 'move,<deg>,<deg>' | 'pid,<h|v>,<kp>,<kd>' | 'testmove,<deg>,<h|v>'");
 }
 
 // ── Loop ──────────────────────────────────────────────────────────────────────
@@ -408,19 +472,28 @@ void loop() {
   static unsigned long lastDbg = 0;
   if (millis() - lastCmd >= 20) {  // 50 Hz
     lastCmd = millis();
-    bool doLog = (millis() - lastDbg >= 1000);  // log every 1 second
+    bool doLog = false;//(millis() - lastDbg >= 1000);  // log every 1 second
     if (doLog) lastDbg = millis();
     for (uint8_t i = 0; i < motorCount; i++) {
       float diff = targetAngles[i] - slewAngles[i];
       if      (diff >  maxStep[i]) diff =  maxStep[i];
       else if (diff < -maxStep[i]) diff = -maxStep[i];
       slewAngles[i] += diff;
+
       if (doLog) {
         Serial.print(">> MIT cmd "); Serial.print(motorName[i]);
+        Serial.print(" target="); Serial.print(targetAngles[i], 2);
+        Serial.print(" slew="); Serial.print(slewAngles[i], 2);
         Serial.print(" pos="); Serial.print(slewAngles[i] * DEG_TO_RAD, 2); Serial.print(" kp="); Serial.print(mitCfg[i].kp, 1);
         Serial.print(" kd="); Serial.println(mitCfg[i].kd, 2);
       }
-      sendMITCommand(motorIds[i], i, slewAngles[i] * DEG_TO_RAD, 0.0f, 0.0f);
+      // Calculate desired velocity towards target (ramp up to target velocity)
+      float targetVel = 0.0f;
+      float errorDeg = targetAngles[i] - slewAngles[i];
+      if (errorDeg > 0.1f) targetVel = 2.0f;      // moving towards positive target
+      else if (errorDeg < -0.1f) targetVel = -2.0f; // moving towards negative target
+
+      sendMITCommand(motorIds[i], i, slewAngles[i] * DEG_TO_RAD, targetVel * DEG_TO_RAD, 0.0f);
     }
   }
 
@@ -430,6 +503,18 @@ void loop() {
 
     for (uint8_t i = 0; i < motorCount; i++) {
       if (!(rxId & 0x80000000) && rxId == motorIds[i]) {
+        // Debug: show raw CAN data
+        if (verbose) {
+          Serial.print("[DEBUG] Got frame from motor "); Serial.print(motorIds[i]);
+          Serial.print(" len="); Serial.print(len);
+          Serial.print(" data: ");
+          for (uint8_t j = 0; j < len; j++) {
+            Serial.print(buf[j], HEX);
+            Serial.print(" ");
+          }
+          Serial.println();
+        }
+
         MotorState st;
         if (parseMITReply(buf, len, i, st) && verbose) {
           MotorState &prev = prevStates[i];

@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:cdn.robotshop.com)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git commit -m 'Add serial monitor utility and troubleshooting guide *)",
+      "Bash(git commit -m 'Fix MAX_MOTORS not declared in scope error *)",
+      "Bash(python -m py_compile motor_control.py)",
+      "WebSearch",
+      "WebFetch(domain:www.cubemars.com)",
+      "WebFetch(domain:github.com)",
+      "Bash(python -m py_compile canbus_cubemars.ino)"
+    ]
+  }
+}
