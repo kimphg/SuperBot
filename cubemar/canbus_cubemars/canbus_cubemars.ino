@@ -1,24 +1,16 @@
-// CubeMars Motor Controller (MIT Cheetah Mode)
+// CubeMars Motor Controller (Servo Mode)
 // Supports 1-2 motors dynamically detected via CAN scan
-// Current setup: h_motor (AK60-6 V1.1, ID 104)
+// Current setup: h_motor (AK60-6 V1.1, ID 104), v_motor (AK45-36, ID 111)
 // Hardware: MCP2515 CAN module via SPI on Arduino Nano (CS pin 10)
 // Library: mcp_can by coryjfowler (Library Manager: "MCP_CAN")
 //
 // ── Protocol ─────────────────────────────────────────────────────────────────
-// MIT Cheetah Mode - STANDARD CAN frames (11-bit ID)
+// Servo Mode - EXTENDED CAN frames (29-bit ID)
 //
-// Command (host → motor): 8 bytes
-//   CAN ID = motorId (104 or 111)
-//   Bytes 0-7: [p_int(16)] [v_int(12)] [kp_int(12)] [kd_int(12)] [iff_int(12)]
-//   - position: ±12.5 rad
-//   - velocity: ±65 rad/s (AK60-6) or ±18 rad/s (AK45-36)
-//   - kp: 0-500
-//   - kd: 0-5
-//   - torque_ff: ±18 A (AK60-6) or ±30 A (AK45-36)
-//
-// Status reply (motor → host): 6 bytes
-//   CAN ID = motorId
-//   Bytes 0-5: [motorId] [p_int(16)] [v_int(12)] [iff_int(12)]
+// Position Loop Command (Mode 4): 8 bytes
+//   CAN ID = (0x04 << 8) | motorId
+//   Bytes 0-3: int32_t position value * 10000 (0.01° resolution)
+//   Range: -36000° to +36000°
 
 #include <SPI.h>
 #include <mcp_can.h>
@@ -27,7 +19,6 @@
 
 uint8_t canData[8];
 bool verbose = false;  // Forward declare for use in functions
-bool useServoMode = true;  // Use servo mode by default (MIT mode had issues)
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 struct MotorState {
@@ -101,16 +92,6 @@ void sendServoPositionCommand(uint8_t id, float angleDeg) {
   CAN.sendMsgBuf(canId, /*ext=*/1, 8, data);
 }
 
-// Switch motor from servo mode to MIT Cheetah mode
-void setMITMode(uint8_t id) {
-  Serial.print(">> switching motor ID "); Serial.print(id); Serial.println(" to MIT mode");
-  // Send via extended servo mode CAN ID with mode-switch code
-  uint8_t d[8] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFB };
-  uint32_t canId = (uint32_t)id | (0x05UL << 8);  // mode-switch command prefix
-  CAN.sendMsgBuf(canId, /*ext=*/1, 8, d);
-  delay(100);
-}
-
 // Switch motor to servo mode
 void setServoMode(uint8_t id) {
   Serial.print(">> switching motor ID "); Serial.print(id); Serial.println(" to Servo mode");
@@ -120,105 +101,11 @@ void setServoMode(uint8_t id) {
   delay(100);
 }
 
-// ── MIT Cheetah mode — both motors ───────────────────────────────────────────
-// Standard CAN frame, CAN ID = motor_id.
-// kp/kd common range (same for all AK series):
-#define MIT_KP_MIN  0.0f
-#define MIT_KP_MAX  500.0f
-#define MIT_KD_MIN  0.0f
-#define MIT_KD_MAX  5.0f
-
-struct MITConfig {
-  float pMin, pMax;     // rad
-  float vMin, vMax;     // rad/s
-  float iffMin, iffMax; // A (feedforward current)
-  float kp, kd;
-};
-
-// Index 0 = h_motor (AK60-6 V1.1 KV80,  6:1 ratio, ID 104)
-// Index 1 = v_motor (AK45-36    KV80, 36:1 ratio, ID 111)
-// NOTE: Velocity range is FIXED at ±30 rad/s in the CAN message encoding
-//       (per official CubeMars sample code), regardless of motor's max velocity
-MITConfig mitCfg[2] = {
-  { -12.5f, 12.5f, -30.0f,  30.0f, -18.0f, 18.0f, 5.0f, 0.5f },
-  { -12.5f, 12.5f, -30.0f,  30.0f, -30.0f, 30.0f, 5.0f, 0.5f },
-};
+// ── Servo Mode (MIT mode removed to save memory) ───────────────────────────────
 
 static const char* motorName[2] = { "h_motor", "v_motor" };
 
 // Matches official CubeMars float_to_uint implementation exactly
-static int floatToUint(float x, float xMin, float xMax, uint8_t bits) {
-  float span = xMax - xMin;
-  if (x < xMin) x = xMin;
-  else if (x > xMax) x = xMax;
-  return (int)((x - xMin) * ((float)((1 << bits) / span)));
-}
-
-void sendMITCommand(uint8_t id, uint8_t motorIdx, float posRad, float velRadS, float iff) {
-  const MITConfig &cfg = mitCfg[motorIdx];
-  int p    = floatToUint(posRad,  cfg.pMin,   cfg.pMax,   16);
-  int v    = floatToUint(velRadS, cfg.vMin,   cfg.vMax,   12);
-  int kp_  = floatToUint(cfg.kp,  MIT_KP_MIN, MIT_KP_MAX, 12);
-  int kd_  = floatToUint(cfg.kd,  MIT_KD_MIN, MIT_KD_MAX, 12);
-  int iff_ = floatToUint(iff,     cfg.iffMin, cfg.iffMax, 12);
-  uint8_t data[8];
-  data[0] = p >> 8;
-  data[1] = p & 0xFF;
-  data[2] = v >> 4;
-  data[3] = ((v & 0xF) << 4) | (kp_ >> 8);
-  data[4] = kp_ & 0xFF;
-  data[5] = kd_ >> 4;
-  data[6] = ((kd_ & 0xF) << 4) | (iff_ >> 8);
-  data[7] = iff_ & 0xFF;
-
-  if (verbose) {
-    Serial.print("[MIT CMD RAW] ID="); Serial.print(id); Serial.print(" bytes: ");
-    for (uint8_t i = 0; i < 8; i++) {
-      if (data[i] < 0x10) Serial.print("0");
-      Serial.print(data[i], HEX);
-      Serial.print(" ");
-    }
-    Serial.print(" (p="); Serial.print(p); Serial.print(" v="); Serial.print(v);
-    Serial.print(" kp="); Serial.print(kp_); Serial.print(" kd="); Serial.print(kd_);
-    Serial.print(" iff="); Serial.print(iff_); Serial.println(")");
-  }
-
-  CAN.sendMsgBuf(id, /*ext=*/0, 8, data);
-}
-
-// ── Status reply parser ───────────────────────────────────────────────────────
-// Motor sends extended frame; mcp_can marks bit-31 of rxId for extended frames.
-// Motor ID is in the low byte of the actual 29-bit CAN ID.
-static bool isReplyFrom(uint32_t rxId, uint8_t motorId) {
-  return (rxId & 0x80000000) && ((rxId & 0xFF) == motorId);
-}
-
-// MIT reply: can be 6 or 8 bytes (motor sends extended format)
-// 6 bytes: [motorId][p_hi][p_lo][v_hi][v_lo|t_hi][t_lo]
-// 8 bytes: [motorId][p_hi][p_lo][v_hi][v_lo|kp_hi][kp_lo][kd_hi|iff_hi][iff_lo]
-bool parseMITReply(const uint8_t *d, uint8_t len, uint8_t motorIdx, MotorState &s) {
-  if (len < 6) return false;
-  const MITConfig &cfg = mitCfg[motorIdx];
-
-  // Position is always in bytes 1-2 (same for 6 and 8 byte frames)
-  uint16_t p_int = ((uint16_t)d[1] << 8) | d[2];
-  float posRad  = p_int / 65535.0f * (cfg.pMax - cfg.pMin) + cfg.pMin;
-
-  // Velocity in bytes 3-4 (bits 0-11 of byte 3 and 4)
-  uint16_t v_int = ((uint16_t)d[3] << 4) | (d[4] >> 4);
-  float velRadS = v_int / 4095.0f * (cfg.vMax - cfg.vMin) + cfg.vMin;
-
-  // Current/torque
-  uint16_t t_int = ((uint16_t)(d[4] & 0xF) << 8) | d[5];
-  float currA = t_int / 4095.0f * (cfg.iffMax - cfg.iffMin) + cfg.iffMin;
-
-  s.angleDeg = (int16_t)(posRad * (180.0f / PI));
-  s.speedRPM = (int16_t)(velRadS * (60.0f / (2.0f * PI)));
-  s.currentA_mA = (int16_t)(currA * 1000.0f);
-  s.tempC = 0;
-  s.error = 0;
-  return true;
-}
 
 bool parseReply(const uint8_t *d, uint8_t len, MotorState &s) {
   if (len < 8) return false;
@@ -394,15 +281,6 @@ void processSerial() {
     Serial.print("verbose: ");
     Serial.println(verbose ? "ON" : "OFF");
     return;
-  } else if (line == "mit") {
-    useServoMode = false;
-    Serial.println("Switched to MIT mode. Switching hardware...");
-    for (uint8_t i = 0; i < motorCount; i++) {
-      setMITMode(motorIds[i]);
-    }
-    delay(200);
-    Serial.println("Motors in MIT mode. Send 'enable' to activate.");
-    return;
   } else if (line == "servo") {
     useServoMode = true;
     Serial.println("Switched to SERVO mode. Switching hardware...");
@@ -446,39 +324,6 @@ void processSerial() {
     Serial.print(a0, 2);
     Serial.print(",");
     Serial.println(a1, 2);
-  } else if (cmd == "pid") {
-    // format: pid,<h|v>,<kp>,<kd>
-    int c2 = line.indexOf(',', c1 + 1);
-    int c3 = line.indexOf(',', c2 + 1);
-    if (c2 < 0 || c3 < 0) { Serial.println("err"); return; }
-    String motor = line.substring(c1 + 1, c2);
-    motor.toLowerCase();
-    int idx = motor == "h" ? 0 : motor == "v" ? 1 : -1;
-    if (idx < 0 || idx >= (int)motorCount) { Serial.println("err"); return; }
-    mitCfg[idx].kp = constrain(line.substring(c2 + 1, c3).toFloat(), MIT_KP_MIN, MIT_KP_MAX);
-    mitCfg[idx].kd = constrain(line.substring(c3 + 1).toFloat(),     MIT_KD_MIN, MIT_KD_MAX);
-    Serial.print("pid,"); Serial.print(motorName[idx]);
-    Serial.print(",kp="); Serial.print(mitCfg[idx].kp, 2);
-    Serial.print(",kd="); Serial.println(mitCfg[idx].kd, 3);
-  } else if (cmd == "testmove") {
-    // Test: Send raw MIT command with no velocity to test pure position control
-    // Format: testmove,<angle>,<h|v>
-    int c2 = line.indexOf(',', c1 + 1);
-    if (c2 < 0) { Serial.println("err"); return; }
-    float angle = line.substring(c1 + 1, c2).toFloat();
-    String motor = line.substring(c2 + 1);
-    motor.toLowerCase();
-    int idx = motor == "h" ? 0 : motor == "v" ? 1 : -1;
-    if (idx < 0 || idx >= (int)motorCount) { Serial.println("err"); return; }
-
-    Serial.print("[TEST] Sending MIT command to "); Serial.print(motorName[idx]);
-    Serial.print(" at "); Serial.print(angle, 2); Serial.println(" deg");
-    Serial.println("[TEST] Variant 1: With velocity=2.0 rad/s");
-    sendMITCommand(motorIds[idx], idx, angle * DEG_TO_RAD, 2.0f * DEG_TO_RAD, 0.0f);
-
-    delay(100);
-    Serial.println("[TEST] Variant 2: With velocity=0 (pure position)");
-    sendMITCommand(motorIds[idx], idx, angle * DEG_TO_RAD, 0.0f, 0.0f);
   } else {
     Serial.println("err");
   }
@@ -525,8 +370,8 @@ void setup() {
 
   Serial.print(motorCount);
   Serial.println(" motor(s) found.");
-  Serial.println("⚠ Motors disabled at startup for safety. Using SERVO mode by default.");
-  Serial.println("Commands: 'enable' | 'disable' | 'servo' | 'mit' | 'v' verbose | 'move,<deg>,<deg>' | 'pid,<h|v>,<kp>,<kd>' | 'testmove,<deg>,<h|v>'");
+  Serial.println("⚠ Motors disabled at startup for safety.");
+  Serial.println("Commands: 'test' | 'enable' | 'disable' | 'v' verbose | 'move,<deg>,<deg>' | 'servo'");
 }
 
 // ── Loop ──────────────────────────────────────────────────────────────────────
@@ -555,29 +400,12 @@ void loop() {
       slewAngles[i] += diff;
 
       if (doLog) {
-        if (useServoMode) {
-          Serial.print(">> SERVO cmd "); Serial.print(motorName[i]);
-          Serial.print(" target="); Serial.print(targetAngles[i], 2);
-          Serial.print(" slew="); Serial.println(slewAngles[i], 2);
-        } else {
-          Serial.print(">> MIT cmd "); Serial.print(motorName[i]);
-          Serial.print(" target="); Serial.print(targetAngles[i], 2);
-          Serial.print(" slew="); Serial.print(slewAngles[i], 2);
-          Serial.print(" pos="); Serial.print(slewAngles[i] * DEG_TO_RAD, 2); Serial.print(" kp="); Serial.print(mitCfg[i].kp, 1);
-          Serial.print(" kd="); Serial.println(mitCfg[i].kd, 2);
-        }
+        Serial.print(">> SERVO cmd "); Serial.print(motorName[i]);
+        Serial.print(" target="); Serial.print(targetAngles[i], 2);
+        Serial.print(" slew="); Serial.println(slewAngles[i], 2);
       }
 
-      if (useServoMode) {
-        sendServoPositionCommand(motorIds[i], slewAngles[i]);
-      } else {
-        // MIT mode: Calculate desired velocity towards target
-        float targetVel = 0.0f;
-        float errorDeg = targetAngles[i] - slewAngles[i];
-        if (errorDeg > 0.1f) targetVel = 2.0f;      // moving towards positive target
-        else if (errorDeg < -0.1f) targetVel = -2.0f; // moving towards negative target
-        sendMITCommand(motorIds[i], i, slewAngles[i] * DEG_TO_RAD, targetVel * DEG_TO_RAD, 0.0f);
-      }
+      sendServoPositionCommand(motorIds[i], slewAngles[i]);
     }
   }
 
@@ -586,32 +414,17 @@ void loop() {
     CAN.readMsgBuf(&rxId, &len, buf);
 
     for (uint8_t i = 0; i < motorCount; i++) {
-      if (!(rxId & 0x80000000) && rxId == motorIds[i]) {
-        // Debug: show raw CAN data
+      if ((rxId & 0x80000000) && (rxId & 0xFF) == motorIds[i]) {
         if (verbose) {
-          Serial.print("[DEBUG] Got frame from motor "); Serial.print(motorIds[i]);
+          Serial.print("[DEBUG] Servo reply from motor "); Serial.print(motorIds[i]);
           Serial.print(" len="); Serial.print(len);
           Serial.print(" data: ");
           for (uint8_t j = 0; j < len; j++) {
+            if (buf[j] < 0x10) Serial.print("0");
             Serial.print(buf[j], HEX);
             Serial.print(" ");
           }
           Serial.println();
-        }
-
-        MotorState st;
-        if (parseMITReply(buf, len, i, st) && verbose) {
-          MotorState &prev = prevStates[i];
-          if (st.angleDeg != prev.angleDeg || st.speedRPM != prev.speedRPM ||
-              st.currentA_mA != prev.currentA_mA || st.tempC != prev.tempC || st.error != prev.error) {
-            Serial.print("  "); Serial.print(motorName[i]);
-            Serial.print(" angle="); Serial.print(st.angleDeg);
-            Serial.print(" deg  speed="); Serial.print(st.speedRPM);
-            Serial.print(" RPM  current="); Serial.print(st.currentA_mA);
-            Serial.print(" mA  temp="); Serial.print(st.tempC);
-            Serial.print(" C  err=0x"); Serial.println(st.error, HEX);
-            prev = st;
-          }
         }
         break;
       }
