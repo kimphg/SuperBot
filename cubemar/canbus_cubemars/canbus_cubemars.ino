@@ -335,7 +335,8 @@ static void readInitialAngle(uint8_t idx) {
     if (CAN.checkReceive() == CAN_MSGAVAIL) {
       uint32_t rxId; uint8_t len; uint8_t buf[8];
       CAN.readMsgBuf(&rxId, &len, buf);
-      if (isReplyFrom(rxId, motorIds[idx]) && len >= 5) {
+      // Check if this is a servo mode response (extended frame) from our motor
+      if ((rxId & 0x80000000) && (rxId & 0xFF) == motorIds[idx] && len >= 5) {
         int16_t rawPos = (int16_t)((uint16_t)buf[3] | ((uint16_t)buf[4] << 8));
         initialAngles[idx] = rawPos * 0.01f;
         Serial.print(motorName[idx]);
