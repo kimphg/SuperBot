@@ -1,0 +1,15 @@
+{
+  "build": {
+    "board": "esp32:esp32:esp32",
+    "optimize": "debug",
+    "warnings": "all"
+  },
+  "upload": {
+    "port": "COM3",
+    "protocol": "esptool"
+  },
+  "monitor": {
+    "port": "COM3",
+    "baud": 115200
+  }
+}

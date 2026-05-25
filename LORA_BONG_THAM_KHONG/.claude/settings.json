@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Rename-Item -Path \"c:\\\\Users\\\\Phuong\\\\Documents\\\\GitHub\\\\WCS\\\\HARDWARE\\\\LORA\\\\arduino_lora_thu\\\\arduino_lora_thu.ino.ino\" -NewName \"arduino_lora_thu.ino\")"
+    ]
+  }
+}

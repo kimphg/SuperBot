@@ -1,0 +1,1 @@
+timestamp,temp_C,pressure_Pa,bmp_alt_m,lat,lon,gps_alt_m,speed_kmh,course_deg,heater,rssi_dBm,travel_time_s,distance_m,raw
