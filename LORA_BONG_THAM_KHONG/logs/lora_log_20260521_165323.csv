@@ -1,0 +1,5 @@
+timestamp,temp_C,pressure_Pa,bmp_alt_m,lat,lon,gps_alt_m,speed_kmh,course_deg,heater,rssi_dBm,travel_time_s,distance_m,raw
+2026-05-21T16:53:41,30.7,99242,175.0,,,,,,OFF,-40,0.0,0.0,30.7|99242|175.0|N/A|N/A|N/A|N/A|N/A|OFF
+2026-05-21T16:53:47,30.7,99242,175.2,,,,,,OFF,-42,0.0,0.0,30.7|99242|175.2|N/A|N/A|N/A|N/A|N/A|OFF
+2026-05-21T16:53:53,30.7,99242,175.0,,,,,,OFF,-43,0.0,0.0,30.7|99242|175.0|N/A|N/A|N/A|N/A|N/A|OFF
+2026-05-21T16:54:00,30.7,99241,174.5,,,,,,OFF,-42,0.0,0.0,30.7|99241|174.5|N/A|N/A|N/A|N/A|N/A|OFF
