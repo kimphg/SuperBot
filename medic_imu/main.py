@@ -75,7 +75,8 @@ input{{width:100%;padding:10px;margin-top:5px;box-sizing:border-box;
 <input type="password" name="password" value="" autocomplete="off" placeholder="Leave blank if open">
 <button class="btn" type="submit">&#128190; Save &amp; Connect</button>
 </form>
-<p class="note">Device will restart and connect to the new network.</p>
+<p class="note">Device will restart and connect to the new network.<br>
+(Setup AP password: <b>niclasetup</b>)</p>
 </body></html>"""
 
 _SAVED_HTML = """\
@@ -94,10 +95,10 @@ def run_setup_ap(cfg):
     """Block here and serve config web page until user saves credentials."""
     ap = WLAN(network.AP_IF)
     ap.active(True)
-    ap.config(ssid="NiclaSetup", channel=6)   # open AP, easy to join
+    ap.config(ssid="NiclaSetup", key="niclasetup", channel=6, security=3)  # WPA2
     time.sleep_ms(600)
     ap_ip = ap.ifconfig()[0]
-    print("Setup AP: join 'NiclaSetup', open http://{}".format(ap_ip))
+    print("Setup AP: join 'NiclaSetup' (password: niclasetup), open http://{}".format(ap_ip))
 
     srv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
