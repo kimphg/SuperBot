@@ -10,7 +10,7 @@ from machine import SPI
 import math
 SSID = "Star3k"
 KEY = "Abach04122019"
-CONTROLLER_IP = "10.254.102.88"
+CONTROLLER_IP = "192.168.4.16"  # PC's DHCP address on the board's AP (192.168.4.x)
 HOST = ""
 PORT = 8080
 lsmimu = LSM6DSOX(SPI(5), cs=Pin("PF6", Pin.OUT_PP, Pin.PULL_UP))
@@ -19,8 +19,8 @@ sensor.set_framesize(sensor.QVGA)
 sensor.set_pixformat(sensor.RGB565)
 ledpin = Pin("PF4", Pin.OUT_PP, Pin.PULL_UP)
 wlan = WLAN(network.AP_IF)
-wlan.config(ssid=SSID, key=KEY)
 wlan.active(True)
+wlan.config(ssid=SSID, key=KEY)
 roll=0
 pitch=90
 yaw=0
