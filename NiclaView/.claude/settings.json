@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/Phuong/Documents/GitHub/SuperBot/medic_imu/**)"
+    ],
+    "additionalDirectories": [
+      "C:\\Users\\Phuong\\Documents\\GitHub\\SuperBot\\medic_imu"
+    ]
+  }
+}

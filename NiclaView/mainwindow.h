@@ -6,6 +6,9 @@
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 #include <QUdpSocket>
+#include <QTimer>
+#include <QHostAddress>
+#include <QDateTime>
 #include "pdfreport.h"
 #include <QDesktopWidget>
 QT_BEGIN_NAMESPACE
@@ -29,6 +32,7 @@ private slots:
     void on_pushButton_clicked();
 
     void udpDataReceive();
+    void sendHeartbeat();
     void on_pushButton_2_clicked();
 
     void on_pushButton_3_clicked();
@@ -52,7 +56,12 @@ private:
     Ui::MainWindow *ui;
     QNetworkAccessManager* m_netwManager ;
     void downloadImage();
+    void updateButtonStates();
     QUdpSocket *videoSocket;
     QUdpSocket *udpSocket;
+    QTimer      *heartbeatTimer;
+    QHostAddress niclaAddress;      // discovered from first received IMU packet
+    qint64       lastImuMs = 0;     // wall-clock ms of most recent IMU packet
+    bool         wasConnected = false;
 };
 #endif // MAINWINDOW_H
