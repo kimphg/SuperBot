@@ -16,7 +16,8 @@
       "Bash(git commit -m 'Add serial debug output and test command *)",
       "Bash(git commit -m 'MEMORY OPTIMIZATION: Remove all MIT mode code, servo-only now *)",
       "Bash(arduino-cli compile *)",
-      "Bash(git commit -m 'Add MIT mode archive and fix readInitialAngle function *)"
+      "Bash(git commit -m 'Add MIT mode archive and fix readInitialAngle function *)",
+      "Bash(git commit *)"
     ]
   }
 }

@@ -27,7 +27,7 @@ class MotorControlApp:
         # Default values
         self.h_angle = tk.DoubleVar(value=0.0)
         self.v_angle = tk.DoubleVar(value=0.0)
-        self.kp = tk.DoubleVar(value=1.0)
+        self.kp = tk.DoubleVar(value=0.5)
         self.kd = tk.DoubleVar(value=0.5)
         self.motor_select = tk.StringVar(value="h")
 
@@ -110,8 +110,8 @@ class MotorControlApp:
         # Kp slider
         kp_frame = ttk.Frame(pid_frame)
         kp_frame.pack(fill=tk.X, pady=5)
-        ttk.Label(kp_frame, text="Kp (0.0-500.0):", width=15).pack(side=tk.LEFT)
-        self.kp_slider = ttk.Scale(kp_frame, from_=0.0, to=500.0, orient=tk.HORIZONTAL, variable=self.kp, command=self.on_pid_change)
+        ttk.Label(kp_frame, text="Kp (0.1-1.0):", width=15).pack(side=tk.LEFT)
+        self.kp_slider = ttk.Scale(kp_frame, from_=0.1, to=1.0, orient=tk.HORIZONTAL, variable=self.kp, command=self.on_pid_change)
         self.kp_slider.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5)
         self.kp_label = ttk.Label(kp_frame, text="1.0", width=8, foreground="blue")
         self.kp_label.pack(side=tk.LEFT)
@@ -224,17 +224,12 @@ class MotorControlApp:
             self.disable_btn.config(state=tk.NORMAL)
             self.log_message(f"✓ Connected to {port} at {baud} baud")
 
-            # Set default PID on connection
-            time.sleep(0.5)
-            self.send_command("pid,h,1.0,0.5")
-            self.log_message("→ Setting default PID: h_motor kp=1.0 kd=0.5")
-
             # Start reading thread
             self.read_thread = threading.Thread(target=self.read_serial, daemon=True)
             self.read_thread.start()
         except Exception as e:
             messagebox.showerror("Connection Error", str(e))
-            self.log_message(f"✗ Connection failed: {e}", "error")
+            self.log_message(f"✗ Connection failed: {e}")
 
     def disconnect_serial(self):
         """Disconnect from Arduino"""
@@ -288,6 +283,10 @@ class MotorControlApp:
             self.motor_status.config(text="Motors: ENABLED ✓", foreground="green")
             self.motor_enabled_status.config(text="✅ Enabled", foreground="green")
             self.log_message("[LOCAL] Motor enabled flag set to True")
+            # Set safe low gains immediately after enable
+            self.send_command("pid,h,0.5,0.5")
+            self.send_command("pid,v,0.5,0.5")
+            self.log_message("→ Safety PID set: Kp=0.5 Kd=0.5 for both motors")
 
     def disable_motors(self):
         """Send disable command"""
