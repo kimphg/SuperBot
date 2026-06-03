@@ -1,16 +1,14 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-#include <QAuthenticator>
 #include <QMainWindow>
-#include <QNetworkAccessManager>
-#include <QNetworkReply>
-#include <QUdpSocket>
+#include <QSerialPort>
+#include <QSerialPortInfo>
 #include <QTimer>
-#include <QHostAddress>
 #include <QDateTime>
 #include "pdfreport.h"
 #include <QDesktopWidget>
+
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
 QT_END_NAMESPACE
@@ -23,47 +21,45 @@ public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
-
-
 protected slots:
     void timerEvent(QTimerEvent *event);
+
 private slots:
-    void videoReceive();
+    void serialReceive();
+    void retryConnection();
     void on_pushButton_clicked();
-
-    void udpDataReceive();
-    void sendHeartbeat();
-    void discoveryReceive();
     void on_pushButton_2_clicked();
-
     void on_pushButton_3_clicked();
-
     void on_pushButton_4_clicked();
-
     void on_pushButton_5_clicked();
 
 private:
+    // ── serial ────────────────────────────────────────────────────────────
+    QSerialPort *serialPort;
+    QTimer      *retryTimer;
+    QByteArray   serialBuffer;
+
+    void autoConnectSerial();
+    void connectSerial(const QString &portName);
+    void processSerialBuffer();
+    void parseIMU(const QByteArray &payload);
+    void parseVideo(const QByteArray &payload);
+
+    // ── measurement state ─────────────────────────────────────────────────
     PdfReport report;
-    QPixmap pixmap;
-    bool isMeasuring = false;
-    float rrol=0;
-    float rpit=0;
-    float roll=0;float pitch = 0;
-    QPixmap panoramaView;
-    bool imgReady=false;
-    float roll_min,roll_max;
-    float pitch_min,pitch_max;
-    QByteArray jpegData,header ;
+    QPixmap   pixmap;
+    bool      isMeasuring = false;
+    float     rrol = 0, rpit = 0;
+    float     roll = 0, pitch = 0;
+    QPixmap   panoramaView;
+    bool      imgReady = false;
+    float     roll_min, roll_max;
+    float     pitch_min, pitch_max;
+    QByteArray header;
+
     Ui::MainWindow *ui;
-    QNetworkAccessManager* m_netwManager ;
-    void downloadImage();
     void updateButtonStates();
-    QUdpSocket *videoSocket;
-    QUdpSocket *udpSocket;
-    QUdpSocket *discoverySocket;    // listens on 31003 for NICLA_HELLO beacons
-    QTimer      *heartbeatTimer;
-    QHostAddress niclaAddress;      // auto-discovered from beacon or first IMU packet
-    qint64       lastImuMs = 0;     // wall-clock ms of most recent IMU packet
-    bool         wasConnected = false;
+    void downloadImage();   // stub, kept for compat
 };
+
 #endif // MAINWINDOW_H
