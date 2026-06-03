@@ -11,8 +11,9 @@ static const int  HEADER_SIZE = 9;   // 4 magic + 1 type + 4 length
 static const quint8 TYPE_IMU  = 0x01;
 static const quint8 TYPE_VIDEO= 0x02;
 
-// ── STMicroelectronics USB VID (Nicla Vision / OpenMV) ───────────────────────
-static const quint16 STM_VID = 0x0483;
+// Known USB VIDs / description keywords for Nicla Vision + OpenMV devices
+static const quint16 VID_STM32   = 0x0483;  // STMicroelectronics (OpenMV firmware)
+static const quint16 VID_ARDUINO = 0x2341;  // Arduino (stock bootloader)
 
 // ─────────────────────────────────────────────────────────────────────────────
 MainWindow::MainWindow(QWidget *parent)
@@ -53,20 +54,36 @@ MainWindow::MainWindow(QWidget *parent)
 // ── Serial auto-connect ───────────────────────────────────────────────────────
 void MainWindow::autoConnectSerial()
 {
-    for (const QSerialPortInfo &info : QSerialPortInfo::availablePorts()) {
-        if (info.vendorIdentifier() == STM_VID) {
+    const auto ports = QSerialPortInfo::availablePorts();
+
+    // Pass 1: match by known VID
+    for (const QSerialPortInfo &info : ports) {
+        quint16 vid = info.vendorIdentifier();
+        if (vid == VID_STM32 || vid == VID_ARDUINO) {
             connectSerial(info.portName());
             return;
         }
     }
-    statusBar()->showMessage("Nicla not found — plug in USB cable");
+    // Pass 2: match by description keyword (covers unusual VIDs)
+    for (const QSerialPortInfo &info : ports) {
+        QString desc = info.description().toLower();
+        if (desc.contains("openmv") || desc.contains("nicla") ||
+            desc.contains("stm32") || desc.contains("virtual com")) {
+            connectSerial(info.portName());
+            return;
+        }
+    }
+
+    statusBar()->showMessage(
+        "Nicla not found — install OpenMV IDE driver, then plug in USB");
     retryTimer->start(2000);
 }
 
 void MainWindow::connectSerial(const QString &portName)
 {
     serialPort->setPortName(portName);
-    if (serialPort->open(QIODevice::ReadOnly)) {
+    if (serialPort->open(QIODevice::ReadWrite)) {
+        serialPort->setDataTerminalReady(true);  // asserts DTR so firmware sees connection
         retryTimer->stop();
         statusBar()->showMessage("Connected: " + portName);
     } else {

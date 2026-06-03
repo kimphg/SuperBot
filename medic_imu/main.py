@@ -44,7 +44,7 @@ def send_video(cframe):
         end = k + 1024
         if end > size:
             end = size
-        usb.write(cframe[k:end])   # OpenMV image slice → bytes-like
+        usb.write(bytes(cframe[k:end]))
         k = end
 
 # ─── Madgwick 6-DOF filter ────────────────────────────────────────────────────
@@ -114,32 +114,24 @@ def updateIMU(fps):
 gc.collect()
 
 def start_streaming():
-    clock = pyb.Timer(4, freq=1)   # dummy; we use time.clock() below
     import time
     clock = time.clock()
-    led_phase = 0
     while True:
         clock.tick()
+        ledpin.on()
 
-        connected = usb.isconnected()
+        frame  = sensor.snapshot()
+        cframe = frame.compress(quality=35)
 
-        # LED: solid = streaming, slow blink = waiting for USB
-        led_phase += 1
-        if connected:
-            ledpin.on()
-        else:
-            ledpin.value(led_phase & 0x08 == 0)   # ~1 Hz blink
+        fps = clock.fps()
+        try:
+            send_video(cframe)
+            if fps > 0:
+                updateIMU(fps)
+        except OSError:
+            pass   # USB write failed — host not ready or disconnected
 
-        if connected:
-            frame  = sensor.snapshot()
-            cframe = frame.compress(quality=35)
-            try:
-                send_video(cframe)
-                updateIMU(clock.fps())
-            except OSError:
-                pass   # USB write failed (host disconnected mid-frame)
-        else:
-            sensor.snapshot()   # keep sensor pipeline alive
+        ledpin.off()
 
 while True:
     try:
