@@ -1,4 +1,4 @@
-import sensor, time, network, pyb, socket, ujson, math, machine
+import sensor, time, network, pyb, socket, ujson, math, machine, gc
 from network import WLAN
 from lsm6dsox import LSM6DSOX
 from machine import Pin, SPI
@@ -6,10 +6,10 @@ from machine import Pin, SPI
 # ─── Tuning constants ─────────────────────────────────────────────────────────
 HEARTBEAT_TIMEOUT_MS   = 3000
 IMU_BUFFER_DURATION_MS = 5000
-STA_CONNECT_TIMEOUT_MS = 10000  # give up on STA after 10 s
-BEACON_INTERVAL_MS     = 2000   # discovery broadcast period
+STA_CONNECT_TIMEOUT_MS = 10000
+BEACON_INTERVAL_MS     = 2000
 
-# ─── Persistent config (saved to flash) ──────────────────────────────────────
+# ─── Persistent config ────────────────────────────────────────────────────────
 CONFIG_FILE = "wifi_config.json"
 
 def load_config():
@@ -34,7 +34,7 @@ def led_blink(on_ms=100, off_ms=100):
     ledpin.on(); time.sleep_ms(on_ms)
     ledpin.off(); time.sleep_ms(off_ms)
 
-# ─── URL decode (for HTTP form body) ─────────────────────────────────────────
+# ─── URL decode ───────────────────────────────────────────────────────────────
 def url_decode(s):
     s = s.replace("+", " ")
     out, i = [], 0
@@ -47,58 +47,24 @@ def url_decode(s):
             i += 1
     return "".join(out)
 
-# ─── Web GUI templates ────────────────────────────────────────────────────────
-_SETUP_HTML = """\
-<!DOCTYPE html><html>
-<head><meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Nicla WiFi Setup</title>
-<style>
-body{{font-family:sans-serif;max-width:360px;margin:30px auto;padding:16px;background:#f0f4f8}}
-h2{{color:#1a3a6a;margin-bottom:4px}}
-.sub{{color:#555;font-size:13px;margin-bottom:20px}}
-label{{display:block;margin-top:14px;font-weight:bold;color:#333;font-size:14px}}
-input{{width:100%;padding:10px;margin-top:5px;box-sizing:border-box;
-       border:1px solid #bbb;border-radius:5px;font-size:15px}}
-.btn{{margin-top:22px;width:100%;padding:13px;background:#1a3a6a;
-      color:#fff;border:none;border-radius:6px;font-size:16px;cursor:pointer}}
-.btn:active{{background:#0e2244}}
-.note{{color:#888;font-size:12px;margin-top:14px;text-align:center}}
-</style></head>
-<body>
-<h2>&#128246; Nicla Vision</h2>
-<p class="sub">WiFi Configuration</p>
-<form method="POST" action="/save">
-<label>WiFi Network (SSID):</label>
-<input type="text" name="ssid" value="{ssid}" required autocomplete="off" placeholder="Network name">
-<label>Password:</label>
-<input type="password" name="password" value="" autocomplete="off" placeholder="Leave blank if open">
-<button class="btn" type="submit">&#128190; Save &amp; Connect</button>
-</form>
-<p class="note">Device will restart and connect to the new network.<br>
-(Setup AP password: <b>niclasetup</b>)</p>
-</body></html>"""
+# ─── Minimal HTML (kept short to save RAM) ────────────────────────────────────
+# Sent in two pieces so no large string is ever concatenated in memory.
+_FORM_A = b"<!DOCTYPE html><html><head><meta charset=UTF-8><meta name=viewport content=width=device-width></head><body><h3>Nicla WiFi Setup</h3><p>AP password: niclasetup</p><form method=POST action=/save>SSID:<br><input name=ssid value=\""
+_FORM_B = b"\"><br>Password:<br><input type=password name=password><br><br><input type=submit value=\"Save and restart\"></form></body></html>"
+_SAVED  = b"<!DOCTYPE html><html><body><h3>Saved! Restarting...</h3><p>Connect your PC to the saved WiFi network then open NiclaViewer.</p></body></html>"
 
-_SAVED_HTML = """\
-<!DOCTYPE html><html>
-<head><meta charset="UTF-8"><title>Saved</title>
-<style>body{{font-family:sans-serif;max-width:360px;margin:30px auto;padding:16px}}</style>
-</head><body>
-<h2 style="color:#1a6a1a">&#10003; Settings saved!</h2>
-<p>Connecting to <b>{ssid}</b>&hellip;</p>
-<p style="color:#555;font-size:13px">Reconnect your computer to that WiFi network,
-then open the NiclaViewer app.</p>
-</body></html>"""
+_HTTP_OK    = b"HTTP/1.1 200 OK\r\nContent-Type:text/html\r\nConnection:close\r\n\r\n"
+_HTTP_REDIR = b"HTTP/1.1 303 See Other\r\nLocation:/\r\nConnection:close\r\n\r\n"
 
 # ─── Setup AP + HTTP server ───────────────────────────────────────────────────
 def run_setup_ap(cfg):
-    """Block here and serve config web page until user saves credentials."""
+    gc.collect()
     ap = WLAN(network.AP_IF)
     ap.active(True)
-    ap.config(ssid="NiclaSetup", key="niclasetup", channel=6, security=3)  # WPA2
+    ap.config(ssid="NiclaSetup", key="niclasetup", channel=6, security=3)
     time.sleep_ms(600)
     ap_ip = ap.ifconfig()[0]
-    print("Setup AP: join 'NiclaSetup' (password: niclasetup), open http://{}".format(ap_ip))
+    print("Setup AP ready. Join 'NiclaSetup' (pass: niclasetup), open http://" + ap_ip)
 
     srv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
@@ -106,90 +72,93 @@ def run_setup_ap(cfg):
     except Exception:
         pass
     srv.bind(("", 80))
-    srv.listen(2)
-    srv.settimeout(1)          # non-blocking accept — allows LED blinking
+    srv.listen(1)
+    srv.settimeout(1)
 
     saved = False
     while not saved:
-        led_blink(40, 960)    # slow blink = setup mode
-
+        led_blink(40, 960)
         try:
             conn, _ = srv.accept()
         except OSError:
-            continue           # timeout, loop again
-
+            continue
         try:
             conn.settimeout(3)
             raw = b""
             while b"\r\n\r\n" not in raw:
-                chunk = conn.recv(512)
+                chunk = conn.recv(256)
                 if not chunk:
                     break
                 raw += chunk
-            req = raw.decode("utf-8", "ignore")
 
-            body    = req.split("\r\n\r\n", 1)[1] if "\r\n\r\n" in req else ""
-            is_post = req.startswith("POST /save")
-
+            is_post = raw.startswith(b"POST /save")
             if is_post:
+                body = raw.split(b"\r\n\r\n", 1)
+                body = body[1] if len(body) > 1 else b""
                 params = {}
-                for part in body.split("&"):
+                for part in body.decode("utf-8", "ignore").split("&"):
                     if "=" in part:
                         k, v = part.split("=", 1)
                         params[url_decode(k)] = url_decode(v)
                 new_ssid = params.get("ssid", "").strip()
                 new_pass = params.get("password", "")
                 if new_ssid:
-                    new_cfg = {"ssid": new_ssid, "password": new_pass}
-                    save_config(new_cfg)
-                    html = _SAVED_HTML.format(ssid=new_ssid)
+                    save_config({"ssid": new_ssid, "password": new_pass})
+                    conn.send(_HTTP_OK)
+                    conn.send(_SAVED)
                     saved = True
-
-            if not saved:
-                html = _SETUP_HTML.format(ssid=cfg.get("ssid", ""))
-
-            hdr = ("HTTP/1.1 200 OK\r\n"
-                   "Content-Type: text/html; charset=utf-8\r\n"
-                   "Content-Length: {}\r\n"
-                   "Connection: close\r\n\r\n").format(len(html))
-            conn.sendall(hdr + html)
+                else:
+                    conn.send(_HTTP_REDIR)
+            else:
+                # Serve form in parts — no large string concat
+                cur_ssid = cfg.get("ssid", "").encode()
+                conn.send(_HTTP_OK)
+                conn.send(_FORM_A)
+                conn.send(cur_ssid)
+                conn.send(_FORM_B)
         except Exception as e:
             print("HTTP:", e)
         finally:
             conn.close()
+            gc.collect()
 
+    srv.close()
     time.sleep_ms(1500)
-    machine.reset()            # restart into STA mode with new credentials
+    machine.reset()
 
 # ─── WiFi: STA first, fall back to setup AP ──────────────────────────────────
 cfg = load_config()
+gc.collect()
 
 sta = WLAN(network.STA_IF)
 sta.active(True)
 sta.connect(cfg["ssid"], cfg["password"])
-print("Connecting to WiFi '{}'…".format(cfg["ssid"]))
+print("Connecting to", cfg["ssid"])
 
 t0 = pyb.millis()
 while not sta.isconnected():
     if pyb.elapsed_millis(t0) > STA_CONNECT_TIMEOUT_MS:
         break
-    led_blink(150, 150)       # fast blink = trying to connect
+    led_blink(150, 150)
 
 if sta.isconnected():
     ledpin.off()
     ip_info = sta.ifconfig()
-    print("WiFi connected — IP:", ip_info[0])
-    # Compute subnet broadcast address for more reliable LAN delivery
+    print("Connected, IP:", ip_info[0])
     _ip   = [int(x) for x in ip_info[0].split(".")]
     _mask = [int(x) for x in ip_info[1].split(".")]
     _bcast = ".".join(str(_ip[i] | (~_mask[i] & 0xFF)) for i in range(4))
-    print("Subnet broadcast:", _bcast)
+    print("Broadcast:", _bcast)
+    del _ip, _mask, ip_info
 else:
     print("WiFi failed, starting setup AP")
     sta.active(False)
-    run_setup_ap(cfg)         # blocks until saved + reset; never returns
+    run_setup_ap(cfg)   # never returns
 
-# ─── Streaming sockets (STA mode) ─────────────────────────────────────────────
+del cfg
+gc.collect()
+
+# ─── Streaming sockets ────────────────────────────────────────────────────────
 svideo = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 sudp   = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
@@ -197,16 +166,14 @@ shb = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 shb.bind(("", 31002))
 shb.setblocking(False)
 
-# Broadcast socket: announces presence on the discovery port (31003)
-# until the PC's IP is learned from the first heartbeat reply.
 sbcast = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 try:
     sbcast.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
 except Exception:
     pass
-_bcast_addr = (_bcast, 31003)   # subnet broadcast, port 31003
+_bcast_addr  = (_bcast, 31003)
+_beacon_open = True   # False once sbcast is closed after discovery
 
-# Both resolved on first heartbeat (auto-discovered from PING sender)
 addr      = None
 addrvideo = None
 
@@ -214,7 +181,7 @@ q0, q1, q2, q3    = 1.0, 0.0, 0.0, 0.0
 B_madgwick         = 0.02
 last_heartbeat_ms  = 0
 has_ever_connected = False
-imu_buffer         = []   # list of (ts_ms: int, packet: bytes)
+imu_buffer         = []
 imu_seq            = 0
 old_roll           = 0
 last_beacon_ms     = 0
@@ -258,11 +225,12 @@ def Madgwick6DOF(gx, gy, gz, ax, ay, az, invSampleFreq):
 
 # ─── Protocol helpers ─────────────────────────────────────────────────────────
 def send_beacon():
-    """Broadcast NICLA_HELLO on the dedicated discovery port (31003).
-    Qt listens there and replies with a heartbeat that reveals the PC's IP.
-    Stops broadcasting once the PC address is known."""
-    global last_beacon_ms
+    global last_beacon_ms, _beacon_open
+    if not _beacon_open:
+        return
     if addr is not None:
+        sbcast.close()       # free socket once PC is known
+        _beacon_open = False
         return
     now = pyb.millis()
     if now - last_beacon_ms >= BEACON_INTERVAL_MS:
@@ -273,8 +241,6 @@ def send_beacon():
         last_beacon_ms = now
 
 def check_heartbeat():
-    """Non-blocking recv on the heartbeat port.
-    First PING reveals the PC's IP; subsequent PINGs reset the timeout."""
     global last_heartbeat_ms, has_ever_connected, addr, addrvideo
     try:
         data, sender = shb.recvfrom(32)
@@ -285,15 +251,15 @@ def check_heartbeat():
                 addr      = socket.getaddrinfo(client_ip, 31000)[0][4]
                 addrvideo = socket.getaddrinfo(client_ip, 31001)[0][4]
                 print("PC discovered:", client_ip)
+                gc.collect()
             has_ever_connected = True
     except OSError:
-        pass  # EAGAIN — nothing to read
+        pass
 
 def is_connected():
     return has_ever_connected and (pyb.millis() - last_heartbeat_ms < HEARTBEAT_TIMEOUT_MS)
 
 def flush_imu_buffer():
-    """Replay buffered IMU packets in order; stop on send failure."""
     global imu_buffer
     if addr is None:
         return
@@ -358,9 +324,9 @@ def start_streaming():
                         k = cframe.size()
                     svideo.sendto(bytes(cframe[k1:k]), addrvideo)
             except OSError:
-                pass  # drop frame on error
+                pass
         else:
-            sensor.snapshot()  # keep sensor pipeline alive
+            sensor.snapshot()
 
         updateIMU(clock.fps())
 
