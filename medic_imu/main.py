@@ -179,6 +179,11 @@ if sta.isconnected():
     ledpin.off()
     ip_info = sta.ifconfig()
     print("WiFi connected — IP:", ip_info[0])
+    # Compute subnet broadcast address for more reliable LAN delivery
+    _ip   = [int(x) for x in ip_info[0].split(".")]
+    _mask = [int(x) for x in ip_info[1].split(".")]
+    _bcast = ".".join(str(_ip[i] | (~_mask[i] & 0xFF)) for i in range(4))
+    print("Subnet broadcast:", _bcast)
 else:
     print("WiFi failed, starting setup AP")
     sta.active(False)
@@ -192,12 +197,14 @@ shb = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 shb.bind(("", 31002))
 shb.setblocking(False)
 
-# Broadcast socket used to announce presence until PC's IP is discovered
+# Broadcast socket: announces presence on the discovery port (31003)
+# until the PC's IP is learned from the first heartbeat reply.
 sbcast = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 try:
     sbcast.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
 except Exception:
     pass
+_bcast_addr = (_bcast, 31003)   # subnet broadcast, port 31003
 
 # Both resolved on first heartbeat (auto-discovered from PING sender)
 addr      = None
@@ -251,17 +258,16 @@ def Madgwick6DOF(gx, gy, gz, ax, ay, az, invSampleFreq):
 
 # ─── Protocol helpers ─────────────────────────────────────────────────────────
 def send_beacon():
-    """Broadcast a small discovery packet so the Qt app can find our IP.
-    Stops once the PC's address is known."""
+    """Broadcast NICLA_HELLO on the dedicated discovery port (31003).
+    Qt listens there and replies with a heartbeat that reveals the PC's IP.
+    Stops broadcasting once the PC address is known."""
     global last_beacon_ms
     if addr is not None:
         return
     now = pyb.millis()
     if now - last_beacon_ms >= BEACON_INTERVAL_MS:
         try:
-            # HELLO on port 31000 — Qt's udpDataReceive captures sender IP,
-            # discards the payload (< 6 comma fields), then sends heartbeats back.
-            sbcast.sendto(b"HELLO\n", ("255.255.255.255", 31000))
+            sbcast.sendto(b"NICLA_HELLO\n", _bcast_addr)
         except OSError:
             pass
         last_beacon_ms = now

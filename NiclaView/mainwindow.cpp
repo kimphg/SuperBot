@@ -18,6 +18,9 @@ MainWindow::MainWindow(QWidget *parent)
     if(!isOK)QApplication::exit();
     connect(udpSocket,SIGNAL(readyRead()),this,SLOT(udpDataReceive()));
     connect(videoSocket,SIGNAL(readyRead()),this,SLOT(videoReceive()));
+    discoverySocket = new QUdpSocket(this);
+    discoverySocket->bind(31003, QUdpSocket::ShareAddress | QUdpSocket::ReuseAddressHint);
+    connect(discoverySocket,SIGNAL(readyRead()),this,SLOT(discoveryReceive()));
     panoramaView  =QPixmap(900,900);
     header.append(0xff);
     header.append(0xff);
@@ -44,6 +47,23 @@ void MainWindow::timerEvent(QTimerEvent *event)
     //    downloadImage();
 //    if(videoSocket->isOpen())
 //    videoReceive();
+}
+
+void MainWindow::discoveryReceive()
+{
+    while (discoverySocket->hasPendingDatagrams())
+    {
+        QByteArray datagram;
+        datagram.resize(discoverySocket->pendingDatagramSize());
+        QHostAddress sender;
+        quint16 senderPort;
+        discoverySocket->readDatagram(datagram.data(), datagram.size(), &sender, &senderPort);
+        if (datagram.startsWith("NICLA_HELLO") && niclaAddress.isNull())
+        {
+            niclaAddress = sender;
+            statusBar()->showMessage("Nicla discovered: " + sender.toString());
+        }
+    }
 }
 
 void MainWindow::updateButtonStates()
@@ -118,7 +138,7 @@ void MainWindow::udpDataReceive()
         quint16 senderPort;
         udpSocket->readDatagram(datagram.data(), datagram.size(), &sender, &senderPort);
 
-        // Discover the Nicla's IP from the first packet so we can send heartbeats back
+        // Fallback discovery: capture sender IP if not yet found via beacon
         if (niclaAddress.isNull())
             niclaAddress = sender;
 

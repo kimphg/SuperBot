@@ -33,6 +33,7 @@ private slots:
 
     void udpDataReceive();
     void sendHeartbeat();
+    void discoveryReceive();
     void on_pushButton_2_clicked();
 
     void on_pushButton_3_clicked();
@@ -59,8 +60,9 @@ private:
     void updateButtonStates();
     QUdpSocket *videoSocket;
     QUdpSocket *udpSocket;
+    QUdpSocket *discoverySocket;    // listens on 31003 for NICLA_HELLO beacons
     QTimer      *heartbeatTimer;
-    QHostAddress niclaAddress;      // discovered from first received IMU packet
+    QHostAddress niclaAddress;      // auto-discovered from beacon or first IMU packet
     qint64       lastImuMs = 0;     // wall-clock ms of most recent IMU packet
     bool         wasConnected = false;
 };
