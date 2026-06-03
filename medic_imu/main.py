@@ -17,7 +17,7 @@ def load_config():
         with open(CONFIG_FILE) as f:
             return ujson.load(f)
     except:
-        return {"ssid": "AA11", "password": "12345678"}
+        return {"ssid": "Maychi", "password": "maychi21"}
 
 def save_config(cfg):
     with open(CONFIG_FILE, "w") as f:
