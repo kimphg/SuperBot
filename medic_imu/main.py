@@ -8,8 +8,8 @@ from lsm6dsox import LSM6DSOX
 from machine import Pin
 from machine import SPI
 import math
-SSID = "Star3k"
-KEY = "Abach04122019"
+SSID = "AA11"
+KEY = "12345678"
 CONTROLLER_IP = "192.168.4.16"  # PC's DHCP address on the board's AP (192.168.4.x)
 HOST = ""
 PORT = 8080
@@ -19,21 +19,52 @@ sensor.set_framesize(sensor.QVGA)
 sensor.set_pixformat(sensor.RGB565)
 ledpin = Pin("PF4", Pin.OUT_PP, Pin.PULL_UP)
 wlan = WLAN(network.AP_IF)
-wlan.active(True)
-wlan.config(ssid=SSID, key=KEY)
 roll=0
 pitch=90
 yaw=0
 imu_clock = pyb.millis()
-time.sleep_ms(5000)
-while not wlan.active():
-    print('Starting access point "{:s}"...'.format(SSID))
-    ledpin.on()
-    time.sleep_ms(1000)
+
+def start_ap():
+    wlan.active(False)          # clear any stuck state before (re)starting
+    time.sleep_ms(500)
+    wlan.active(True)
+    wlan.config(ssid=SSID, key=KEY, channel=6)
+    while not wlan.active():
+        print('Starting access point "{:s}"...'.format(SSID))
+        ledpin.on()
+        time.sleep_ms(1000)
+        ledpin.off()
+        time.sleep_ms(1000)
     ledpin.off()
-    time.sleep_ms(1000)
-ledpin.off()
-print("AP started ", wlan.ifconfig())
+    ip, netmask, gateway, dns = wlan.ifconfig()
+    print("WiFi status:")
+    print("  mode    : AP")
+    print("  active  :", wlan.active())
+    print("  ssid    :", SSID)
+    print("  ip      :", ip)
+    print("  netmask :", netmask)
+    print("  gateway :", gateway)
+    print("  send to :", CONTROLLER_IP)
+
+def client_count():
+    try:
+        return len(wlan.status('stations'))
+    except (OSError, ValueError, TypeError):
+        return -1   # 'stations' not supported on this build -> skip the check
+
+start_ap()
+time.sleep_ms(5000)
+t0 = pyb.millis()
+while client_count() == 0:
+    if pyb.elapsed_millis(t0) > 30000:
+        print("No WiFi client in 30s, restarting AP...")
+        start_ap()
+        t0 = pyb.millis()
+    ledpin.on()
+    time.sleep_ms(250)
+    ledpin.off()
+    time.sleep_ms(250)
+print("Client connected, clients:", client_count())
 svideo = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 sudp = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 q0 = 1.0
@@ -118,7 +149,6 @@ def updateIMU(fps):
     if(pitch>50):
         roll = old_roll+rx*dtus
     old_roll=roll
-    print((roll,pitch,yaw))
     sudp.sendto(bytes("IMU,"+str(roll)+","+str(pitch)+","+str(yaw)+"\n", 'utf-8'),addr)
     return True
 def start_streaming():
