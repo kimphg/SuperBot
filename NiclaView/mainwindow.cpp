@@ -4,16 +4,17 @@
 #include <QFileDialog>
 #include <QPainter>
 #include <QDateTime>
+#include <QHBoxLayout>
 
-// ── Frame protocol constants (must match firmware) ────────────────────────────
-static const QByteArray FRAME_MAGIC = "NICL";
-static const int  HEADER_SIZE = 9;   // 4 magic + 1 type + 4 length
-static const quint8 TYPE_IMU  = 0x01;
-static const quint8 TYPE_VIDEO= 0x02;
+// ── Frame protocol (must match firmware) ─────────────────────────────────────
+static const QByteArray FRAME_MAGIC  = "NICL";
+static const int        HEADER_SIZE  = 9;      // 4 magic + 1 type + 4 length
+static const quint8     TYPE_IMU     = 0x01;
+static const quint8     TYPE_VIDEO   = 0x02;
 
-// Known USB VIDs / description keywords for Nicla Vision + OpenMV devices
-static const quint16 VID_STM32   = 0x0483;  // STMicroelectronics (OpenMV firmware)
-static const quint16 VID_ARDUINO = 0x2341;  // Arduino (stock bootloader)
+// Known USB VIDs for Nicla Vision / OpenMV
+static const quint16 VID_STM32   = 0x0483;
+static const quint16 VID_ARDUINO = 0x2341;
 
 // ─────────────────────────────────────────────────────────────────────────────
 MainWindow::MainWindow(QWidget *parent)
@@ -26,9 +27,11 @@ MainWindow::MainWindow(QWidget *parent)
     roll_max = -1000; roll_min = 1000;
     pitch_min = 1000; pitch_max = -1000;
 
+    initChart();
+
     // Serial port
     serialPort = new QSerialPort(this);
-    serialPort->setBaudRate(QSerialPort::Baud115200); // ignored by USB CDC
+    serialPort->setBaudRate(QSerialPort::Baud115200);
     connect(serialPort, &QSerialPort::readyRead,
             this, &MainWindow::serialReceive);
     connect(serialPort, &QSerialPort::errorOccurred,
@@ -41,7 +44,6 @@ MainWindow::MainWindow(QWidget *parent)
         }
     });
 
-    // Retry / auto-connect timer
     retryTimer = new QTimer(this);
     retryTimer->setSingleShot(false);
     connect(retryTimer, &QTimer::timeout, this, &MainWindow::retryConnection);
@@ -51,12 +53,56 @@ MainWindow::MainWindow(QWidget *parent)
     this->showMaximized();
 }
 
+// ── Chart setup ───────────────────────────────────────────────────────────────
+void MainWindow::initChart()
+{
+    rollSeries  = new QLineSeries();
+    pitchSeries = new QLineSeries();
+    rollSeries->setName(QString::fromUtf8("Góc xoay (roll)"));
+    pitchSeries->setName(QString::fromUtf8("Góc ngẩng (pitch)"));
+
+    QPen rp(QColor(220, 0, 0));   rp.setWidth(2); rollSeries->setPen(rp);
+    QPen pp(QColor(0, 0, 200));   pp.setWidth(2); pitchSeries->setPen(pp);
+
+    chart = new QChart();
+    chart->addSeries(rollSeries);
+    chart->addSeries(pitchSeries);
+    chart->setTitle("");
+    chart->setMargins(QMargins(4, 4, 4, 4));
+    chart->legend()->setVisible(true);
+    chart->legend()->setAlignment(Qt::AlignTop);
+
+    xAxis = new QValueAxis();
+    xAxis->setTitleText(QString::fromUtf8("Thời gian (s)"));
+    xAxis->setRange(0, 10);
+    xAxis->setTickCount(11);
+    xAxis->setLabelFormat("%.0f");
+    xAxis->setGridLineVisible(true);
+
+    yAxis = new QValueAxis();
+    yAxis->setTitleText(QString::fromUtf8("Góc (°)"));
+    yAxis->setRange(-180, 180);
+    yAxis->setTickCount(13);
+    yAxis->setLabelFormat("%.0f");
+    yAxis->setGridLineVisible(true);
+
+    chart->addAxis(xAxis, Qt::AlignBottom);
+    chart->addAxis(yAxis, Qt::AlignLeft);
+    rollSeries->attachAxis(xAxis);  rollSeries->attachAxis(yAxis);
+    pitchSeries->attachAxis(xAxis); pitchSeries->attachAxis(yAxis);
+
+    chartView = new QChartView(chart, ui->plotter);
+    chartView->setRenderHint(QPainter::Antialiasing);
+
+    QHBoxLayout *layout = new QHBoxLayout(ui->plotter);
+    layout->setContentsMargins(0, 0, 0, 0);
+    layout->addWidget(chartView);
+}
+
 // ── Serial auto-connect ───────────────────────────────────────────────────────
 void MainWindow::autoConnectSerial()
 {
     const auto ports = QSerialPortInfo::availablePorts();
-
-    // Pass 1: match by known VID
     for (const QSerialPortInfo &info : ports) {
         quint16 vid = info.vendorIdentifier();
         if (vid == VID_STM32 || vid == VID_ARDUINO) {
@@ -64,7 +110,6 @@ void MainWindow::autoConnectSerial()
             return;
         }
     }
-    // Pass 2: match by description keyword (covers unusual VIDs)
     for (const QSerialPortInfo &info : ports) {
         QString desc = info.description().toLower();
         if (desc.contains("openmv") || desc.contains("nicla") ||
@@ -73,7 +118,6 @@ void MainWindow::autoConnectSerial()
             return;
         }
     }
-
     statusBar()->showMessage(
         "Nicla not found — install OpenMV IDE driver, then plug in USB");
     retryTimer->start(2000);
@@ -83,7 +127,7 @@ void MainWindow::connectSerial(const QString &portName)
 {
     serialPort->setPortName(portName);
     if (serialPort->open(QIODevice::ReadWrite)) {
-        serialPort->setDataTerminalReady(true);  // asserts DTR so firmware sees connection
+        serialPort->setDataTerminalReady(true);
         retryTimer->stop();
         statusBar()->showMessage("Connected: " + portName);
     } else {
@@ -98,7 +142,7 @@ void MainWindow::retryConnection()
         autoConnectSerial();
 }
 
-// ── Serial data reception & binary frame parsing ──────────────────────────────
+// ── Serial frame parsing ──────────────────────────────────────────────────────
 void MainWindow::serialReceive()
 {
     serialBuffer.append(serialPort->readAll());
@@ -108,21 +152,14 @@ void MainWindow::serialReceive()
 void MainWindow::processSerialBuffer()
 {
     while (true) {
-        // Find magic
         int idx = serialBuffer.indexOf(FRAME_MAGIC);
         if (idx < 0) {
-            // Keep last 3 bytes so a magic spanning reads isn't lost
             if (serialBuffer.size() > 3)
                 serialBuffer = serialBuffer.right(3);
             break;
         }
-        if (idx > 0) {
-            serialBuffer.remove(0, idx);
-            continue;
-        }
-        // Magic is at position 0; need at least a full header
-        if (serialBuffer.size() < HEADER_SIZE)
-            break;
+        if (idx > 0) { serialBuffer.remove(0, idx); continue; }
+        if (serialBuffer.size() < HEADER_SIZE) break;
 
         quint8  type   = static_cast<quint8>(serialBuffer[4]);
         quint32 length = (static_cast<quint8>(serialBuffer[5]) << 24)
@@ -130,38 +167,54 @@ void MainWindow::processSerialBuffer()
                        | (static_cast<quint8>(serialBuffer[7]) <<  8)
                        |  static_cast<quint8>(serialBuffer[8]);
 
-        if (static_cast<int>(HEADER_SIZE + length) > serialBuffer.size())
-            break;  // payload not fully received yet
+        if (serialBuffer.size() < HEADER_SIZE + (int)length) break;
 
         QByteArray payload = serialBuffer.mid(HEADER_SIZE, length);
         serialBuffer.remove(0, HEADER_SIZE + length);
 
-        if (type == TYPE_IMU)
-            parseIMU(payload);
-        else if (type == TYPE_VIDEO)
-            parseVideo(payload);
+        if (type == TYPE_IMU)   parseIMU(payload);
+        else if (type == TYPE_VIDEO) parseVideo(payload);
     }
 }
 
-// ── IMU frame: "IMU,seq,ts_ms,roll,pitch,yaw\n" ──────────────────────────────
+// ── IMU: "IMU,seq,ts_ms,roll,pitch,yaw\n" ────────────────────────────────────
 void MainWindow::parseIMU(const QByteArray &payload)
 {
-    QByteArrayList datalist = payload.split(',');
-    if (datalist.size() < 6) return;
+    QByteArrayList d = payload.split(',');
+    if (d.size() < 6) return;
 
-    roll = -datalist.at(3).toFloat();
-    ui->plotter->addRecord(0, roll);
-
-    pitch = datalist.at(4).toFloat();
+    qint64 ts_ms = d.at(2).toLongLong();
+    roll  = -d.at(3).toFloat();
+    pitch =  d.at(4).toFloat();
     if (pitch > 85) pitch -= 10;
 
     if (abs(roll) > 90) {
         pitch = 180 - pitch;
         while (roll < -180) roll += 360;
     }
-    ui->plotter->addRecord(1, pitch);
-    ui->label_pitch->setText(QString::number(pitch - 90));
-    ui->label_roll->setText(QString::number(roll));
+
+    float displayPitch = pitch - 90;   // 0 = level, + = looking up
+
+    ui->label_pitch->setText(QString::number(displayPitch, 'f', 1));
+    ui->label_roll->setText(QString::number(roll, 'f', 1));
+
+    // ── chart update ─────────────────────────────────────────────────────
+    if (firstTs < 0) firstTs = ts_ms;
+    double elapsed = (ts_ms - firstTs) / 1000.0;
+
+    if (isRecording) {
+        rollSeries->append(elapsed, roll);
+        pitchSeries->append(elapsed, displayPitch);
+
+        // Auto-extend x-axis in 10-second steps
+        if (elapsed >= maxElapsed) {
+            maxElapsed = elapsed + 10.0;
+            xAxis->setRange(0, maxElapsed);
+            // Adjust tick spacing: 1 tick per 10 s, max 20 ticks
+            int ticks = qMin((int)(maxElapsed / 10) + 1, 20);
+            xAxis->setTickCount(ticks + 1);
+        }
+    }
 
     if (!isMeasuring) return;
 
@@ -185,13 +238,13 @@ void MainWindow::parseIMU(const QByteArray &payload)
     rrol = pitch + 90;
     rpit = -roll;
 
-    ui->label_pitch_min->setText(QString::number(pitch_min));
-    ui->label_pitch_max->setText(QString::number(pitch_max));
-    ui->label_roll_min->setText(QString::number(roll_min));
-    ui->label_roll_max->setText(QString::number(roll_max));
+    ui->label_pitch_min->setText(QString::number(pitch_min - 90, 'f', 1));
+    ui->label_pitch_max->setText(QString::number(pitch_max - 90, 'f', 1));
+    ui->label_roll_min->setText(QString::number(roll_min, 'f', 1));
+    ui->label_roll_max->setText(QString::number(roll_max, 'f', 1));
 }
 
-// ── Video frame: raw JPEG bytes ───────────────────────────────────────────────
+// ── Video: raw JPEG ───────────────────────────────────────────────────────────
 void MainWindow::parseVideo(const QByteArray &jpegData)
 {
     pixmap.loadFromData(jpegData);
@@ -200,6 +253,26 @@ void MainWindow::parseVideo(const QByteArray &jpegData)
         repaint();
         imgReady = true;
     }
+}
+
+// ── CSV export ────────────────────────────────────────────────────────────────
+void MainWindow::saveCsv(const QString &filename)
+{
+    QFile file(filename + ".csv");
+    if (!file.open(QIODevice::WriteOnly)) return;
+    QByteArray out;
+    out.append("STT,Time(s),Roll(deg),Pitch(deg)\n");
+    int n = qMin(rollSeries->count(), pitchSeries->count());
+    for (int i = 0; i < n; i++) {
+        QPointF r = rollSeries->at(i);
+        QPointF p = pitchSeries->at(i);
+        out += QByteArray::number(i + 1) + ","
+             + QByteArray::number(r.x(), 'f', 3) + ","
+             + QByteArray::number(r.y(), 'f', 2) + ","
+             + QByteArray::number(p.y(), 'f', 2) + "\n";
+    }
+    file.write(out);
+    file.close();
 }
 
 // ── Button state styling ──────────────────────────────────────────────────────
@@ -226,53 +299,61 @@ void MainWindow::timerEvent(QTimerEvent *) {}
 void MainWindow::downloadImage() {}
 
 // ── Button handlers ───────────────────────────────────────────────────────────
-void MainWindow::on_pushButton_clicked()
+void MainWindow::on_pushButton_clicked()    // Start
 {
-    isMeasuring = true;
+    isMeasuring  = true;
+    isRecording  = true;
     roll_max = -1000; roll_min = 1000;
     pitch_min = 1000; pitch_max = -1000;
-    ui->plotter->resetRecord();
+
+    rollSeries->clear();
+    pitchSeries->clear();
+    firstTs    = -1;
+    maxElapsed = 10.0;
+    xAxis->setRange(0, maxElapsed);
+    xAxis->setTickCount(11);
+
     ui->label_mes_count->setText(QString::number(report.getCount_rec()));
     updateButtonStates();
 }
 
-void MainWindow::on_pushButton_2_clicked()
+void MainWindow::on_pushButton_2_clicked()  // Stop
 {
     isMeasuring = false;
-    ui->plotter->stopRecord();
+    isRecording = false;
     updateButtonStates();
 }
 
-void MainWindow::on_pushButton_3_clicked()
+void MainWindow::on_pushButton_3_clicked()  // Save
 {
-    QDateTime currentDateTime = QDateTime::currentDateTime();
-    QString bnName  = ui->lineEdit->text();
-    QString bnCode  = ui->lineEdit_2->text();
-    QString bnNS    = ui->lineEdit_3->text();
+    QDateTime dt = QDateTime::currentDateTime();
+    QString bnName   = ui->lineEdit->text();
+    QString bnCode   = ui->lineEdit_2->text();
+    QString bnNS     = ui->lineEdit_3->text();
     QString tiltdata = ui->label_pitch_min->text() + "/" + ui->label_pitch_max->text();
     QString pandata  = ui->label_roll_min->text()  + "/" + ui->label_roll_max->text();
-    QString date     = currentDateTime.toString("dd_MM_yyyy_hh_mm") + "_" + bnName;
+    QString base     = dt.toString("dd_MM_yyyy_hh_mm") + "_" + bnName;
 
-    QPixmap grab = QPixmap::grabWidget(ui->plotter);
-    grab = grab.scaled(700, 350);
-    QFile f1(date + ".png"); f1.open(QIODevice::WriteOnly); grab.save(&f1, "PNG");
+    QPixmap g = QPixmap::grabWidget(ui->plotter);
+    g = g.scaled(700, 350);
+    QFile f1(base + ".png"); f1.open(QIODevice::WriteOnly); g.save(&f1, "PNG");
 
-    grab = QPixmap::grabWidget(ui->frame);
-    grab = grab.scaled(700, 350);
-    QFile f2(date + "video.png"); f2.open(QIODevice::WriteOnly); grab.save(&f2, "PNG");
+    g = QPixmap::grabWidget(ui->frame);
+    g = g.scaled(700, 350);
+    QFile f2(base + "video.png"); f2.open(QIODevice::WriteOnly); g.save(&f2, "PNG");
 
     report.insertRecord(bnName, bnCode, bnNS, tiltdata, pandata);
     ui->label_mes_count->setText(QString::number(report.getCount_rec()));
-    ui->plotter->saveCsv(date);
+    saveCsv(base);
 }
 
-void MainWindow::on_pushButton_4_clicked()
+void MainWindow::on_pushButton_4_clicked()  // Reset
 {
     report.resetData();
     updateButtonStates();
 }
 
-void MainWindow::on_pushButton_5_clicked()
+void MainWindow::on_pushButton_5_clicked()  // Open PDF
 {
     QDesktopServices::openUrl(report.lastFileName);
 }

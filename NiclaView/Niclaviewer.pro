@@ -1,4 +1,4 @@
-QT       += core gui network printsupport serialport
+QT       += core gui network printsupport serialport charts
 QT       += 3dcore widgets
 
 TARGET = nicla

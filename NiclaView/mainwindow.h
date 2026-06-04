@@ -6,8 +6,14 @@
 #include <QSerialPortInfo>
 #include <QTimer>
 #include <QDateTime>
+#include <QtCharts/QChart>
+#include <QtCharts/QChartView>
+#include <QtCharts/QLineSeries>
+#include <QtCharts/QValueAxis>
 #include "pdfreport.h"
 #include <QDesktopWidget>
+
+QT_CHARTS_USE_NAMESPACE
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -45,6 +51,20 @@ private:
     void parseIMU(const QByteArray &payload);
     void parseVideo(const QByteArray &payload);
 
+    // ── chart ─────────────────────────────────────────────────────────────
+    QChart      *chart;
+    QChartView  *chartView;
+    QLineSeries *rollSeries;
+    QLineSeries *pitchSeries;
+    QValueAxis  *xAxis;
+    QValueAxis  *yAxis;
+    qint64       firstTs   = -1;   // firmware ts_ms of first received packet
+    double       maxElapsed = 10.0; // current right edge of x-axis (s)
+    bool         isRecording = false;
+
+    void initChart();
+    void saveCsv(const QString &filename);
+
     // ── measurement state ─────────────────────────────────────────────────
     PdfReport report;
     QPixmap   pixmap;
@@ -55,11 +75,10 @@ private:
     bool      imgReady = false;
     float     roll_min, roll_max;
     float     pitch_min, pitch_max;
-    QByteArray header;
 
     Ui::MainWindow *ui;
     void updateButtonStates();
-    void downloadImage();   // stub, kept for compat
+    void downloadImage();
 };
 
 #endif // MAINWINDOW_H

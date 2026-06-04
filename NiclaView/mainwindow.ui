@@ -310,9 +310,9 @@
      </widget>
     </item>
 
-    <!-- ── RIGHT col 1, row 0 ── plotter (chart) ────────────────────── -->
+    <!-- ── RIGHT col 1, row 0 ── chart container ────────────────────── -->
     <item row="0" column="1">
-     <widget class="QCustomPlotter" name="plotter">
+     <widget class="QWidget" name="plotter">
       <property name="sizePolicy">
        <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
         <horstretch>2</horstretch>
@@ -324,12 +324,6 @@
         <width>0</width>
         <height>280</height>
        </size>
-      </property>
-      <property name="frameShape">
-       <enum>QFrame::StyledPanel</enum>
-      </property>
-      <property name="frameShadow">
-       <enum>QFrame::Raised</enum>
       </property>
      </widget>
     </item>
@@ -723,14 +717,7 @@ Người kiểm tra nhấn nút hoàn thành để lưu kết quả đo.</string
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
  </widget>
- <customwidgets>
-  <customwidget>
-   <class>QCustomPlotter</class>
-   <extends>QFrame</extends>
-   <header location="global">qcustomplotter.h</header>
-   <container>1</container>
-  </customwidget>
- </customwidgets>
+ <customwidgets/>
  <resources/>
  <connections/>
 </ui>
