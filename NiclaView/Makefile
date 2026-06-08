@@ -265,6 +265,7 @@ Makefile: Niclaviewer.pro C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\mkspecs\win32-msvc\q
 		C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\lib\Qt53DCore.prl \
 		C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\lib\Qt5Gui.prl \
 		C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\lib\Qt5Network.prl \
+		C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\lib\Qt5SerialPort.prl \
 		C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\lib\Qt5Core.prl \
 		C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\lib\qtmain.prl \
 		C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\mkspecs\features\build_pass.prf \
@@ -275,6 +276,7 @@ Makefile: Niclaviewer.pro C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\mkspecs\win32-msvc\q
 		C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\lib\Qt53DCored.prl \
 		C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\lib\Qt5Guid.prl \
 		C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\lib\Qt5Networkd.prl \
+		C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\lib\Qt5SerialPortd.prl \
 		C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\lib\Qt5Cored.prl \
 		C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\lib\qtmaind.prl
 	$(QMAKE) -o Makefile Niclaviewer.pro -spec win32-msvc "CONFIG+=qtquickcompiler"
@@ -459,6 +461,7 @@ C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\lib\Qt5Widgets.prl:
 C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\lib\Qt53DCore.prl:
 C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\lib\Qt5Gui.prl:
 C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\lib\Qt5Network.prl:
+C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\lib\Qt5SerialPort.prl:
 C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\lib\Qt5Core.prl:
 C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\lib\qtmain.prl:
 C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\mkspecs\features\build_pass.prf:
@@ -469,6 +472,7 @@ C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\lib\Qt5Widgetsd.prl:
 C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\lib\Qt53DCored.prl:
 C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\lib\Qt5Guid.prl:
 C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\lib\Qt5Networkd.prl:
+C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\lib\Qt5SerialPortd.prl:
 C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\lib\Qt5Cored.prl:
 C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\lib\qtmaind.prl:
 qmake: FORCE
